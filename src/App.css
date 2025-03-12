@@ -1,0 +1,804 @@
+#root {
+  width: 100%;
+  height: 100%;
+  min-height: 100vh;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.logo {
+  height: 6em;
+  padding: 1.5em;
+  will-change: filter;
+  transition: filter 300ms;
+}
+.logo:hover {
+  filter: drop-shadow(0 0 2em #646cffaa);
+}
+.logo.react:hover {
+  filter: drop-shadow(0 0 2em #61dafbaa);
+}
+
+@keyframes logo-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  a:nth-of-type(2) .logo {
+    animation: logo-spin infinite 20s linear;
+  }
+}
+
+.card {
+  padding: 2em;
+}
+
+.read-the-docs {
+  color: #888;
+}
+
+/* 全体のスタイル */
+:root {
+  --primary-color: #3498db;
+  --secondary-color: #2980b9;
+  --accent-color: #e74c3c;
+  --text-color: #333;
+  --light-gray: #f5f5f5;
+  --border-color: #ddd;
+  --success-color: #2ecc71;
+  --warning-color: #f39c12;
+  --danger-color: #e74c3c;
+  --sidebar-width: 250px;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  line-height: 1.6;
+  color: var(--text-color);
+  background-color: #f9f9f9;
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  min-height: 100vh;
+}
+
+html {
+  height: 100%;
+}
+
+.app-container {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  height: 100%;
+  width: 100%;
+}
+
+.app-content {
+  display: flex;
+  flex: 1;
+  height: 100%;
+}
+
+.sidebar {
+  width: var(--sidebar-width);
+  background-color: #2c3e50;
+  color: white;
+  padding: 20px;
+  position: fixed;
+  height: 100vh;
+  overflow-y: auto;
+  box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+}
+
+.sidebar-header {
+  padding-bottom: 20px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  margin-bottom: 20px;
+}
+
+.sidebar-header h2 {
+  color: white;
+  font-size: 1.8rem;
+  margin: 0;
+}
+
+.sidebar-nav ul {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 20px 0;
+}
+
+.sidebar-nav li {
+  margin-bottom: 10px;
+}
+
+.sidebar-nav a {
+  color: rgba(255, 255, 255, 0.8);
+  display: block;
+  padding: 8px 0;
+  transition: all 0.3s;
+}
+
+.sidebar-nav a:hover {
+  color: white;
+  text-decoration: none;
+  transform: translateX(5px);
+}
+
+.sidebar-nav h3 {
+  font-size: 1rem;
+  color: rgba(255, 255, 255, 0.6);
+  margin: 20px 0 10px;
+  padding-top: 20px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.main-content {
+  flex: 1;
+  margin-left: var(--sidebar-width);
+  padding: 20px;
+  min-height: 100vh;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+}
+
+a {
+  color: var(--primary-color);
+  text-decoration: none;
+}
+
+a:hover {
+  text-decoration: underline;
+}
+
+button {
+  cursor: pointer;
+  border: none;
+  border-radius: 4px;
+  padding: 8px 16px;
+  font-size: 14px;
+  transition: background-color 0.3s;
+}
+
+/* ヘッダースタイル */
+.app-header {
+  text-align: center;
+  margin-bottom: 30px;
+  padding: 20px 0;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.app-header h1 {
+  font-size: 2.5rem;
+  color: var(--primary-color);
+  margin-bottom: 10px;
+}
+
+.app-header p {
+  font-size: 1.2rem;
+  color: #666;
+}
+
+/* Wiki リストスタイル */
+.wiki-list {
+  background-color: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  padding: 20px;
+  max-width: 800px;
+  margin: 0 auto;
+  width: 100%;
+  min-height: calc(100vh - 150px);
+  display: flex;
+  flex-direction: column;
+}
+
+.search-container {
+  margin-bottom: 20px;
+}
+
+.search-input {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  font-size: 16px;
+  background-color: white;
+}
+
+.page-list {
+  list-style: none;
+}
+
+.page-item {
+  padding: 15px;
+  border-bottom: 1px solid var(--border-color);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.page-item:last-child {
+  border-bottom: none;
+}
+
+.page-link {
+  font-size: 18px;
+  font-weight: 500;
+}
+
+.page-date {
+  font-size: 14px;
+  color: #777;
+}
+
+.no-pages {
+  text-align: center;
+  padding: 30px;
+  color: #777;
+}
+
+.actions {
+  margin-top: 20px;
+  text-align: right;
+}
+
+.create-button {
+  display: inline-block;
+  background-color: var(--primary-color);
+  color: white;
+  padding: 10px 20px;
+  border-radius: 4px;
+  font-weight: 500;
+}
+
+.create-button:hover {
+  background-color: var(--secondary-color);
+  text-decoration: none;
+}
+
+/* Wiki ページスタイル */
+.wiki-page {
+  background-color: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  padding: 30px;
+  max-width: 800px;
+  margin: 0 auto;
+  width: 100%;
+  min-height: calc(100vh - 40px);
+  display: flex;
+  flex-direction: column;
+}
+
+.page-header {
+  margin-bottom: 20px;
+  padding-bottom: 15px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.page-header h1 {
+  font-size: 2rem;
+  margin-bottom: 10px;
+}
+
+.page-meta {
+  display: flex;
+  gap: 20px;
+  color: #777;
+  font-size: 14px;
+}
+
+.page-content {
+  line-height: 1.8;
+  margin-bottom: 30px;
+  flex: 1;
+}
+
+.page-content h1,
+.page-content h2,
+.page-content h3 {
+  margin-top: 1.5em;
+  margin-bottom: 0.5em;
+}
+
+.page-content p {
+  margin-bottom: 1em;
+}
+
+.page-content ul,
+.page-content ol {
+  margin-left: 20px;
+  margin-bottom: 1em;
+}
+
+.page-content pre {
+  background-color: var(--light-gray);
+  padding: 15px;
+  border-radius: 4px;
+  overflow-x: auto;
+  margin-bottom: 1em;
+}
+
+.page-content code {
+  background-color: var(--light-gray);
+  padding: 2px 5px;
+  border-radius: 3px;
+  font-family: 'Courier New', Courier, monospace;
+}
+
+.page-content blockquote {
+  border-left: 4px solid var(--primary-color);
+  padding-left: 15px;
+  color: #555;
+  font-style: italic;
+  margin-bottom: 1em;
+}
+
+.page-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.edit-button,
+.back-button {
+  display: inline-block;
+  background-color: var(--primary-color);
+  color: white;
+  padding: 8px 16px;
+  border-radius: 4px;
+}
+
+.edit-button:hover,
+.back-button:hover {
+  background-color: var(--secondary-color);
+  text-decoration: none;
+}
+
+.delete-button {
+  background-color: var(--danger-color);
+  color: white;
+}
+
+.delete-button:hover {
+  background-color: #c0392b;
+}
+
+.delete-confirm {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.delete-confirm p {
+  background-color: white;
+  padding: 20px;
+  border-radius: 8px 8px 0 0;
+  width: 400px;
+  text-align: center;
+  font-size: 18px;
+}
+
+.confirm-actions {
+  background-color: white;
+  width: 400px;
+  display: flex;
+  border-radius: 0 0 8px 8px;
+}
+
+.confirm-yes,
+.confirm-no {
+  flex: 1;
+  padding: 15px;
+  font-size: 16px;
+  border: none;
+  border-top: 1px solid var(--border-color);
+}
+
+.confirm-yes {
+  background-color: var(--danger-color);
+  color: white;
+  border-radius: 0 0 0 8px;
+}
+
+.confirm-no {
+  background-color: #f5f5f5;
+  border-radius: 0 0 8px 0;
+}
+
+/* Wiki フォームスタイル */
+.wiki-form {
+  background-color: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  padding: 30px;
+  max-width: 800px;
+  margin: 0 auto;
+  width: 100%;
+  min-height: calc(100vh - 40px);
+  display: flex;
+  flex-direction: column;
+}
+
+.wiki-form h1 {
+  margin-bottom: 20px;
+  color: var(--primary-color);
+}
+
+.error-message {
+  background-color: #fde8e8;
+  color: var(--danger-color);
+  padding: 10px;
+  border-radius: 4px;
+  margin-bottom: 20px;
+}
+
+.form-group {
+  margin-bottom: 20px;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: 500;
+}
+
+.form-group input,
+.form-group textarea {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  font-size: 16px;
+  background-color: white;
+}
+
+.form-group textarea {
+  resize: vertical;
+  min-height: 200px;
+}
+
+.form-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+}
+
+.save-button {
+  background-color: var(--success-color);
+  color: white;
+}
+
+.save-button:hover {
+  background-color: #27ae60;
+}
+
+.cancel-button {
+  background-color: #95a5a6;
+  color: white;
+}
+
+.cancel-button:hover {
+  background-color: #7f8c8d;
+}
+
+/* 404ページスタイル */
+.not-found-page {
+  text-align: center;
+  padding: 50px 20px;
+  max-width: 800px;
+  margin: 0 auto;
+  width: 100%;
+  min-height: calc(100vh - 40px);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+
+.not-found-page h1 {
+  font-size: 6rem;
+  color: var(--primary-color);
+  margin-bottom: 10px;
+}
+
+.not-found-page h2 {
+  font-size: 2rem;
+  margin-bottom: 20px;
+}
+
+.not-found-page p {
+  font-size: 1.2rem;
+  color: #666;
+  margin-bottom: 30px;
+}
+
+.home-link {
+  display: inline-block;
+  background-color: var(--primary-color);
+  color: white;
+  padding: 10px 20px;
+  border-radius: 4px;
+  font-weight: 500;
+}
+
+.home-link:hover {
+  background-color: var(--secondary-color);
+  text-decoration: none;
+}
+
+/* ローディングとエラー表示 */
+.loading {
+  text-align: center;
+  padding: 50px;
+  font-size: 1.2rem;
+  color: #666;
+}
+
+.error-container {
+  background-color: #fde8e8;
+  border-radius: 8px;
+  padding: 20px;
+  margin: 20px 0;
+  text-align: center;
+}
+
+.error-message {
+  color: var(--danger-color);
+  margin-bottom: 15px;
+}
+
+.back-link {
+  display: inline-block;
+  margin-top: 10px;
+}
+
+/* レスポンシブデザイン */
+@media (max-width: 768px) {
+  .app-container {
+    padding: 0;
+  }
+  
+  .sidebar {
+    width: 100%;
+    position: relative;
+    height: auto;
+    min-height: auto;
+  }
+  
+  .main-content {
+    margin-left: 0;
+    padding: 15px;
+  }
+  
+  .app-content {
+    flex-direction: column;
+  }
+  
+  .wiki-page,
+  .wiki-form,
+  .wiki-list {
+    padding: 15px;
+  }
+  
+  .page-header h1 {
+    font-size: 1.5rem;
+  }
+  
+  .delete-confirm p,
+  .confirm-actions {
+    width: 90%;
+  }
+  
+  .home-page,
+  .view-page,
+  .edit-page,
+  .new-page {
+    width: 100%;
+    max-width: 100%;
+  }
+}
+
+/* ホームページスタイル */
+.home-page {
+  width: 100%;
+  max-width: 800px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+/* ビューページスタイル */
+.view-page {
+  width: 100%;
+  max-width: 800px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+/* 編集ページスタイル */
+.edit-page {
+  width: 100%;
+  max-width: 800px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+/* 新規ページスタイル */
+.new-page {
+  width: 100%;
+  max-width: 800px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+.home-page,
+.view-page,
+.edit-page,
+.new-page,
+.not-found-page {
+  width: 100%;
+  max-width: 800px;
+  margin: 0 auto;
+  height: 100%;
+}
+
+.sidebar-title {
+  color: white;
+  text-decoration: none;
+}
+
+.sidebar-title:hover {
+  text-decoration: none;
+}
+
+.sidebar-title h2 {
+  transition: color 0.3s;
+}
+
+.sidebar-title:hover h2 {
+  color: rgba(255, 255, 255, 0.8);
+}
+
+/* フォーム要素のスタイル */
+input,
+textarea,
+select {
+  background-color: white;
+  color: var(--text-color);
+}
+
+/* ページツリースタイル */
+.page-tree {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.page-tree-item {
+  margin-bottom: 5px;
+}
+
+.page-tree-item-content {
+  display: flex;
+  align-items: center;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.page-tree-children {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 0 20px;
+}
+
+.expand-button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 12px;
+  padding: 0 8px 0 0;
+  color: var(--primary-color);
+}
+
+.expand-button.expanded {
+  transform: rotate(0deg);
+}
+
+.view-toggle {
+  display: flex;
+  justify-content: center;
+  margin-top: 10px;
+}
+
+.view-toggle-button {
+  background-color: #f5f5f5;
+  border: 1px solid var(--border-color);
+  padding: 5px 10px;
+  margin: 0 5px;
+  cursor: pointer;
+}
+
+.view-toggle-button.active {
+  background-color: var(--primary-color);
+  color: white;
+}
+
+/* 親子関係スタイル */
+.page-breadcrumb {
+  margin-bottom: 10px;
+  font-size: 14px;
+}
+
+.parent-page a {
+  display: flex;
+  align-items: center;
+  color: var(--secondary-color);
+}
+
+.breadcrumb-icon {
+  margin-right: 5px;
+  font-style: normal;
+}
+
+.child-pages {
+  margin-top: 30px;
+  padding-top: 20px;
+  border-top: 1px solid var(--border-color);
+}
+
+.child-pages h3 {
+  font-size: 1.2rem;
+  margin-bottom: 10px;
+  color: var(--secondary-color);
+}
+
+.child-pages-list {
+  list-style: none;
+  padding: 0;
+}
+
+.child-pages-list li {
+  margin-bottom: 8px;
+  padding-left: 20px;
+  position: relative;
+}
+
+.child-pages-list li:before {
+  content: "↳";
+  position: absolute;
+  left: 0;
+  color: var(--secondary-color);
+}

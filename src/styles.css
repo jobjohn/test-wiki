@@ -1,0 +1,170 @@
+/* タグスタイル */
+.tag {
+  display: inline-block;
+  background-color: #e0f7fa;
+  color: #00838f;
+  padding: 4px 8px;
+  border-radius: 16px;
+  font-size: 0.85rem;
+  margin-right: 8px;
+  margin-bottom: 8px;
+  text-decoration: none;
+  transition: background-color 0.2s;
+}
+
+.tag:hover {
+  background-color: #b2ebf2;
+}
+
+.tag.active {
+  background-color: #00acc1;
+  color: white;
+}
+
+.tag-small {
+  display: inline-block;
+  background-color: #e0f7fa;
+  color: #00838f;
+  padding: 2px 6px;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  margin-right: 4px;
+  text-decoration: none;
+}
+
+.tag-small:hover {
+  background-color: #b2ebf2;
+}
+
+.page-tags {
+  margin-top: 10px;
+  margin-bottom: 20px;
+}
+
+.page-item-tags {
+  display: inline-block;
+  margin-left: 10px;
+}
+
+/* タグ入力スタイル */
+.tags-input-container {
+  margin-bottom: 10px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  padding: 8px;
+  background-color: #f9f9f9;
+}
+
+.tags-list {
+  display: flex;
+  flex-wrap: wrap;
+  margin-bottom: 8px;
+}
+
+.tag-input-wrapper {
+  display: flex;
+}
+
+.tag-input-wrapper input {
+  flex-grow: 1;
+  margin-right: 8px;
+}
+
+.add-tag-button {
+  background-color: #00acc1;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 4px 8px;
+  cursor: pointer;
+}
+
+.add-tag-button:disabled {
+  background-color: #ccc;
+  cursor: not-allowed;
+}
+
+.tag-remove {
+  background: none;
+  border: none;
+  color: #00838f;
+  margin-left: 4px;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+.suggested-tags {
+  margin-top: 8px;
+  font-size: 0.85rem;
+}
+
+.suggested-tag {
+  background: none;
+  border: 1px solid #00acc1;
+  color: #00acc1;
+  border-radius: 12px;
+  padding: 2px 6px;
+  margin-right: 4px;
+  margin-bottom: 4px;
+  font-size: 0.75rem;
+  cursor: pointer;
+}
+
+.suggested-tag:hover {
+  background-color: #e0f7fa;
+}
+
+.suggested-tag:disabled {
+  border-color: #ccc;
+  color: #ccc;
+  cursor: not-allowed;
+}
+
+.all-tags {
+  margin: 20px 0;
+  padding: 15px;
+  background-color: #f5f5f5;
+  border-radius: 4px;
+}
+
+.all-tags h3 {
+  margin-top: 0;
+  margin-bottom: 10px;
+  font-size: 1rem;
+  color: #333;
+}
+
+.tags-cloud {
+  display: flex;
+  flex-wrap: wrap;
+}
+
+.tag-filter-info {
+  margin: 15px 0;
+  padding: 10px;
+  background-color: #fff8e1;
+  border-left: 4px solid #ffc107;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.tag-filter-info p {
+  margin: 0;
+}
+
+.clear-filter {
+  color: #f57c00;
+  text-decoration: none;
+  font-weight: bold;
+}
+
+.clear-filter:hover {
+  text-decoration: underline;
+}
+
+.page-item-content {
+  display: flex;
+  align-items: center;
+  flex-grow: 1;
+} 
