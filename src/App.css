@@ -56,6 +56,13 @@
   --warning-color: #f39c12;
   --danger-color: #e74c3c;
   --sidebar-width: 250px;
+  
+  /* フォントサイズの統一 */
+  --font-size-small: 0.85rem;
+  --font-size-base: 1rem;
+  --font-size-medium: 1.2rem;
+  --font-size-large: 1.5rem;
+  --font-size-xlarge: 1.8rem;
 }
 
 * {
@@ -73,6 +80,7 @@ body {
   padding: 0;
   height: 100%;
   min-height: 100vh;
+  font-size: var(--font-size-base);
 }
 
 html {
@@ -112,7 +120,7 @@ html {
 
 .sidebar-header h2 {
   color: white;
-  font-size: 1.8rem;
+  font-size: var(--font-size-xlarge);
   margin: 0;
 }
 
@@ -131,6 +139,7 @@ html {
   display: block;
   padding: 8px 0;
   transition: all 0.3s;
+  font-size: var(--font-size-base);
 }
 
 .sidebar-nav a:hover {
@@ -140,7 +149,7 @@ html {
 }
 
 .sidebar-nav h3 {
-  font-size: 1rem;
+  font-size: var(--font-size-base);
   color: rgba(255, 255, 255, 0.6);
   margin: 20px 0 10px;
   padding-top: 20px;
@@ -173,27 +182,8 @@ button {
   border: none;
   border-radius: 4px;
   padding: 8px 16px;
-  font-size: 14px;
+  font-size: var(--font-size-base);
   transition: background-color 0.3s;
-}
-
-/* ヘッダースタイル */
-.app-header {
-  text-align: center;
-  margin-bottom: 30px;
-  padding: 20px 0;
-  border-bottom: 1px solid var(--border-color);
-}
-
-.app-header h1 {
-  font-size: 2.5rem;
-  color: var(--primary-color);
-  margin-bottom: 10px;
-}
-
-.app-header p {
-  font-size: 1.2rem;
-  color: #666;
 }
 
 /* Wiki リストスタイル */
@@ -219,7 +209,7 @@ button {
   padding: 10px;
   border: 1px solid var(--border-color);
   border-radius: 4px;
-  font-size: 16px;
+  font-size: var(--font-size-base);
   background-color: white;
 }
 
@@ -240,12 +230,12 @@ button {
 }
 
 .page-link {
-  font-size: 18px;
+  font-size: var(--font-size-medium);
   font-weight: 500;
 }
 
 .page-date {
-  font-size: 14px;
+  font-size: var(--font-size-small);
   color: #777;
 }
 
@@ -253,6 +243,7 @@ button {
   text-align: center;
   padding: 30px;
   color: #777;
+  font-size: var(--font-size-base);
 }
 
 .actions {
@@ -267,6 +258,7 @@ button {
   padding: 10px 20px;
   border-radius: 4px;
   font-weight: 500;
+  font-size: var(--font-size-base);
 }
 
 .create-button:hover {
@@ -295,7 +287,7 @@ button {
 }
 
 .page-header h1 {
-  font-size: 2rem;
+  font-size: var(--font-size-large);
   margin-bottom: 10px;
 }
 
@@ -303,13 +295,14 @@ button {
   display: flex;
   gap: 20px;
   color: #777;
-  font-size: 14px;
+  font-size: var(--font-size-small);
 }
 
 .page-content {
   line-height: 1.8;
   margin-bottom: 30px;
   flex: 1;
+  font-size: var(--font-size-base);
 }
 
 .page-content h1,
@@ -317,6 +310,18 @@ button {
 .page-content h3 {
   margin-top: 1.5em;
   margin-bottom: 0.5em;
+}
+
+.page-content h1 {
+  font-size: var(--font-size-large);
+}
+
+.page-content h2 {
+  font-size: var(--font-size-medium);
+}
+
+.page-content h3 {
+  font-size: var(--font-size-base);
 }
 
 .page-content p {
@@ -364,6 +369,7 @@ button {
   color: white;
   padding: 8px 16px;
   border-radius: 4px;
+  font-size: var(--font-size-base);
 }
 
 .edit-button:hover,
@@ -401,7 +407,7 @@ button {
   border-radius: 8px 8px 0 0;
   width: 400px;
   text-align: center;
-  font-size: 18px;
+  font-size: var(--font-size-medium);
 }
 
 .confirm-actions {
@@ -415,7 +421,7 @@ button {
 .confirm-no {
   flex: 1;
   padding: 15px;
-  font-size: 16px;
+  font-size: var(--font-size-base);
   border: none;
   border-top: 1px solid var(--border-color);
 }
@@ -448,6 +454,7 @@ button {
 .wiki-form h1 {
   margin-bottom: 20px;
   color: var(--primary-color);
+  font-size: var(--font-size-large);
 }
 
 .error-message {
@@ -466,6 +473,7 @@ button {
   display: block;
   margin-bottom: 8px;
   font-weight: 500;
+  font-size: var(--font-size-base);
 }
 
 .form-group input,
@@ -474,7 +482,7 @@ button {
   padding: 10px;
   border: 1px solid var(--border-color);
   border-radius: 4px;
-  font-size: 16px;
+  font-size: var(--font-size-base);
   background-color: white;
 }
 
@@ -522,18 +530,18 @@ button {
 }
 
 .not-found-page h1 {
-  font-size: 6rem;
+  font-size: 3rem;
   color: var(--primary-color);
   margin-bottom: 10px;
 }
 
 .not-found-page h2 {
-  font-size: 2rem;
+  font-size: var(--font-size-large);
   margin-bottom: 20px;
 }
 
 .not-found-page p {
-  font-size: 1.2rem;
+  font-size: var(--font-size-medium);
   color: #666;
   margin-bottom: 30px;
 }
@@ -545,6 +553,7 @@ button {
   padding: 10px 20px;
   border-radius: 4px;
   font-weight: 500;
+  font-size: var(--font-size-base);
 }
 
 .home-link:hover {
@@ -556,7 +565,7 @@ button {
 .loading {
   text-align: center;
   padding: 50px;
-  font-size: 1.2rem;
+  font-size: var(--font-size-medium);
   color: #666;
 }
 
@@ -607,7 +616,7 @@ button {
   }
   
   .page-header h1 {
-    font-size: 1.5rem;
+    font-size: var(--font-size-large);
   }
   
   .delete-confirm p,
@@ -728,7 +737,7 @@ select {
   background: none;
   border: none;
   cursor: pointer;
-  font-size: 12px;
+  font-size: var(--font-size-small);
   padding: 0 8px 0 0;
   color: var(--primary-color);
 }
@@ -749,6 +758,7 @@ select {
   padding: 5px 10px;
   margin: 0 5px;
   cursor: pointer;
+  font-size: var(--font-size-small);
 }
 
 .view-toggle-button.active {
@@ -759,7 +769,7 @@ select {
 /* 親子関係スタイル */
 .page-breadcrumb {
   margin-bottom: 10px;
-  font-size: 14px;
+  font-size: var(--font-size-small);
 }
 
 .parent-page a {
@@ -780,7 +790,7 @@ select {
 }
 
 .child-pages h3 {
-  font-size: 1.2rem;
+  font-size: var(--font-size-medium);
   margin-bottom: 10px;
   color: var(--secondary-color);
 }
