@@ -16,11 +16,6 @@ function App() {
     setPages(getAllPages());
   }, []);
 
-  // ページが変更されたときに再取得するための関数
-  const refreshPages = () => {
-    setPages(getAllPages());
-  };
-
   return (
     <Router>
       <div className="app-container">
