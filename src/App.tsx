@@ -11,35 +11,61 @@ import { WikiPage } from './types';
 
 function App() {
   const [pages, setPages] = useState<WikiPage[]>([]);
+  const [menuOpen, setMenuOpen] = useState(false);
 
   useEffect(() => {
     setPages(getAllPages());
   }, []);
 
+  // メニューの開閉を切り替える関数
+  const toggleMenu = () => {
+    setMenuOpen(!menuOpen);
+  };
+
+  // メニューを閉じる関数
+  const closeMenu = () => {
+    setMenuOpen(false);
+  };
+
   return (
     <Router>
       <div className="app-container">
+        <div className="mobile-header">
+          <Link to="/" className="mobile-title">
+            <h2>Wiki App</h2>
+          </Link>
+          <button 
+            className="menu-toggle" 
+            onClick={toggleMenu}
+            aria-label={menuOpen ? "メニューを閉じる" : "メニューを開く"}
+          >
+            {menuOpen ? "✕" : "☰"}
+          </button>
+        </div>
+        
+        <div className={`sidebar-overlay ${menuOpen ? 'open' : ''}`} onClick={closeMenu}></div>
+        
         <div className="app-content">
-          <aside className="sidebar">
+          <aside className={`sidebar ${menuOpen ? 'open' : ''}`}>
             <div className="sidebar-header">
-              <Link to="/" className="sidebar-title">
+              <Link to="/" className="sidebar-title" onClick={closeMenu}>
                 <h2>Wiki App</h2>
               </Link>
             </div>
             <nav className="sidebar-nav">
               <ul>
                 <li>
-                  <Link to="/">ホーム</Link>
+                  <Link to="/" onClick={closeMenu}>ホーム</Link>
                 </li>
                 <li>
-                  <Link to="/new">新規ページ作成</Link>
+                  <Link to="/new" onClick={closeMenu}>新規ページ作成</Link>
                 </li>
               </ul>
               <h3>最近のページ</h3>
               <ul>
                 {pages.slice(0, 5).map(page => (
                   <li key={page.id}>
-                    <Link to={`/page/${page.id}`}>{page.title}</Link>
+                    <Link to={`/page/${page.id}`} onClick={closeMenu}>{page.title}</Link>
                   </li>
                 ))}
               </ul>
