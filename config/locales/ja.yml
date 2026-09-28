@@ -1,0 +1,22 @@
+ja:
+  activerecord:
+    models:
+      page: ページ
+      tag: タグ
+      revision: 版
+      upload: ファイル
+    attributes:
+      page:
+        title: タイトル
+        body: 本文
+        parent_id: 親ページ
+        parent: 親ページ
+        tag_list: タグ
+        position: 表示順
+      tag:
+        name: タグ名
+      upload:
+        file: ファイル
+  time:
+    formats:
+      wiki: "%Y/%m/%d %H:%M"

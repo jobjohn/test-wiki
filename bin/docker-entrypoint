@@ -1,0 +1,24 @@
+#!/bin/bash -e
+
+# Enable jemalloc for reduced memory usage and latency.
+if [ -z "${LD_PRELOAD+x}" ]; then
+    LD_PRELOAD=$(find /usr/lib -name libjemalloc.so.2 -print -quit)
+    export LD_PRELOAD
+fi
+
+# SECRET_KEY_BASE が未設定なら、初回起動時に生成して永続ボリュームに保存する
+if [ -z "${SECRET_KEY_BASE}" ]; then
+  secret_file="/rails/storage/.secret_key_base"
+  if [ ! -s "${secret_file}" ]; then
+    (umask 077 && head -c 64 /dev/urandom | od -An -tx1 | tr -d ' \n' > "${secret_file}")
+  fi
+  SECRET_KEY_BASE="$(cat "${secret_file}")"
+  export SECRET_KEY_BASE
+fi
+
+# サーバー起動時はデータベースを作成・マイグレーション（初回は初期ページも作成）
+if [ "${1}" == "./bin/rails" ] && [ "${2}" == "server" ]; then
+  ./bin/rails db:prepare
+fi
+
+exec "${@}"

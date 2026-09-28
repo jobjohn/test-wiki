@@ -1,0 +1,51 @@
+<% content_for :title, "第#{@revision.number}版: #{@page.title}" %>
+<nav class="breadcrumbs"><%= link_to @page.title, @page %> <span class="sep">/</span> <%= link_to "履歴", page_revisions_path(@page) %></nav>
+<h1><%= @revision.title %> <small class="muted">第<%= @revision.number %>版</small></h1>
+<p class="muted small">
+  <%= l @revision.created_at, format: :wiki %>
+  <% if @revision.summary.present? %> ・ <%= @revision.summary %><% end %>
+</p>
+
+<div class="page-actions">
+  <% if @revision != @page.current_revision %>
+    <%= button_to "この版に戻す", restore_page_revision_path(@page, @revision), class: "button button-primary",
+          form: { data: { confirm: "第#{@revision.number}版の内容に戻しますか？" } } %>
+  <% end %>
+  <% if (prev = @revision.previous) %>
+    <%= link_to "← 第#{prev.number}版", page_revision_path(@page, prev), class: "button" %>
+  <% end %>
+  <% if (nxt = @page.revisions.where("number > ?", @revision.number).last) %>
+    <%= link_to "第#{nxt.number}版 →", page_revision_path(@page, nxt), class: "button" %>
+  <% end %>
+</div>
+
+<div class="tabs-static">
+  <details open>
+    <summary><strong>前の版からの差分</strong>
+      <span class="diff-stat"><span class="added">+<%= @diff.additions %></span> <span class="removed">-<%= @diff.deletions %></span></span>
+    </summary>
+    <% if @diff.changed? %>
+      <table class="diff">
+        <% @diff.hunks.each do |hunk| %>
+          <% if hunk.nil? %>
+            <tr class="diff-skip"><td colspan="3">⋯</td></tr>
+          <% else %>
+            <% hunk.each do |line| %>
+              <tr class="diff-<%= { "+" => "add", "-" => "del", "=" => "eq" }[line.action] %>">
+                <td class="ln"><%= line.old_number %></td>
+                <td class="ln"><%= line.new_number %></td>
+                <td class="code"><span class="mark"><%= line.action == "=" ? " " : line.action %></span><%= line.text %></td>
+              </tr>
+            <% end %>
+          <% end %>
+        <% end %>
+      </table>
+    <% else %>
+      <p class="muted">本文の変更はありません。</p>
+    <% end %>
+  </details>
+  <details>
+    <summary><strong>この版の内容</strong></summary>
+    <%= markdown(@revision.body) %>
+  </details>
+</div>

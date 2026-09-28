@@ -1,0 +1,67 @@
+<%= form_with model: page, class: "page-form", data: { page_form: true, dirty_check: true } do |f| %>
+  <% if page.errors.any? %>
+    <div class="flash flash-alert">
+      <ul>
+        <% page.errors.full_messages.each do |message| %>
+          <li><%= message %></li>
+        <% end %>
+      </ul>
+    </div>
+  <% end %>
+
+  <%= f.hidden_field :lock_version if page.persisted? %>
+
+  <div class="field">
+    <%= f.label :title %>
+    <%= f.text_field :title, required: true, maxlength: Page::TITLE_MAX_LENGTH, autofocus: page.title.blank?, placeholder: "ページタイトル" %>
+  </div>
+
+  <div class="field-row">
+    <div class="field">
+      <%= f.label :parent_id %>
+      <%= f.collection_select :parent_id, page.parent_candidates, :id, :title, { include_blank: "なし（トップレベル）" } %>
+    </div>
+    <div class="field">
+      <%= f.label :tag_list %>
+      <%= f.text_field :tag_list, placeholder: "カンマ・空白区切り（例: 手順書, 開発）", list: "tag-suggestions" %>
+      <datalist id="tag-suggestions">
+        <% Tag.order(:name).pluck(:name).each do |name| %>
+          <option value="<%= name %>">
+        <% end %>
+      </datalist>
+    </div>
+    <div class="field field-narrow">
+      <%= f.label :position %>
+      <%= f.number_field :position, step: 1 %>
+    </div>
+  </div>
+
+  <div class="editor" data-editor>
+    <div class="editor-toolbar">
+      <div class="tabs" role="tablist">
+        <button type="button" class="tab active" data-tab="write">編集</button>
+        <button type="button" class="tab" data-tab="preview" data-preview-url="<%= preview_pages_path %>">プレビュー</button>
+      </div>
+      <label class="button button-small upload-button">
+        📎 ファイル添付
+        <input type="file" multiple hidden data-upload-input data-upload-url="<%= uploads_path %>">
+      </label>
+    </div>
+    <%= f.text_area :body, rows: 22, class: "editor-textarea", data: { editor_textarea: true },
+          placeholder: "Markdown で記述できます。\n[[ページ名]] で他のページへリンク、画像はドラッグ＆ドロップや貼り付けで添付できます。" %>
+    <div class="editor-preview markdown-body" data-editor-preview hidden></div>
+    <p class="muted small">
+      Markdown（GitHub 形式）対応 ・ <code>[[ページ名]]</code> / <code>[[ページ名|表示名]]</code> で Wiki リンク ・ Ctrl/⌘ + S で保存
+    </p>
+  </div>
+
+  <div class="field">
+    <label for="page_edit_summary">変更内容の要約（任意）</label>
+    <input type="text" name="page[edit_summary]" id="page_edit_summary" maxlength="200" placeholder="例: 手順を追記" value="<%= params.dig(:page, :edit_summary) %>">
+  </div>
+
+  <div class="form-actions">
+    <%= f.submit "保存", class: "button button-primary", data: { disable_with: "保存中..." } %>
+    <%= link_to "キャンセル", page.persisted? ? page_path(page) : root_path, class: "button" %>
+  </div>
+<% end %>

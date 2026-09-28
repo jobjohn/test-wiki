@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <title><%= [content_for(:title), wiki_name].compact.join(" - ") %></title>
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <meta name="color-scheme" content="light dark">
+    <%= csrf_meta_tags %>
+    <%= csp_meta_tag %>
+    <link rel="icon" href="/icon.svg" type="image/svg+xml">
+    <link rel="icon" href="/icon.png" type="image/png">
+    <%= stylesheet_link_tag :app %>
+    <%= javascript_include_tag "application", defer: true %>
+  </head>
+
+  <body>
+    <header class="topbar">
+      <button type="button" class="menu-toggle" data-menu-toggle aria-label="メニューを開く" aria-expanded="false">☰</button>
+      <%= link_to wiki_name, root_path, class: "brand" %>
+      <%= form_with url: search_path, method: :get, class: "topbar-search", role: "search" do %>
+        <input type="search" name="q" value="<%= params[:q] if controller_name == "search" %>" placeholder="検索（/ キーで移動）" aria-label="Wiki を検索" data-search-input>
+        <input type="hidden" name="go" value="1">
+      <% end %>
+      <%= link_to "＋ 新規ページ", new_page_path, class: "button button-primary topbar-new" %>
+    </header>
+
+    <div class="layout">
+      <aside class="sidebar" data-sidebar>
+        <nav class="sidebar-nav">
+          <ul class="nav-links">
+            <li><%= link_to "🏠 ホーム", root_path %></li>
+            <li><%= link_to "🕘 最近の更新", recent_changes_path %></li>
+            <li><%= link_to "🏷️ タグ一覧", tags_path %></li>
+            <li><%= link_to "📎 アップロード", uploads_path %></li>
+            <li class="only-mobile"><%= link_to "＋ 新規ページ", new_page_path %></li>
+          </ul>
+          <h2 class="sidebar-heading">ページ</h2>
+          <% if sidebar_tree[nil].present? %>
+            <%= render "shared/page_tree", tree: sidebar_tree, parent_id: nil, current_ids: Array(@page&.persisted? ? [@page.id, *@page.ancestors.map(&:id)] : []) %>
+          <% else %>
+            <p class="muted small">まだページがありません。</p>
+          <% end %>
+        </nav>
+      </aside>
+      <div class="sidebar-backdrop" data-menu-close></div>
+
+      <main class="content">
+        <% flash.each do |type, message| %>
+          <div class="flash flash-<%= type %>" role="status"><%= message %></div>
+        <% end %>
+        <%= yield %>
+      </main>
+    </div>
+  </body>
+</html>

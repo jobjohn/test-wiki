@@ -1,0 +1,15 @@
+<ul class="tree">
+  <% tree[parent_id].each do |id, title| %>
+    <% children = tree[id] %>
+    <li>
+      <% if children %>
+        <details <%= "open" if current_ids.include?(id) %>>
+          <summary><%= link_to title, page_path(id), class: ("current" if current_ids.first == id) %></summary>
+          <%= render "shared/page_tree", tree: tree, parent_id: id, current_ids: current_ids %>
+        </details>
+      <% else %>
+        <%= link_to title, page_path(id), class: ["leaf", ("current" if current_ids.first == id)] %>
+      <% end %>
+    </li>
+  <% end %>
+</ul>

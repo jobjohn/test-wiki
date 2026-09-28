@@ -1,0 +1,11 @@
+<% if page_number > 1 || has_next %>
+  <nav class="pagination">
+    <% if page_number > 1 %>
+      <%= link_to "← 前へ", url_for(request.query_parameters.merge(page: page_number - 1)), class: "button" %>
+    <% end %>
+    <span class="muted"><%= page_number %> ページ目</span>
+    <% if has_next %>
+      <%= link_to "次へ →", url_for(request.query_parameters.merge(page: page_number + 1)), class: "button" %>
+    <% end %>
+  </nav>
+<% end %>

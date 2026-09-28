@@ -1,0 +1,7 @@
+<% if tags.any? %>
+  <span class="tags">
+    <% tags.each do |tag| %>
+      <%= link_to tag.name, tag_path(tag), class: "tag" %>
+    <% end %>
+  </span>
+<% end %>

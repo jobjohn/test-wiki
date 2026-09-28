@@ -1,0 +1,11 @@
+<% content_for :title, "タグ一覧" %>
+<h1>タグ一覧</h1>
+<% if @tags.any? %>
+  <div class="tag-cloud">
+    <% @tags.each do |tag| %>
+      <%= link_to tag_path(tag), class: "tag tag-large" do %><%= tag.name %> <span class="count"><%= tag.pages_count %></span><% end %>
+    <% end %>
+  </div>
+<% else %>
+  <p class="muted">タグはまだありません。ページ編集画面でタグを付けられます。</p>
+<% end %>

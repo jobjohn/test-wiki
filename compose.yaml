@@ -1,0 +1,19 @@
+services:
+  wiki:
+    build: .
+    image: rails-wiki
+    restart: unless-stopped
+    ports:
+      - "${WIKI_PORT:-3000}:3000"
+    environment:
+      # 画面上部に表示する Wiki 名
+      WIKI_NAME: ${WIKI_NAME:-Wiki}
+      # 設定すると Basic 認証が有効になります（ユーザー名の既定値は admin）
+      WIKI_USERNAME: ${WIKI_USERNAME:-admin}
+      WIKI_PASSWORD: ${WIKI_PASSWORD:-}
+      TZ: ${TZ:-Asia/Tokyo}
+    volumes:
+      - wiki-storage:/rails/storage
+
+volumes:
+  wiki-storage:

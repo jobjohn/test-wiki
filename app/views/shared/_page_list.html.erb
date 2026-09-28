@@ -1,0 +1,14 @@
+<ul class="page-list">
+  <% pages.each do |page| %>
+    <li>
+      <div class="page-list-main">
+        <%= link_to page.title, page, class: "page-list-title" %>
+        <%= render "shared/tags", tags: page.tags %>
+      </div>
+      <% if local_assigns[:query] %>
+        <p class="snippet"><%= search_snippet(page.body, query) %></p>
+      <% end %>
+      <span class="muted small">更新: <%= l page.updated_at, format: :wiki %></span>
+    </li>
+  <% end %>
+</ul>

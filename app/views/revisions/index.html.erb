@@ -1,0 +1,27 @@
+<% content_for :title, "履歴: #{@page.title}" %>
+<nav class="breadcrumbs"><%= link_to @page.title, @page %></nav>
+<h1>変更履歴</h1>
+
+<table class="table">
+  <thead>
+    <tr><th>版</th><th>日時</th><th>タイトル</th><th>要約</th><th></th></tr>
+  </thead>
+  <tbody>
+    <% @revisions.each do |revision| %>
+      <tr>
+        <td><%= link_to "第#{revision.number}版", page_revision_path(@page, revision) %></td>
+        <td class="nowrap"><%= l revision.created_at, format: :wiki %></td>
+        <td><%= revision.title %></td>
+        <td><%= revision.summary %></td>
+        <td class="nowrap">
+          <% if revision == @revisions.first %>
+            <span class="badge">現在</span>
+          <% else %>
+            <%= button_to "この版に戻す", restore_page_revision_path(@page, revision), class: "button button-small",
+                  form: { data: { confirm: "第#{revision.number}版の内容に戻しますか？（新しい版として保存されます）" } } %>
+          <% end %>
+        </td>
+      </tr>
+    <% end %>
+  </tbody>
+</table>

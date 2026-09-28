@@ -1,0 +1,46 @@
+<% content_for :title, "ホーム" %>
+
+<% if @home_page %>
+  <article class="page">
+    <header class="page-header">
+      <h1><%= @home_page.title %></h1>
+      <div class="page-actions">
+        <%= link_to "編集", edit_page_path(@home_page), class: "button" %>
+      </div>
+    </header>
+    <%= markdown(@home_page.body) %>
+  </article>
+<% else %>
+  <header class="page-header">
+    <h1><%= wiki_name %></h1>
+  </header>
+  <p class="muted">
+    「<%= link_to ENV.fetch("WIKI_HOME_PAGE", "ホーム"), new_page_path(title: ENV.fetch("WIKI_HOME_PAGE", "ホーム")) %>」という名前のページを作成すると、ここにトップページとして表示されます。
+  </p>
+<% end %>
+
+<div class="dashboard">
+  <section class="card">
+    <h2>最近更新されたページ</h2>
+    <% if @recent_pages.any? %>
+      <%= render "shared/page_list", pages: @recent_pages %>
+      <p><%= link_to "すべての更新履歴 →", recent_changes_path %></p>
+    <% else %>
+      <p class="muted">まだページがありません。<%= link_to "最初のページを作成", new_page_path %>しましょう。</p>
+    <% end %>
+  </section>
+
+  <section class="card">
+    <h2>タグ</h2>
+    <% if @tags.any? %>
+      <div class="tag-cloud">
+        <% @tags.each do |tag| %>
+          <%= link_to tag_path(tag), class: "tag" do %><%= tag.name %> <span class="count"><%= tag.pages_count %></span><% end %>
+        <% end %>
+      </div>
+    <% else %>
+      <p class="muted">タグはまだありません。</p>
+    <% end %>
+    <p class="muted small">全 <%= @pages_count %> ページ</p>
+  </section>
+</div>

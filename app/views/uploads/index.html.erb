@@ -1,0 +1,31 @@
+<% content_for :title, "アップロード" %>
+<h1>アップロード</h1>
+
+<%= form_with url: uploads_path, multipart: true, class: "upload-form" do %>
+  <input type="file" name="file" required>
+  <button type="submit" class="button button-primary">アップロード</button>
+  <span class="muted small">最大 <%= Upload::MAX_SIZE / 1.megabyte %>MB。ページ編集画面ではドラッグ＆ドロップでも添付できます。</span>
+<% end %>
+
+<% if @uploads.any? %>
+  <table class="table">
+    <thead><tr><th></th><th>ファイル名</th><th>サイズ</th><th>日時</th><th>Markdown</th><th></th></tr></thead>
+    <tbody>
+      <% @uploads.each do |upload| %>
+        <% next unless upload.file.attached? %>
+        <% url = rails_blob_path(upload.file, only_path: true) %>
+        <tr>
+          <td><% if upload.image? %><%= image_tag url, class: "thumb", alt: "" %><% end %></td>
+          <td><%= link_to upload.file.filename.to_s, url, target: "_blank", rel: "noopener" %></td>
+          <td class="nowrap"><%= number_to_human_size upload.file.byte_size %></td>
+          <td class="nowrap"><%= l upload.created_at, format: :wiki %></td>
+          <td><code class="copyable" data-copy title="クリックでコピー"><%= upload.image? ? "![#{upload.file.filename}](#{url})" : "[#{upload.file.filename}](#{url})" %></code></td>
+          <td><%= button_to "削除", upload_path(upload), method: :delete, class: "button button-small button-danger",
+                    form: { data: { confirm: "このファイルを削除しますか？ページ内のリンクは表示されなくなります。" } } %></td>
+        </tr>
+      <% end %>
+    </tbody>
+  </table>
+<% else %>
+  <p class="muted">アップロードされたファイルはありません。</p>
+<% end %>
