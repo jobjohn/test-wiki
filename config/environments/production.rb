@@ -25,6 +25,12 @@ Rails.application.configure do
   config.active_storage.service = :local
 
   # Assume all access to the app is happening through a SSL-terminating reverse proxy.
+  # SECRET_KEY_BASE 未設定時は、初回起動時に bin/docker-entrypoint が生成したものを使う
+  secret_file = Rails.root.join("storage/.secret_key_base")
+  if ENV["SECRET_KEY_BASE"].blank? && secret_file.exist?
+    config.secret_key_base = secret_file.read.strip
+  end
+
   config.assume_ssl = ENV["FORCE_SSL"] == "true"
 
   # Force all access to the app over SSL, use Strict-Transport-Security, and use secure cookies.

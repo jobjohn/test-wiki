@@ -1,6 +1,12 @@
 require "test_helper"
 
 class WikiFlowTest < ActionDispatch::IntegrationTest
+  setup do
+    complete_setup!
+    @user = create_user("editor1", display_name: "編集 太郎")
+    sign_in_as(@user)
+  end
+
   test "create, view, edit, view history, restore and delete a page" do
     get root_path
     assert_response :success
@@ -17,6 +23,7 @@ class WikiFlowTest < ActionDispatch::IntegrationTest
 
     get page_revisions_path(page)
     assert_select "td", "修正"
+    assert_select "td", "編集 太郎"
 
     get page_revision_path(page, 2)
     assert_response :success
@@ -90,14 +97,44 @@ class WikiFlowTest < ActionDispatch::IntegrationTest
     assert_select "td a", "memo.txt"
   end
 
-  test "basic auth when password configured" do
-    ENV["WIKI_PASSWORD"] = "secret"
-    get root_path
-    assert_response :unauthorized
+  test "folders can be nested, moved and dissolved" do
+    post folders_path, params: { folder: { name: "開発" } }
+    dev = Folder.find_by!(name: "開発")
+    post folders_path, params: { folder: { name: "API", parent_id: dev.id } }
+    api = Folder.find_by!(name: "API")
+    assert_redirected_to folder_path(api)
 
-    get root_path, headers: { "Authorization" => ActionController::HttpAuthentication::Basic.encode_credentials("admin", "secret") }
+    post pages_path, params: { page: { title: "認証 API", body: "x", folder_id: api.id } }
+    page = Page.find_by_title("認証 API")
+    assert_equal api, page.folder
+
+    get page_path(page)
+    assert_select ".breadcrumbs a", /開発/
+    assert_select ".tree details[open] summary", /API/
+
+    get folder_path(dev)
+    assert_select ".folder-item-name", "API"
+
+    patch folder_path(api), params: { folder: { name: "API", parent_id: api.id } }
+    assert_response :unprocessable_entity
+
+    delete folder_path(api)
+    assert_equal dev, page.reload.folder
+  end
+
+  test "viewers cannot edit" do
+    delete logout_path
+    viewer = create_user("viewer1", role: "viewer")
+    sign_in_as(viewer)
+    page = Page.create!(title: "Readonly")
+
+    get page_path(page)
     assert_response :success
-  ensure
-    ENV.delete("WIKI_PASSWORD")
+    assert_select "a[href=?]", edit_page_path(page), count: 0
+
+    get edit_page_path(page)
+    assert_redirected_to root_path
+    post pages_path, params: { page: { title: "New" } }
+    assert_nil Page.find_by_title("New")
   end
 end

@@ -6,12 +6,11 @@ services:
     ports:
       - "${WIKI_PORT:-3000}:3000"
     environment:
-      # 画面上部に表示する Wiki 名
-      WIKI_NAME: ${WIKI_NAME:-Wiki}
-      # 設定すると Basic 認証が有効になります（ユーザー名の既定値は admin）
-      WIKI_USERNAME: ${WIKI_USERNAME:-admin}
-      WIKI_PASSWORD: ${WIKI_PASSWORD:-}
+      # 初期ユーザー wikiadmin の初期パスワード（未指定なら "wikiadmin"。初回ログイン時に変更を求められます）
+      WIKI_ADMIN_PASSWORD: ${WIKI_ADMIN_PASSWORD:-}
       TZ: ${TZ:-Asia/Tokyo}
+      # リバースプロキシで HTTPS 化している場合は true
+      FORCE_SSL: ${FORCE_SSL:-}
     volumes:
       - wiki-storage:/rails/storage
 

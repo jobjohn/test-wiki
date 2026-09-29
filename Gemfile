@@ -32,3 +32,8 @@ gem "commonmarker", "~> 2.0"
 gem "diff-lcs", "~> 1.5"
 # Japanese locale data (validation messages, date formats)
 gem "rails-i18n", "~> 8.0"
+# Password hashing for user accounts
+gem "bcrypt", "~> 3.1.7"
+# TOTP (authenticator app passcodes) and QR codes for MFA
+gem "rotp", "~> 6.3"
+gem "rqrcode", "~> 3.0"

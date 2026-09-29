@@ -1,0 +1,17 @@
+<% content_for :title, "バックアップコード" %>
+<h1 class="page-title"><%= icon_label "key-round", "バックアップコード", size: 26 %></h1>
+<div class="form-card form-narrow">
+  <div class="notice-box">
+    <%= icon "triangle-alert", size: 18 %>
+    <div>スマートフォンを紛失した場合などに、パスコードの代わりに使えます。<strong>この画面を離れると再表示できません。</strong>印刷するか安全な場所に保管してください（各コードは 1 回のみ使用可能）。</div>
+  </div>
+  <ul class="backup-codes" data-copy title="クリックでコピー">
+    <% @backup_codes.each do |code| %>
+      <li><code><%= code %></code></li>
+    <% end %>
+  </ul>
+  <div class="form-actions">
+    <button type="button" class="button" data-print><%= icon_label "download", "印刷" %></button>
+    <%= link_to root_path, class: "button button-primary" do %><%= icon_label "check", "保管しました" %><% end %>
+  </div>
+</div>

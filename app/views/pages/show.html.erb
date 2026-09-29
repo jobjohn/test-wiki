@@ -2,51 +2,45 @@
 
 <article class="page">
   <header class="page-header">
-    <% if @page.parent %>
-      <nav class="breadcrumbs"><%= breadcrumbs(@page) %></nav>
+    <% if @page.folder %>
+      <nav class="breadcrumbs"><%= folder_breadcrumbs(@page.folder) %></nav>
     <% end %>
     <h1><%= @page.title %></h1>
     <div class="page-meta muted small">
-      <span>最終更新: <%= l @page.updated_at, format: :wiki %></span>
-      <% if @revision %><span>第<%= @revision.number %>版</span><% end %>
-      <span>作成: <%= l @page.created_at, format: :wiki %></span>
+      <span><%= icon "clock", size: 14 %> 最終更新 <%= l @page.updated_at, format: :wiki %></span>
+      <% if @revision %>
+        <span><%= icon "history", size: 14 %> 第<%= @revision.number %>版</span>
+        <% if @revision.user %><span><%= icon "user", size: 14 %> <%= @revision.user.name %></span><% end %>
+      <% end %>
     </div>
     <%= render "shared/tags", tags: @page.tags %>
     <div class="page-actions">
-      <%= link_to "✏️ 編集", edit_page_path(@page), class: "button button-primary", accesskey: "e" %>
-      <%= link_to "＋ 子ページ", new_page_path(parent_id: @page.id), class: "button" %>
-      <%= link_to "🕘 履歴", page_revisions_path(@page), class: "button" %>
-      <%= link_to "⬇ Markdown", page_path(@page, format: :md, download: 1), class: "button" %>
-      <%= button_to "🗑 削除", page_path(@page), method: :delete, class: "button button-danger",
-            form: { data: { confirm: @children.any? ? "このページと子ページ（#{@page.descendants_count}件）を削除します。よろしいですか？" : "このページを削除します。よろしいですか？" } } %>
+      <% if can_edit? %>
+        <%= link_to edit_page_path(@page), class: "button button-primary", accesskey: "e" do %><%= icon_label "pencil", "編集" %><% end %>
+      <% end %>
+      <%= link_to page_revisions_path(@page), class: "button" do %><%= icon_label "history", "履歴" %><% end %>
+      <%= link_to page_path(@page, format: :md, download: 1), class: "button" do %><%= icon_label "download", "Markdown" %><% end %>
+      <% if can_edit? %>
+        <%= button_to page_path(@page), method: :delete, class: "button button-danger",
+              form: { data: { confirm: "ページ「#{@page.title}」を削除します。よろしいですか？" } } do %><%= icon_label "trash-2", "削除" %><% end %>
+      <% end %>
     </div>
   </header>
 
   <nav class="toc" data-toc hidden>
-    <strong>目次</strong>
+    <strong><%= icon_label "list-tree", "目次", size: 16 %></strong>
     <ol></ol>
   </nav>
 
   <% if @page.body.present? %>
     <%= markdown(@page.body) %>
   <% else %>
-    <p class="muted">本文はまだありません。<%= link_to "編集", edit_page_path(@page) %>して内容を追加してください。</p>
-  <% end %>
-
-  <% if @children.any? %>
-    <section class="related">
-      <h2>子ページ</h2>
-      <ul>
-        <% @children.each do |child| %>
-          <li><%= link_to child.title, child %></li>
-        <% end %>
-      </ul>
-    </section>
+    <p class="muted">本文はまだありません。</p>
   <% end %>
 
   <% if @backlinks.any? %>
     <section class="related">
-      <h2>このページへのリンク</h2>
+      <h2><%= icon_label "link", "このページへのリンク", size: 16 %></h2>
       <ul>
         <% @backlinks.each do |page| %>
           <li><%= link_to page.title, page %></li>

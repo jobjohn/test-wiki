@@ -1,10 +1,18 @@
 module ApplicationHelper
   def wiki_name
-    ENV.fetch("WIKI_NAME", "Wiki")
+    wiki_setting.wiki_name
   end
 
   def markdown(text)
     tag.div(MarkdownRenderer.render(text), class: "markdown-body")
+  end
+
+  def can_edit?
+    current_user&.can_edit?
+  end
+
+  def admin?
+    current_user&.admin?
   end
 
   # 検索語の周辺テキストを抜き出し、該当箇所を強調表示する
@@ -19,8 +27,26 @@ module ApplicationHelper
     highlight(excerpt, terms)
   end
 
-  def breadcrumbs(page)
-    items = page.ancestors.map { |ancestor| link_to(ancestor.title, ancestor) }
-    safe_join(items, tag.span(" / ", class: "sep"))
+  # フォルダ階層のパンくず
+  def folder_breadcrumbs(folder, include_self: true)
+    return "".html_safe unless folder
+
+    folders = include_self ? [ *folder.ancestors, folder ] : folder.ancestors
+    items = [ link_to(icon("house", size: 14), root_path, title: "ホーム") ]
+    items += folders.map { |f| link_to(icon_label("folder", f.name, size: 14), f) }
+    safe_join(items, tag.span(icon("chevron-right", size: 14), class: "sep"))
+  end
+
+  def folder_options(selected_id = nil, exclude: [])
+    options = Folder.options_for_select.reject { |_, id| exclude.include?(id) }
+    options_for_select(options, selected_id)
+  end
+
+  def theme_style_tag
+    tag.style(":root { #{wiki_setting.css_variables} }".html_safe, id: "theme-variables")
+  end
+
+  def color_swatches(colors)
+    tag.span(safe_join(colors.map { |c| tag.span(class: "swatch", style: "background: #{c}") }), class: "swatches")
   end
 end

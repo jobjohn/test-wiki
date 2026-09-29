@@ -35,16 +35,63 @@
     form.querySelectorAll("[data-disable-with]").forEach((button) => {
       setTimeout(() => {
         button.disabled = true;
-        button.value = button.dataset.disableWith;
+        if (button.tagName === "INPUT") button.value = button.dataset.disableWith;
       }, 0);
     });
+  });
+
+  // --- ユーザーメニュー: 外側クリックで閉じる ---
+  document.addEventListener("click", (event) => {
+    document.querySelectorAll("[data-dropdown][open]").forEach((dropdown) => {
+      if (!dropdown.contains(event.target)) dropdown.open = false;
+    });
+  });
+
+  // --- 印刷 ---
+  document.querySelectorAll("[data-print]").forEach((button) => button.addEventListener("click", () => window.print()));
+
+  // --- テーマ設定のライブプレビュー ---
+  const picker = document.querySelector("[data-theme-picker]");
+  if (picker) {
+    const root = document.documentElement;
+    const contrast = (hex) => {
+      const [r, g, b] = hex.replace("#", "").match(/../g).map((c) => {
+        const v = parseInt(c, 16) / 255;
+        return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4;
+      });
+      return 0.2126 * r + 0.7152 * g + 0.0722 * b > 0.4 ? "#111827" : "#ffffff";
+    };
+    const inputs = picker.querySelectorAll("[data-color]");
+    const apply = () => {
+      inputs.forEach((input) => {
+        const name = input.dataset.color;
+        root.style.setProperty(`--${name}`, input.value);
+        root.style.setProperty(`--${name}-fg`, contrast(input.value));
+        input.closest("label").querySelector("[data-color-code]").textContent = input.value;
+      });
+    };
+    picker.querySelectorAll('input[name="setting[theme]"]').forEach((radio) => {
+      radio.addEventListener("change", () => {
+        if (!radio.dataset.colors) return;
+        radio.dataset.colors.split(",").forEach((color, i) => { inputs[i].value = color; });
+        apply();
+      });
+    });
+    inputs.forEach((input) => input.addEventListener("input", () => {
+      picker.querySelector("[data-custom]").checked = true;
+      apply();
+    }));
+  }
+  document.querySelectorAll("[data-color-mode]").forEach((radio) => {
+    radio.addEventListener("change", () => { document.documentElement.dataset.theme = radio.value; });
   });
 
   // --- クリックでコピー ---
   document.querySelectorAll("[data-copy]").forEach((el) => {
     el.addEventListener("click", async () => {
       try {
-        await navigator.clipboard.writeText(el.textContent.trim());
+        const text = [...el.querySelectorAll("code")].map((c) => c.textContent.trim()).join("\n") || el.textContent.trim();
+        await navigator.clipboard.writeText(el.classList.contains("secret") ? text.replace(/\s+/g, "") : text);
         el.classList.add("copied");
         setTimeout(() => el.classList.remove("copied"), 1200);
       } catch (_) { /* クリップボード非対応 */ }

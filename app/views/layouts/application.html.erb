@@ -1,52 +1,84 @@
 <!DOCTYPE html>
-<html lang="ja">
+<html lang="ja" data-theme="<%= wiki_setting.color_mode %>">
   <head>
     <title><%= [content_for(:title), wiki_name].compact.join(" - ") %></title>
-    <meta name="viewport" content="width=device-width,initial-scale=1">
-    <meta name="color-scheme" content="light dark">
-    <%= csrf_meta_tags %>
-    <%= csp_meta_tag %>
-    <link rel="icon" href="/icon.svg" type="image/svg+xml">
-    <link rel="icon" href="/icon.png" type="image/png">
-    <%= stylesheet_link_tag :app %>
-    <%= javascript_include_tag "application", defer: true %>
+    <%= render "layouts/head" %>
   </head>
 
   <body>
     <header class="topbar">
-      <button type="button" class="menu-toggle" data-menu-toggle aria-label="メニューを開く" aria-expanded="false">☰</button>
-      <%= link_to wiki_name, root_path, class: "brand" %>
+      <button type="button" class="icon-button menu-toggle" data-menu-toggle aria-label="メニュー" aria-expanded="false">
+        <%= icon "menu", class: "when-closed" %><%= icon "x", class: "when-open" %>
+      </button>
+      <%= link_to root_path, class: "brand" do %>
+        <span class="brand-mark"><%= icon "book-open", size: 18 %></span>
+        <span class="brand-name"><%= wiki_name %></span>
+      <% end %>
       <%= form_with url: search_path, method: :get, class: "topbar-search", role: "search" do %>
-        <input type="search" name="q" value="<%= params[:q] if controller_name == "search" %>" placeholder="検索（/ キーで移動）" aria-label="Wiki を検索" data-search-input>
+        <%= icon "search", size: 16, class: "search-icon" %>
+        <input type="search" name="q" value="<%= params[:q] if controller_name == "search" %>" placeholder="検索（/ キー）" aria-label="Wiki を検索" data-search-input>
         <input type="hidden" name="go" value="1">
       <% end %>
-      <%= link_to "＋ 新規ページ", new_page_path, class: "button button-primary topbar-new" %>
+      <% if can_edit? %>
+        <%= link_to new_page_path(folder_id: @folder&.id || @page&.folder_id), class: "button button-accent topbar-new" do %><%= icon_label "plus", "新規ページ" %><% end %>
+      <% end %>
+      <% if signed_in? %>
+        <details class="user-menu" data-dropdown>
+          <summary class="icon-button" aria-label="ユーザーメニュー">
+            <span class="avatar"><%= current_user.name.first.upcase %></span>
+          </summary>
+          <div class="dropdown">
+            <div class="dropdown-header">
+              <strong><%= current_user.name %></strong>
+              <span class="muted small">@<%= current_user.username %>・<%= current_user.role_name %></span>
+            </div>
+            <%= link_to account_path do %><%= icon_label "user", "アカウント" %><% end %>
+            <% if admin? %>
+              <%= link_to edit_settings_path do %><%= icon_label "settings", "Wiki の設定" %><% end %>
+              <%= link_to users_path do %><%= icon_label "users", "ユーザー管理" %><% end %>
+            <% end %>
+            <%= button_to logout_path, method: :delete, class: "dropdown-button" do %><%= icon_label "log-out", "ログアウト" %><% end %>
+          </div>
+        </details>
+      <% else %>
+        <%= link_to login_path, class: "button button-ghost" do %><%= icon_label "log-in", "ログイン" %><% end %>
+      <% end %>
     </header>
 
     <div class="layout">
       <aside class="sidebar" data-sidebar>
         <nav class="sidebar-nav">
           <ul class="nav-links">
-            <li><%= link_to "🏠 ホーム", root_path %></li>
-            <li><%= link_to "🕘 最近の更新", recent_changes_path %></li>
-            <li><%= link_to "🏷️ タグ一覧", tags_path %></li>
-            <li><%= link_to "📎 アップロード", uploads_path %></li>
-            <li class="only-mobile"><%= link_to "＋ 新規ページ", new_page_path %></li>
+            <li><%= link_to root_path, class: ("active" if current_page?(root_path)) do %><%= icon_label "house", "ホーム" %><% end %></li>
+            <li><%= link_to recent_changes_path, class: ("active" if current_page?(recent_changes_path)) do %><%= icon_label "history", "最近の更新" %><% end %></li>
+            <li><%= link_to tags_path, class: ("active" if controller_name == "tags") do %><%= icon_label "tags", "タグ" %><% end %></li>
+            <li><%= link_to uploads_path, class: ("active" if controller_name == "uploads") do %><%= icon_label "paperclip", "ファイル" %><% end %></li>
           </ul>
-          <h2 class="sidebar-heading">ページ</h2>
-          <% if sidebar_tree[nil].present? %>
-            <%= render "shared/page_tree", tree: sidebar_tree, parent_id: nil, current_ids: Array(@page&.persisted? ? [@page.id, *@page.ancestors.map(&:id)] : []) %>
+
+          <div class="sidebar-section">
+            <h2 class="sidebar-heading">ページ</h2>
+            <% if can_edit? %>
+              <span class="sidebar-actions">
+                <%= link_to icon("folder-plus", size: 16), new_folder_path, class: "icon-button icon-button-small", title: "新しいフォルダ" %>
+                <%= link_to icon("file-plus", size: 16), new_page_path, class: "icon-button icon-button-small", title: "新しいページ" %>
+              </span>
+            <% end %>
+          </div>
+          <% current_folder = @folder&.persisted? ? @folder : @page&.folder %>
+          <% open_ids = current_folder ? [current_folder.id, *current_folder.ancestors.map(&:id)] : [] %>
+          <% if sidebar_tree[:folders][nil].present? || sidebar_tree[:pages][nil].present? %>
+            <%= render "shared/tree", tree: sidebar_tree, folder_id: nil, open_ids: open_ids,
+                  current_page_id: (@page.id if @page&.persisted? && controller_name == "pages"),
+                  current_folder_id: (@folder.id if @folder&.persisted? && controller_name == "folders") %>
           <% else %>
-            <p class="muted small">まだページがありません。</p>
+            <p class="muted small sidebar-empty">まだページがありません。</p>
           <% end %>
         </nav>
       </aside>
       <div class="sidebar-backdrop" data-menu-close></div>
 
       <main class="content">
-        <% flash.each do |type, message| %>
-          <div class="flash flash-<%= type %>" role="status"><%= message %></div>
-        <% end %>
+        <%= render "shared/flash" %>
         <%= yield %>
       </main>
     </div>

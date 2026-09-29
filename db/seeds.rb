@@ -1,8 +1,11 @@
-# 初回起動時に作成される初期ページ（既に存在する場合は何もしない）
+# 初回起動時に作成される初期データ（既に存在する場合は何もしない）
+Setting.current
+User.ensure_default_admin!
+
 home_title = ENV.fetch("WIKI_HOME_PAGE", "ホーム")
 
 unless Page.find_by_title(home_title)
-  home = Page.create!(
+  Page.create!(
     title: home_title,
     tag_list: "はじめに",
     edit_summary: "初期ページ",
@@ -12,7 +15,7 @@ unless Page.find_by_title(home_title)
       ## 使い方
 
       - 右上の **＋ 新規ページ** からページを作成します
-      - ページは **親ページ** を指定して階層化できます（左のサイドバーにツリー表示）
+      - ページは **フォルダ** に分けて整理できます。フォルダの中にフォルダを作って階層化できます（左のサイドバーにツリー表示）
       - **タグ** を付けてページを分類できます
       - 編集のたびに **履歴** が残り、差分の確認や過去の版への復元ができます
       - 画面上部の検索ボックスで全文検索できます（`/` キーでフォーカス）
@@ -23,7 +26,7 @@ unless Page.find_by_title(home_title)
 
   Page.create!(
     title: "Markdown の書き方",
-    parent: home,
+    folder: Folder.find_or_create_by!(name: "ヘルプ", parent: nil),
     tag_list: "はじめに, ヘルプ",
     edit_summary: "初期ページ",
     body: <<~'MARKDOWN'

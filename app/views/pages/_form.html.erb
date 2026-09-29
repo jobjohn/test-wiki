@@ -1,13 +1,5 @@
 <%= form_with model: page, class: "page-form", data: { page_form: true, dirty_check: true } do |f| %>
-  <% if page.errors.any? %>
-    <div class="flash flash-alert">
-      <ul>
-        <% page.errors.full_messages.each do |message| %>
-          <li><%= message %></li>
-        <% end %>
-      </ul>
-    </div>
-  <% end %>
+  <%= render "shared/errors", record: page %>
 
   <%= f.hidden_field :lock_version if page.persisted? %>
 
@@ -18,8 +10,8 @@
 
   <div class="field-row">
     <div class="field">
-      <%= f.label :parent_id %>
-      <%= f.collection_select :parent_id, page.parent_candidates, :id, :title, { include_blank: "なし（トップレベル）" } %>
+      <%= f.label :folder_id %>
+      <%= f.select :folder_id, folder_options(page.folder_id), { include_blank: "（トップ）" } %>
     </div>
     <div class="field">
       <%= f.label :tag_list %>
@@ -39,11 +31,11 @@
   <div class="editor" data-editor>
     <div class="editor-toolbar">
       <div class="tabs" role="tablist">
-        <button type="button" class="tab active" data-tab="write">編集</button>
-        <button type="button" class="tab" data-tab="preview" data-preview-url="<%= preview_pages_path %>">プレビュー</button>
+        <button type="button" class="tab active" data-tab="write"><%= icon_label "pencil", "編集", size: 14 %></button>
+        <button type="button" class="tab" data-tab="preview" data-preview-url="<%= preview_pages_path %>"><%= icon_label "eye", "プレビュー", size: 14 %></button>
       </div>
       <label class="button button-small upload-button">
-        📎 ファイル添付
+        <%= icon_label "paperclip", "ファイル添付", size: 14 %>
         <input type="file" multiple hidden data-upload-input data-upload-url="<%= uploads_path %>">
       </label>
     </div>
@@ -61,7 +53,7 @@
   </div>
 
   <div class="form-actions">
-    <%= f.submit "保存", class: "button button-primary", data: { disable_with: "保存中..." } %>
-    <%= link_to "キャンセル", page.persisted? ? page_path(page) : root_path, class: "button" %>
+    <%= f.button class: "button button-primary", data: { disable_with: "保存中..." } do %><%= icon_label "save", "保存" %><% end %>
+    <%= link_to "キャンセル", page.persisted? ? page_path(page) : (page.folder || root_path), class: "button" %>
   </div>
 <% end %>

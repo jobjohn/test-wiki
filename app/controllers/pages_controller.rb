@@ -1,4 +1,5 @@
 class PagesController < ApplicationController
+  before_action :require_editor, only: %i[new create edit update destroy preview]
   before_action :set_page, only: %i[show edit update destroy]
 
   def index
@@ -6,12 +7,12 @@ class PagesController < ApplicationController
     @tags = Tag.with_counts
     @pages_count = Page.count
     @home_page = Page.find_by_title(ENV.fetch("WIKI_HOME_PAGE", "ホーム"))
+    @root_folders = Folder.roots
   end
 
   def show
     respond_to do |format|
       format.html do
-        @children = @page.children
         @revision = @page.current_revision
         @backlinks = backlinks_for(@page)
       end
@@ -33,7 +34,7 @@ class PagesController < ApplicationController
   end
 
   def new
-    @page = Page.new(title: params[:title], parent_id: params[:parent_id])
+    @page = Page.new(title: params[:title], folder_id: params[:folder_id])
   end
 
   def create
@@ -68,11 +69,8 @@ class PagesController < ApplicationController
   end
 
   def destroy
-    count = @page.descendants_count
     @page.destroy!
-    message = "ページ「#{@page.title}」を削除しました。"
-    message += "（子ページ #{count} 件も削除）" if count.positive?
-    redirect_to root_path, notice: message, status: :see_other
+    redirect_to @page.folder || root_path, notice: "ページ「#{@page.title}」を削除しました。", status: :see_other
   end
 
   def preview
@@ -86,7 +84,7 @@ class PagesController < ApplicationController
   end
 
   def page_params
-    params.require(:page).permit(:title, :body, :parent_id, :tag_list, :position, :lock_version)
+    params.require(:page).permit(:title, :body, :folder_id, :tag_list, :position, :lock_version)
   end
 
   # このページへ [[リンク]] しているページ

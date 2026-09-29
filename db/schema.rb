@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_09_28_232743) do
+ActiveRecord::Schema[8.0].define(version: 2026_09_28_234851) do
   create_table "active_storage_attachments", force: :cascade do |t|
     t.string "name", null: false
     t.string "record_type", null: false
@@ -39,16 +39,26 @@ ActiveRecord::Schema[8.0].define(version: 2026_09_28_232743) do
     t.index ["blob_id", "variation_digest"], name: "index_active_storage_variant_records_uniqueness", unique: true
   end
 
+  create_table "folders", force: :cascade do |t|
+    t.string "name", null: false
+    t.integer "parent_id"
+    t.integer "position", default: 0, null: false
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index ["parent_id", "name"], name: "index_folders_on_parent_id_and_name", unique: true
+    t.index ["parent_id"], name: "index_folders_on_parent_id"
+  end
+
   create_table "pages", force: :cascade do |t|
     t.string "title", null: false
     t.text "body", default: "", null: false
-    t.integer "parent_id"
     t.integer "position", default: 0, null: false
     t.integer "lock_version", default: 0, null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.integer "folder_id"
     t.index "lower(title)", name: "index_pages_on_lower_title", unique: true
-    t.index ["parent_id"], name: "index_pages_on_parent_id"
+    t.index ["folder_id"], name: "index_pages_on_folder_id"
     t.index ["updated_at"], name: "index_pages_on_updated_at"
   end
 
@@ -60,8 +70,24 @@ ActiveRecord::Schema[8.0].define(version: 2026_09_28_232743) do
     t.integer "number", null: false
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
+    t.integer "user_id"
     t.index ["page_id", "number"], name: "index_revisions_on_page_id_and_number", unique: true
     t.index ["page_id"], name: "index_revisions_on_page_id"
+    t.index ["user_id"], name: "index_revisions_on_user_id"
+  end
+
+  create_table "settings", force: :cascade do |t|
+    t.string "wiki_name", default: "Wiki", null: false
+    t.text "description"
+    t.string "primary_color", default: "#2563eb", null: false
+    t.string "secondary_color", default: "#0f172a", null: false
+    t.string "accent_color", default: "#f59e0b", null: false
+    t.string "color_mode", default: "system", null: false
+    t.boolean "public_read", default: false, null: false
+    t.boolean "require_mfa", default: false, null: false
+    t.datetime "setup_completed_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
   end
 
   create_table "taggings", force: :cascade do |t|
@@ -86,10 +112,28 @@ ActiveRecord::Schema[8.0].define(version: 2026_09_28_232743) do
     t.datetime "updated_at", null: false
   end
 
+  create_table "users", force: :cascade do |t|
+    t.string "username", null: false
+    t.string "display_name"
+    t.string "password_digest", null: false
+    t.string "role", default: "editor", null: false
+    t.string "otp_secret"
+    t.datetime "otp_enabled_at"
+    t.text "otp_backup_codes"
+    t.integer "last_otp_at"
+    t.boolean "must_change_password", default: false, null: false
+    t.datetime "last_sign_in_at"
+    t.datetime "created_at", null: false
+    t.datetime "updated_at", null: false
+    t.index "lower(username)", name: "index_users_on_lower_username", unique: true
+  end
+
   add_foreign_key "active_storage_attachments", "active_storage_blobs", column: "blob_id"
   add_foreign_key "active_storage_variant_records", "active_storage_blobs", column: "blob_id"
-  add_foreign_key "pages", "pages", column: "parent_id"
+  add_foreign_key "folders", "folders", column: "parent_id"
+  add_foreign_key "pages", "folders"
   add_foreign_key "revisions", "pages"
+  add_foreign_key "revisions", "users", on_delete: :nullify
   add_foreign_key "taggings", "pages"
   add_foreign_key "taggings", "tags"
 end

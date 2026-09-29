@@ -1,15 +1,16 @@
 <% content_for :title, "最近の更新" %>
-<h1>最近の更新</h1>
+<h1 class="page-title"><%= icon_label "history", "最近の更新", size: 26 %></h1>
 
 <% if @revisions.any? %>
   <table class="table">
-    <thead><tr><th>日時</th><th>ページ</th><th>版</th><th>要約</th></tr></thead>
+    <thead><tr><th>日時</th><th>ページ</th><th>版</th><th>編集者</th><th>要約</th></tr></thead>
     <tbody>
       <% @revisions.each do |revision| %>
         <tr>
           <td class="nowrap"><%= l revision.created_at, format: :wiki %></td>
           <td><%= link_to revision.page.title, revision.page %></td>
           <td class="nowrap"><%= link_to "第#{revision.number}版", page_revision_path(revision.page, revision) %></td>
+          <td><%= revision.user&.name || "—" %></td>
           <td><%= revision.summary %></td>
         </tr>
       <% end %>

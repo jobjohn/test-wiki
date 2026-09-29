@@ -20,26 +20,11 @@ class PageTest < ActiveSupport::TestCase
     assert page.errors.of_kind?(:title, :taken)
   end
 
-  test "cannot set itself or a descendant as parent" do
-    root = Page.create!(title: "Root")
-    child = Page.create!(title: "Child", parent: root)
-    grandchild = Page.create!(title: "Grandchild", parent: child)
-
-    root.parent = grandchild
-    assert_not root.valid?
-    root.parent = root
-    assert_not root.valid?
-    assert_equal [ root.id, child.id, grandchild.id ].sort, root.reload.self_and_descendant_ids.sort
-  end
-
-  test "destroying a page removes descendants" do
-    root = Page.create!(title: "Root")
-    child = Page.create!(title: "Child", parent: root)
-    Page.create!(title: "Grandchild", parent: child)
-
-    assert_difference -> { Page.count }, -3 do
-      root.destroy!
-    end
+  test "pages belong to folders" do
+    folder = Folder.create!(name: "Docs")
+    page = Page.create!(title: "In folder", folder: folder)
+    assert_equal [ page ], folder.pages.to_a
+    assert_includes Page.roots, Page.create!(title: "Root page")
   end
 
   test "tag list is parsed and reused case-insensitively" do

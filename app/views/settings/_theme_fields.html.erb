@@ -1,0 +1,32 @@
+<%# 基本 3 色のテーマ選択（プリセット or カスタム） %>
+<fieldset class="field theme-picker" data-theme-picker>
+  <% if local_assigns.fetch(:legend, true) %><legend>カラーテーマ</legend><% end %>
+  <p class="hint">メイン（ボタン・リンク）・サブ（ヘッダー）・アクセント（タグ・強調）の 3 色で全体の配色が決まります。</p>
+  <div class="theme-options">
+    <% Setting::THEMES.each do |key, theme| %>
+      <label class="theme-option">
+        <input type="radio" name="setting[theme]" value="<%= key %>" <%= "checked" if setting.theme == key %>
+               data-colors="<%= theme.values_at(:primary, :secondary, :accent).join(",") %>">
+        <span class="theme-card">
+          <%= color_swatches(theme.values_at(:primary, :secondary, :accent)) %>
+          <span><%= theme[:name] %></span>
+        </span>
+      </label>
+    <% end %>
+    <label class="theme-option">
+      <input type="radio" name="setting[theme]" value="custom" <%= "checked" if setting.theme == "custom" %> data-custom>
+      <span class="theme-card">
+        <%= icon "palette", size: 22 %>
+        <span>カスタム</span>
+      </span>
+    </label>
+  </div>
+  <div class="color-inputs">
+    <% [[:primary_color, "メイン"], [:secondary_color, "サブ"], [:accent_color, "アクセント"]].each do |attr, label| %>
+      <label class="color-input">
+        <input type="color" name="setting[<%= attr %>]" value="<%= setting.public_send(attr) %>" data-color="<%= attr.to_s.delete_suffix("_color") %>">
+        <span><%= label %><br><code data-color-code><%= setting.public_send(attr) %></code></span>
+      </label>
+    <% end %>
+  </div>
+</fieldset>

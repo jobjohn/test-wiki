@@ -1,0 +1,22 @@
+<ul class="tree">
+  <% Array(tree[:folders][folder_id]).each do |id, name, _| %>
+    <li>
+      <details <%= "open" if open_ids.include?(id) %>>
+        <summary>
+          <%= icon "chevron-right", size: 14, class: "tree-chevron" %>
+          <%= link_to folder_path(id), class: ["tree-link", ("current" if current_folder_id == id)] do %>
+            <%= icon "folder", size: 16, class: "tree-icon when-closed" %><%= icon "folder-open", size: 16, class: "tree-icon when-open" %><span><%= name %></span>
+          <% end %>
+        </summary>
+        <%= render "shared/tree", tree: tree, folder_id: id, open_ids: open_ids, current_page_id: current_page_id, current_folder_id: current_folder_id %>
+      </details>
+    </li>
+  <% end %>
+  <% Array(tree[:pages][folder_id]).each do |id, title, _| %>
+    <li>
+      <%= link_to page_path(id), class: ["tree-link", "tree-leaf", ("current" if current_page_id == id)] do %>
+        <%= icon "file-text", size: 16, class: "tree-icon" %><span><%= title %></span>
+      <% end %>
+    </li>
+  <% end %>
+</ul>

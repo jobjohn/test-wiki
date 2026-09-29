@@ -1,0 +1,44 @@
+<% content_for :title, @folder.name %>
+
+<header class="page-header">
+  <nav class="breadcrumbs"><%= folder_breadcrumbs(@folder, include_self: false) %></nav>
+  <h1 class="page-title"><%= icon_label "folder-open", @folder.name, size: 26 %></h1>
+  <p class="muted small"><%= @children.size %> フォルダ・<%= @pages.size %> ページ</p>
+  <% if can_edit? %>
+    <div class="page-actions">
+      <%= link_to new_page_path(folder_id: @folder.id), class: "button button-primary" do %><%= icon_label "file-plus", "ページを追加" %><% end %>
+      <%= link_to new_folder_path(parent_id: @folder.id), class: "button" do %><%= icon_label "folder-plus", "サブフォルダを作成" %><% end %>
+      <%= link_to edit_folder_path(@folder), class: "button" do %><%= icon_label "folder-input", "名前変更・移動" %><% end %>
+      <%= button_to folder_path(@folder), method: :delete, class: "button button-danger",
+            form: { data: { confirm: "フォルダ「#{@folder.name}」を削除します。中のページやサブフォルダは 1 つ上の階層へ移動します。よろしいですか？" } } do %><%= icon_label "trash-2", "削除" %><% end %>
+    </div>
+  <% end %>
+</header>
+
+<% if @children.empty? && @pages.empty? %>
+  <div class="empty-state">
+    <%= icon "folder", size: 40 %>
+    <p>このフォルダは空です。</p>
+  </div>
+<% else %>
+  <ul class="folder-contents">
+    <% @children.each do |child| %>
+      <li>
+        <%= link_to child, class: "folder-item" do %>
+          <%= icon "folder", size: 20, class: "folder-item-icon" %>
+          <span class="folder-item-name"><%= child.name %></span>
+          <span class="muted small"><%= child.children.size %> フォルダ・<%= child.pages.size %> ページ</span>
+        <% end %>
+      </li>
+    <% end %>
+    <% @pages.each do |page| %>
+      <li>
+        <%= link_to page, class: "folder-item" do %>
+          <%= icon "file-text", size: 20, class: "folder-item-icon page-icon" %>
+          <span class="folder-item-name"><%= page.title %></span>
+          <span class="muted small"><%= l page.updated_at, format: :wiki %></span>
+        <% end %>
+      </li>
+    <% end %>
+  </ul>
+<% end %>

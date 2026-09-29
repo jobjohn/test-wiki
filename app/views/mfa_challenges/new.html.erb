@@ -1,0 +1,15 @@
+<% content_for :title, "二段階認証" %>
+<div class="auth-lead">
+  <%= icon "shield-check", size: 22 %>
+  <p>認証アプリに表示されている <strong>6 桁のパスコード</strong> を入力してください。</p>
+</div>
+<%= form_with url: mfa_challenge_path, class: "auth-form" do %>
+  <div class="field">
+    <label for="code">パスコード</label>
+    <input type="text" name="code" id="code" class="code-input" inputmode="numeric" autocomplete="one-time-code"
+           pattern="[0-9a-zA-Z\- ]*" maxlength="16" required autofocus placeholder="123456">
+    <p class="hint">スマートフォンを利用できない場合は、バックアップコード（xxxxx-xxxxx）を入力できます。</p>
+  </div>
+  <button type="submit" class="button button-primary button-block"><%= icon_label "shield-check", "確認" %></button>
+<% end %>
+<p class="auth-footer"><%= link_to login_path do %><%= icon_label "arrow-left", "ログイン画面に戻る", size: 14 %><% end %></p>

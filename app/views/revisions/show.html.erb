@@ -1,21 +1,22 @@
 <% content_for :title, "第#{@revision.number}版: #{@page.title}" %>
-<nav class="breadcrumbs"><%= link_to @page.title, @page %> <span class="sep">/</span> <%= link_to "履歴", page_revisions_path(@page) %></nav>
-<h1><%= @revision.title %> <small class="muted">第<%= @revision.number %>版</small></h1>
+<nav class="breadcrumbs"><%= link_to icon_label("file-text", @page.title, size: 14), @page %> <span class="sep"><%= icon "chevron-right", size: 14 %></span> <%= link_to icon_label("history", "履歴", size: 14), page_revisions_path(@page) %></nav>
+<h1 class="page-title"><%= @revision.title %> <small class="muted">第<%= @revision.number %>版</small></h1>
 <p class="muted small">
-  <%= l @revision.created_at, format: :wiki %>
+  <%= icon "clock", size: 14 %> <%= l @revision.created_at, format: :wiki %>
+  <% if @revision.user %> ・ <%= icon "user", size: 14 %> <%= @revision.user.name %><% end %>
   <% if @revision.summary.present? %> ・ <%= @revision.summary %><% end %>
 </p>
 
 <div class="page-actions">
-  <% if @revision != @page.current_revision %>
-    <%= button_to "この版に戻す", restore_page_revision_path(@page, @revision), class: "button button-primary",
-          form: { data: { confirm: "第#{@revision.number}版の内容に戻しますか？" } } %>
+  <% if can_edit? && @revision != @page.current_revision %>
+    <%= button_to restore_page_revision_path(@page, @revision), class: "button button-primary",
+          form: { data: { confirm: "第#{@revision.number}版の内容に戻しますか？" } } do %><%= icon_label "rotate-ccw", "この版に戻す" %><% end %>
   <% end %>
   <% if (prev = @revision.previous) %>
-    <%= link_to "← 第#{prev.number}版", page_revision_path(@page, prev), class: "button" %>
+    <%= link_to page_revision_path(@page, prev), class: "button" do %><%= icon_label "arrow-left", "第#{prev.number}版" %><% end %>
   <% end %>
   <% if (nxt = @page.revisions.where("number > ?", @revision.number).last) %>
-    <%= link_to "第#{nxt.number}版 →", page_revision_path(@page, nxt), class: "button" %>
+    <%= link_to page_revision_path(@page, nxt), class: "button" do %><span>第<%= nxt.number %>版</span><%= icon "arrow-right" %><% end %>
   <% end %>
 </div>
 

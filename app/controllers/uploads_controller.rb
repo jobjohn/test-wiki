@@ -1,4 +1,6 @@
 class UploadsController < ApplicationController
+  before_action :require_editor, only: %i[create destroy]
+
   def index
     @uploads = Upload.includes(file_attachment: :blob).order(created_at: :desc).limit(200)
   end

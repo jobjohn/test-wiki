@@ -1,0 +1,11 @@
+<% messages = local_assigns[:messages] || record&.errors&.full_messages || [] %>
+<% if messages.any? %>
+  <div class="flash flash-alert">
+    <%= icon "triangle-alert", size: 18 %>
+    <ul>
+      <% messages.each do |message| %>
+        <li><%= message %></li>
+      <% end %>
+    </ul>
+  </div>
+<% end %>

@@ -2,21 +2,45 @@ ja:
   activerecord:
     models:
       page: ページ
+      folder: フォルダ
       tag: タグ
       revision: 版
       upload: ファイル
+      user: ユーザー
+      setting: 設定
     attributes:
       page:
         title: タイトル
         body: 本文
-        parent_id: 親ページ
-        parent: 親ページ
+        folder_id: フォルダ
+        folder: フォルダ
         tag_list: タグ
+        position: 表示順
+      folder:
+        name: フォルダ名
+        parent_id: 親フォルダ
+        parent: 親フォルダ
         position: 表示順
       tag:
         name: タグ名
       upload:
         file: ファイル
+      user:
+        username: ユーザー名
+        display_name: 表示名
+        password: パスワード
+        password_confirmation: パスワード（確認）
+        role: 権限
+        must_change_password: 次回ログイン時にパスワード変更を求める
+      setting:
+        wiki_name: Wiki の名前
+        description: Wiki の説明
+        primary_color: メインカラー
+        secondary_color: サブカラー
+        accent_color: アクセントカラー
+        color_mode: 表示モード
+        public_read: ログインなしで閲覧を許可
+        require_mfa: 全ユーザーに二段階認証を必須にする
   time:
     formats:
       wiki: "%Y/%m/%d %H:%M"

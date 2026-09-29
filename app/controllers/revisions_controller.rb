@@ -1,10 +1,11 @@
 class RevisionsController < ApplicationController
   PER_PAGE = 50
 
+  before_action :require_editor, only: :restore
   before_action :set_page, except: :recent
 
   def index
-    @revisions = @page.revisions
+    @revisions = @page.revisions.includes(:user)
   end
 
   def show
@@ -23,7 +24,7 @@ class RevisionsController < ApplicationController
   # 最近の更新（全ページの変更履歴）
   def recent
     @page_number = [ params[:page].to_i, 1 ].max
-    scope = Revision.includes(:page).order(created_at: :desc, id: :desc)
+    scope = Revision.includes(:page, :user).order(created_at: :desc, id: :desc)
     @revisions = scope.offset((@page_number - 1) * PER_PAGE).limit(PER_PAGE + 1).to_a
     @has_next = @revisions.size > PER_PAGE
     @revisions = @revisions.first(PER_PAGE)
