@@ -1,6 +1,13 @@
 require "test_helper"
 
 class SettingTest < ActiveSupport::TestCase
+  test "default theme is white base, blue main and green accent" do
+    setting = Setting.new
+    assert_equal [ "#2563eb", "#ffffff", "#16a34a" ], setting.colors
+    assert_equal "standard", setting.theme
+    assert_includes setting.css_variables, "--secondary-fg: #111827;"
+  end
+
   test "applies theme presets and detects custom colors" do
     setting = Setting.current
     setting.update!(theme: "forest")

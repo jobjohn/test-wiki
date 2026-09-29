@@ -1,15 +1,15 @@
 /*
- * テーマ: 基本 3 色（--primary / --secondary / --accent）は設定画面の値が
+ * テーマ: 基本 3 色（--secondary: ベースカラー / --primary: メインカラー / --accent: 差し色）は設定画面の値が
  * <style id="theme-variables"> で注入される。その他の色はすべてこの 3 色と
  * ニュートラルカラーから導出する。
  */
 :root {
   --primary: #2563eb;
   --primary-fg: #ffffff;
-  --secondary: #0f172a;
-  --secondary-fg: #ffffff;
-  --accent: #f59e0b;
-  --accent-fg: #111827;
+  --secondary: #ffffff;
+  --secondary-fg: #111827;
+  --accent: #16a34a;
+  --accent-fg: #ffffff;
 
   --bg: #ffffff;
   --surface: #f8fafc;
@@ -34,7 +34,11 @@
   --primary-ring: color-mix(in srgb, var(--primary) 35%, transparent);
   --accent-soft: color-mix(in srgb, var(--accent) 18%, var(--bg));
   --accent-text: color-mix(in srgb, var(--accent) 55%, var(--fg));
-  --sidebar-bg: color-mix(in srgb, var(--secondary) 5%, var(--bg));
+  --sidebar-bg: color-mix(in srgb, var(--secondary) 5%, color-mix(in srgb, var(--primary) 3%, var(--bg)));
+  /* ヘッダー（ベースカラー）。ダークモードでは暗い面に置き換える */
+  --header-bg: var(--secondary);
+  --header-fg: var(--secondary-fg);
+  --header-border: color-mix(in srgb, var(--secondary-fg) 12%, var(--secondary));
   --danger-soft: color-mix(in srgb, var(--danger) 10%, var(--bg));
   --success-soft: color-mix(in srgb, var(--success) 12%, var(--bg));
 }
@@ -47,6 +51,9 @@
     --accent-text: color-mix(in srgb, var(--accent) 70%, #ffffff);
     --primary-soft: color-mix(in srgb, var(--primary) 22%, var(--bg));
     --accent-soft: color-mix(in srgb, var(--accent) 20%, var(--bg));
+    --header-bg: color-mix(in srgb, var(--secondary) 6%, #161a22);
+    --header-fg: #e5e7eb;
+    --header-border: #2a2f3a;
   }
 }
 :root[data-theme="dark"] {
@@ -56,6 +63,9 @@
   --accent-text: color-mix(in srgb, var(--accent) 70%, #ffffff);
   --primary-soft: color-mix(in srgb, var(--primary) 22%, var(--bg));
   --accent-soft: color-mix(in srgb, var(--accent) 20%, var(--bg));
+  --header-bg: color-mix(in srgb, var(--secondary) 6%, #161a22);
+  --header-fg: #e5e7eb;
+  --header-border: #2a2f3a;
 }
 :root[data-theme="light"] { color-scheme: light; }
 :root[data-theme="dark"] { color-scheme: dark; }
@@ -93,7 +103,8 @@ code { font-family: var(--mono); font-size: .88em; padding: .1em .4em; backgroun
   position: sticky; top: 0; z-index: 30;
   display: flex; align-items: center; gap: 12px;
   height: var(--topbar-height); padding: 0 16px;
-  background: var(--secondary); color: var(--secondary-fg);
+  background: var(--header-bg); color: var(--header-fg);
+  border-bottom: 1px solid var(--header-border);
 }
 .brand { display: flex; align-items: center; gap: 10px; color: inherit; font-weight: 700; font-size: 1.05rem; min-width: 0; }
 .brand:hover { text-decoration: none; }
@@ -109,11 +120,11 @@ code { font-family: var(--mono); font-size: .88em; padding: .1em .4em; backgroun
 .topbar-search .search-icon { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); opacity: .7; }
 .topbar .topbar-search input {
   width: 100%; height: 36px; padding: 0 12px 0 36px;
-  color: inherit; background: color-mix(in srgb, var(--secondary-fg) 12%, transparent);
-  border: 1px solid color-mix(in srgb, var(--secondary-fg) 20%, transparent); border-radius: 999px;
+  color: inherit; background: color-mix(in srgb, var(--header-fg) 6%, transparent);
+  border: 1px solid color-mix(in srgb, var(--header-fg) 18%, transparent); border-radius: 999px;
 }
 .topbar .topbar-search input::placeholder { color: inherit; opacity: .65; }
-.topbar .topbar-search input:focus { outline: 2px solid var(--accent); outline-offset: 0; background: color-mix(in srgb, var(--secondary-fg) 18%, transparent); }
+.topbar .topbar-search input:focus { outline: 2px solid var(--primary); outline-offset: 0; background: color-mix(in srgb, var(--header-fg) 10%, transparent); }
 
 .icon-button {
   display: inline-flex; align-items: center; justify-content: center;
@@ -300,8 +311,9 @@ legend { font-weight: 600; font-size: .9rem; margin-bottom: 4px; padding: 0; }
 .hero {
   display: flex; gap: 18px; align-items: flex-start; padding: 24px; margin-bottom: 24px;
   border-radius: calc(var(--radius) + 6px);
-  background: linear-gradient(135deg, var(--secondary), color-mix(in srgb, var(--secondary) 70%, var(--primary)));
-  color: var(--secondary-fg);
+  background: linear-gradient(135deg, var(--header-bg), color-mix(in srgb, var(--header-bg) 82%, var(--primary)));
+  color: var(--header-fg);
+  border: 1px solid var(--header-border);
 }
 .hero h1 { margin: 0 0 4px; }
 .hero-mark { display: inline-flex; padding: 12px; border-radius: 12px; background: var(--accent); color: var(--accent-fg); }
@@ -397,9 +409,9 @@ legend { font-weight: 600; font-size: .9rem; margin-bottom: 4px; padding: 0; }
   background:
     radial-gradient(circle at 15% 20%, color-mix(in srgb, var(--primary) 35%, transparent), transparent 45%),
     radial-gradient(circle at 85% 85%, color-mix(in srgb, var(--accent) 30%, transparent), transparent 45%),
-    var(--secondary);
+    var(--header-bg);
 }
-.auth-card { width: 100%; max-width: 400px; padding: 32px 28px; background: var(--bg); border-radius: 16px; box-shadow: 0 20px 50px rgba(0, 0, 0, .25); }
+.auth-card { width: 100%; max-width: 400px; padding: 32px 28px; background: var(--bg); border: 1px solid var(--border); border-radius: 16px; box-shadow: 0 20px 50px rgba(15, 23, 42, .15); }
 .auth-brand { display: flex; flex-direction: column; align-items: center; gap: 12px; margin-bottom: 24px; text-align: center; }
 .auth-brand h1 { font-size: 1.4rem; margin: 0; }
 .auth-lead { display: flex; gap: 10px; align-items: flex-start; font-size: .92rem; }

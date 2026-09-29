@@ -36,8 +36,8 @@ ja:
         wiki_name: Wiki の名前
         description: Wiki の説明
         primary_color: メインカラー
-        secondary_color: サブカラー
-        accent_color: アクセントカラー
+        secondary_color: ベースカラー
+        accent_color: 差し色
         color_mode: 表示モード
         public_read: ログインなしで閲覧を許可
         require_mfa: 全ユーザーに二段階認証を必須にする

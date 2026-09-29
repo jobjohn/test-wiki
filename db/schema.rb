@@ -10,7 +10,7 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[8.0].define(version: 2026_09_28_234851) do
+ActiveRecord::Schema[8.0].define(version: 2026_09_29_000700) do
   create_table "active_storage_attachments", force: :cascade do |t|
     t.string "name", null: false
     t.string "record_type", null: false
@@ -80,8 +80,8 @@ ActiveRecord::Schema[8.0].define(version: 2026_09_28_234851) do
     t.string "wiki_name", default: "Wiki", null: false
     t.text "description"
     t.string "primary_color", default: "#2563eb", null: false
-    t.string "secondary_color", default: "#0f172a", null: false
-    t.string "accent_color", default: "#f59e0b", null: false
+    t.string "secondary_color", default: "#ffffff", null: false
+    t.string "accent_color", default: "#16a34a", null: false
     t.string "color_mode", default: "system", null: false
     t.boolean "public_read", default: false, null: false
     t.boolean "require_mfa", default: false, null: false

@@ -3,8 +3,12 @@ class Setting < ApplicationRecord
   COLOR_FORMAT = /\A#\h{6}\z/
   COLOR_MODES = { "system" => "システムに合わせる", "light" => "ライト", "dark" => "ダーク" }.freeze
 
-  # 基本 3 色（メイン / サブ / アクセント）のプリセット
+  # 基本 3 色のプリセット
+  #   secondary: ベースカラー（ヘッダー・画面の基調色）
+  #   primary:   メインカラー（ボタン・リンク・選択中の項目）
+  #   accent:    差し色（タグ・強調・フォルダアイコン）
   THEMES = {
+    "standard" => { name: "スタンダード", primary: "#2563eb", secondary: "#ffffff", accent: "#16a34a" },
     "ocean"  => { name: "オーシャン", primary: "#2563eb", secondary: "#0f172a", accent: "#f59e0b" },
     "forest" => { name: "フォレスト", primary: "#15803d", secondary: "#14281d", accent: "#eab308" },
     "sunset" => { name: "サンセット", primary: "#ea580c", secondary: "#2b1d16", accent: "#0ea5e9" },
@@ -12,7 +16,7 @@ class Setting < ApplicationRecord
     "sakura" => { name: "さくら",     primary: "#db2777", secondary: "#fce7f3", accent: "#0d9488" },
     "mono"   => { name: "モノクロ",   primary: "#374151", secondary: "#111827", accent: "#dc2626" }
   }.freeze
-  DEFAULT_THEME = "ocean"
+  DEFAULT_THEME = "standard"
 
   normalizes :wiki_name, with: ->(name) { name.to_s.squish }
   normalizes :primary_color, :secondary_color, :accent_color, with: ->(color) { color.to_s.strip.downcase }
