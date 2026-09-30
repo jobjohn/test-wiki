@@ -1,0 +1,32 @@
+import { Settings as SettingsIcon } from "lucide-react";
+import type { Metadata } from "next";
+import { redirect } from "next/navigation";
+import { SetupForm } from "@/components/SetupForm";
+import { requireAccess } from "@/lib/access";
+import { currentThemeKey } from "@/lib/settings";
+
+export const metadata: Metadata = { title: "初期設定" };
+
+export default async function SetupPage() {
+  const { user, settings } = await requireAccess("admin", { gate: false });
+  if (settings.setupCompletedAt) redirect("/settings");
+
+  return (
+    <div className="setup">
+      <h1 className="page-title">
+        <SettingsIcon size={26} aria-hidden /> 初期設定
+      </h1>
+      <p className="muted">Wiki の使い始めに必要な設定です。ここで設定した内容は、あとから「Wiki の設定」でいつでも変更できます。</p>
+      <SetupForm
+        mustChangePassword={!!user?.mustChangePassword}
+        initial={{
+          wikiName: settings.wikiName,
+          description: settings.description ?? "",
+          theme: currentThemeKey(settings),
+          colors: { primary: settings.primaryColor, secondary: settings.secondaryColor, accent: settings.accentColor },
+          colorMode: settings.colorMode,
+        }}
+      />
+    </div>
+  );
+}

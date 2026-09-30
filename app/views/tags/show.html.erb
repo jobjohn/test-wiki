@@ -1,5 +1,0 @@
-<% content_for :title, "タグ: #{@tag.name}" %>
-<nav class="breadcrumbs"><%= link_to icon_label("tags", "タグ", size: 14), tags_path %></nav>
-<h1 class="page-title"><%= icon_label "tag", @tag.name, size: 26 %></h1>
-<p class="muted"><%= @pages.size %> ページ</p>
-<%= render "shared/page_list", pages: @pages %>

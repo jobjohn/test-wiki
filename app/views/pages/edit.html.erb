@@ -1,9 +1,0 @@
-<% content_for :title, "編集: #{@page.title}" %>
-<h1 class="page-title"><%= icon_label "pencil", "ページを編集", size: 26 %></h1>
-<% if @conflict_body %>
-  <details class="conflict" open>
-    <summary><%= icon_label "triangle-alert", "あなたが保存しようとした本文（コピーして反映してください）", size: 16 %></summary>
-    <textarea readonly rows="10"><%= @conflict_body %></textarea>
-  </details>
-<% end %>
-<%= render "form", page: @page %>

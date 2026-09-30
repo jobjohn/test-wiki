@@ -1,6 +1,0 @@
-<% flash.each do |type, message| %>
-  <div class="flash flash-<%= type %>" role="status">
-    <%= icon(type.to_s == "notice" ? "check" : "triangle-alert", size: 18) %>
-    <span><%= message %></span>
-  </div>
-<% end %>

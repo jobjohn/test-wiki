@@ -1,6 +1,6 @@
 # Wiki
 
-Ruby on Rails 製のシンプルで実用的な Wiki です。Docker があればコマンド 1 つで起動できます。
+Next.js 製のシンプルで実用的な Wiki です。Docker があればコマンド 1 つで起動できます。
 
 ## 起動方法
 
@@ -26,7 +26,7 @@ docker compose up -d --build
 docker compose down
 ```
 
-データ（ページ・履歴・アップロードファイル）は Docker ボリューム `wiki-storage` に保存されるため、コンテナを作り直しても消えません。
+データ（ページ・履歴・アップロードファイル）は Docker ボリューム `wiki-data` に保存されるため、コンテナを作り直しても消えません。
 `docker compose down -v` を実行するとボリュームごと削除されます。
 
 ## 主な機能
@@ -36,14 +36,14 @@ docker compose down
 - **Wiki リンク**: `[[ページ名]]` / `[[ページ名|表示名]]`。未作成のページは赤字で表示され、クリックで作成できます
 - **タグ**、**全文検索**（日本語対応・該当箇所を強調）
 - **変更履歴**: 編集者つきで版を保存。差分表示、過去の版への復元
-- **同時編集の検知**: 他の人が先に保存していた場合は上書きせず警告
+- **同時編集の検知**: 他の人が先に保存していた場合は上書きせず警告し、自分の編集内容を残したまま最新の内容を読み込めます
 - **ファイル添付**: ドラッグ＆ドロップ、クリップボードからの画像貼り付け
 - プレビュー、目次、被リンク表示、Markdown ダウンロード、最近の更新
 - ショートカット: `/` で検索、編集画面で `Ctrl/⌘ + S` 保存
 
 ### 見た目
 
-- アイコンは [Lucide](https://lucide.dev) で統一
+- アイコンは [Lucide](https://lucide.dev)（`lucide-react`）で統一
 - **3 色（ベースカラー・メインカラー・差し色）** で全体の配色が決まるカラーテーマ。標準はベース白・メイン青・差し色緑。7 種類のプリセットのほか、色を自由に選べるカスタムテーマに対応（設定画面でリアルタイムにプレビュー）
 - 表示モード: システムに合わせる / ライト / ダーク
 - スマートフォン対応
@@ -54,6 +54,7 @@ docker compose down
 - **二段階認証（MFA）**: 認証アプリ（Google Authenticator など）のパスコードによるログイン。各ユーザーが任意で設定でき、管理者は全員に必須化することも可能。スマートフォン紛失時用のバックアップコード付き
 - 「ログインなしで閲覧を許可」設定（閲覧のみ公開、編集はログイン必須）
 - ログイン試行回数の制限、パスワード変更時に他の端末のログインを無効化
+- Markdown の HTML は安全な要素だけに制限。アップロードされた SVG / HTML はブラウザで実行されないようダウンロード扱い
 
 ## 設定
 
@@ -67,40 +68,49 @@ Wiki の名前・説明・カラーテーマ・アクセス設定は、管理者
 | `WIKI_ADMIN_PASSWORD` | `wikiadmin` | 初期ユーザー `wikiadmin` の初期パスワード（最初の起動前に設定） |
 | `WIKI_HOME_PAGE` | `ホーム` | ホーム画面に表示するページのタイトル |
 | `TZ` | `Asia/Tokyo` | タイムゾーン |
-| `FORCE_SSL` | （なし） | `true` にすると HTTPS を強制します（リバースプロキシで TLS 終端する場合） |
-| `SECRET_KEY_BASE` | 自動生成 | 未設定の場合は初回起動時に生成し、ボリュームに保存します |
+| `FORCE_SSL` | （なし） | `true` にすると Cookie に Secure を付けます（リバースプロキシで HTTPS 化する場合） |
+| `SECRET_KEY_BASE` | 自動生成 | 二段階認証の情報を暗号化する鍵。未設定の場合は初回に生成し、データ領域に保存します |
+
+設定を変更したら `docker compose up -d` で反映されます。
+
+リバースプロキシの背後で使う場合は、`Host`（または `X-Forwarded-Host`）を元のホスト名のまま渡してください。
 
 ### ログインできなくなった場合
 
-管理者のパスワードを忘れた場合や二段階認証の端末を紛失した場合は、次のコマンドでリセットできます。
+管理者のパスワードを忘れた場合や、二段階認証の端末を紛失した場合は、次のコマンドでリセットできます（次回ログイン時にパスワードの変更を求められます）。
 
 ```bash
-docker compose exec wiki bin/rails runner 'u = User.find_by_username("wikiadmin"); u.update!(password: "wikiadmin", must_change_password: true); u.disable_mfa!'
+# ランダムなパスワードを発行
+docker compose exec wiki node scripts/reset-password.mjs wikiadmin
+
+# パスワードを指定し、二段階認証も解除する
+docker compose exec wiki node scripts/reset-password.mjs wikiadmin 新しいパスワード --reset-mfa
 ```
 
 ## バックアップ
 
 ```bash
-docker compose cp wiki:/rails/storage ./backup
+docker compose cp wiki:/data ./backup
 ```
 
-SQLite データベース（`production.sqlite3`）とアップロードファイル（`files/`）が含まれます。
+SQLite データベース（`wiki.sqlite3`）とアップロードファイル（`files/`）が含まれます。復元するときは、`docker compose down` のあとでボリュームに書き戻してください。
 
 ## 開発
 
-Ruby 3.3 がインストールされた環境で:
+Node.js 22.13 以上が必要です。
 
 ```bash
-bundle install
-bin/rails db:prepare
-bin/rails server   # http://localhost:3000
-bin/rails test     # テスト
+npm install
+npm run dev        # http://localhost:3000（データは ./storage に保存）
+npm test           # テスト
+npm run typecheck  # 型チェック
 ```
 
 ## 構成
 
-- Ruby on Rails 8 / SQLite / Puma
-- 認証: bcrypt、二段階認証: [rotp](https://github.com/mdp/rotp)（TOTP）
-- Markdown: [commonmarker](https://github.com/gjtorikian/commonmarker)
-- ファイル保存: Active Storage（ローカルディスク）
-- アイコン: [Lucide](https://lucide.dev)（ISC License、`vendor/lucide` に同梱）
+- Next.js 16（App Router / Server Actions）/ React 19 / TypeScript
+- データベース: SQLite（Node.js 標準の `node:sqlite`。ネイティブ拡張なし）
+- 認証: セッション Cookie + scrypt、二段階認証: TOTP（RFC 6238）を自前実装、シークレットは AES-256-GCM で暗号化
+- Markdown: unified（remark / rehype）+ highlight.js、HTML は `rehype-sanitize` で制限
+- ファイル保存: ローカルディスク（`/data/files`）
+- アイコン: [lucide-react](https://lucide.dev)

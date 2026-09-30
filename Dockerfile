@@ -2,55 +2,45 @@
 #
 # docker compose up -d --build で起動し、http://localhost:3000 にアクセスしてください。
 
-ARG RUBY_VERSION=3.3.6
-FROM docker.io/library/ruby:$RUBY_VERSION-slim AS base
+# node:sqlite（フラグなしで使える）のため Node.js 22.13 以上を使う
+ARG NODE_VERSION=22
+FROM node:${NODE_VERSION}-slim AS base
+ENV NEXT_TELEMETRY_DISABLED=1
+WORKDIR /app
 
-WORKDIR /rails
+# --- 依存パッケージ ---
+FROM base AS deps
+COPY package.json package-lock.json ./
+RUN npm ci
 
-RUN apt-get update -qq && \
-    apt-get install --no-install-recommends -y curl libjemalloc2 sqlite3 && \
-    rm -rf /var/lib/apt/lists /var/cache/apt/archives
-
-ENV RAILS_ENV="production" \
-    BUNDLE_DEPLOYMENT="1" \
-    BUNDLE_PATH="/usr/local/bundle" \
-    BUNDLE_WITHOUT="development:test" \
-    RAILS_LOG_TO_STDOUT="1"
-
-# --- build stage ---
+# --- ビルド ---
 FROM base AS build
-
-RUN apt-get update -qq && \
-    apt-get install --no-install-recommends -y build-essential git libyaml-dev pkg-config && \
-    rm -rf /var/lib/apt/lists /var/cache/apt/archives
-
-COPY Gemfile Gemfile.lock ./
-RUN bundle install && \
-    rm -rf ~/.bundle/ "${BUNDLE_PATH}"/ruby/*/cache "${BUNDLE_PATH}"/ruby/*/bundler/gems/*/.git && \
-    bundle exec bootsnap precompile --gemfile
-
+COPY --from=deps /app/node_modules ./node_modules
 COPY . .
+RUN npm run build
 
-RUN bundle exec bootsnap precompile app/ lib/ && \
-    SECRET_KEY_BASE_DUMMY=1 ./bin/rails assets:precompile
+# --- 実行用イメージ ---
+FROM base AS runtime
+ENV NODE_ENV=production \
+    PORT=3000 \
+    HOSTNAME=0.0.0.0 \
+    WIKI_DATA_DIR=/data \
+    NODE_OPTIONS=--disable-warning=ExperimentalWarning
 
-# --- runtime stage ---
-FROM base
+RUN groupadd --system --gid 1001 wiki && \
+    useradd --system --uid 1001 --gid 1001 --home-dir /app wiki && \
+    mkdir /data && chown wiki:wiki /data
 
-COPY --from=build "${BUNDLE_PATH}" "${BUNDLE_PATH}"
-COPY --from=build /rails /rails
+COPY --from=build --chown=wiki:wiki /app/.next/standalone ./
+COPY --from=build --chown=wiki:wiki /app/.next/static ./.next/static
+COPY --from=build --chown=wiki:wiki /app/scripts ./scripts
 
-RUN groupadd --system --gid 1000 rails && \
-    useradd rails --uid 1000 --gid 1000 --create-home --shell /bin/bash && \
-    mkdir -p storage/files && \
-    chown -R rails:rails db log storage tmp
-USER 1000:1000
-
-VOLUME ["/rails/storage"]
-
-ENTRYPOINT ["/rails/bin/docker-entrypoint"]
-
+USER wiki
+VOLUME ["/data"]
 EXPOSE 3000
-HEALTHCHECK --interval=30s --timeout=5s --start-period=30s --retries=3 \
-  CMD curl -fsS http://localhost:3000/up || exit 1
-CMD ["./bin/rails", "server", "-b", "0.0.0.0", "-p", "3000"]
+
+HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
+  CMD node -e "fetch('http://127.0.0.1:'+process.env.PORT+'/up').then(r=>process.exit(r.ok?0:1),()=>process.exit(1))"
+
+# データベースの作成・マイグレーション・初期データ（wikiadmin）は初回のアクセス時に自動で行われる
+CMD ["node", "server.js"]
