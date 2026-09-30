@@ -83,7 +83,7 @@ describe("設定", () => {
     expect(contrastColor("#ffffff")).toBe("#111827");
     expect(contrastColor("#0f172a")).toBe("#ffffff");
     expect(contrastColor("#2563eb")).toBe("#ffffff");
-    expect(cssVariables({ primaryColor: "#2563eb", secondaryColor: "#ffffff", accentColor: "#16a34a" })).toContain("--secondary-fg: #111827;");
+    expect(cssVariables({ primaryColor: "#2563eb", secondaryColor: "#ffffff", accentColor: "#16a34a" })).toContain("--base-foreground: #111827;");
     expect(Object.keys(THEMES)[0]).toBe("standard");
   });
 });

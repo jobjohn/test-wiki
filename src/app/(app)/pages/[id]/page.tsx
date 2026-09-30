@@ -4,10 +4,13 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { deletePageAction } from "@/actions/pages";
 import { FolderBreadcrumbs } from "@/components/Breadcrumbs";
-import { ConfirmButton } from "@/components/ConfirmButton";
+import { ConfirmAction } from "@/components/ConfirmAction";
 import { Markdown } from "@/components/Markdown";
+import { PageTitle } from "@/components/PageTitle";
 import { Tags } from "@/components/Tags";
 import { Toc } from "@/components/Toc";
+import { Button } from "@/components/ui/button";
+import { Separator } from "@/components/ui/separator";
 import { canViewContent, requireAccess } from "@/lib/access";
 import { formatDateTime } from "@/lib/format";
 import { getFolder } from "@/lib/folders";
@@ -35,66 +38,82 @@ export default async function PageView({ params }: Props) {
 
   return (
     <article className="page">
-      <header className="page-header">
-        {folder && <FolderBreadcrumbs folder={folder} />}
-        <h1>{page.title}</h1>
-        <div className="page-meta muted small">
-          <span>
-            <Clock size={14} aria-hidden /> 最終更新 {formatDateTime(page.updatedAt)}
+      <header className="mb-5 grid gap-3 border-b pb-4">
+        <div>
+          {folder && <FolderBreadcrumbs folder={folder} />}
+          <PageTitle>{page.title}</PageTitle>
+        </div>
+        <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted-foreground">
+          <span className="inline-flex items-center gap-1">
+            <Clock className="size-3.5" aria-hidden /> 最終更新 {formatDateTime(page.updatedAt)}
           </span>
           {revision && (
-            <span>
-              <History size={14} aria-hidden /> 第{revision.number}版
+            <span className="inline-flex items-center gap-1">
+              <History className="size-3.5" aria-hidden /> 第{revision.number}版
             </span>
           )}
           {revision?.userName && (
-            <span>
-              <User size={14} aria-hidden /> {revision.userName}
+            <span className="inline-flex items-center gap-1">
+              <User className="size-3.5" aria-hidden /> {revision.userName}
             </span>
           )}
         </div>
         <Tags tags={tagsForPage(page.id)} />
-        <div className="page-actions">
+        <div className="flex flex-wrap gap-2">
           {editable && (
-            <Link href={`/pages/${page.id}/edit`} className="button button-primary" accessKey="e">
-              <Pencil size={18} aria-hidden />
-              <span>編集</span>
-            </Link>
+            <Button asChild>
+              <Link href={`/pages/${page.id}/edit`} accessKey="e">
+                <Pencil aria-hidden />
+                編集
+              </Link>
+            </Button>
           )}
-          <Link href={`/pages/${page.id}/revisions`} className="button">
-            <History size={18} aria-hidden />
-            <span>履歴</span>
-          </Link>
-          <a href={`/pages/${page.id}/markdown?download=1`} className="button" download>
-            <Download size={18} aria-hidden />
-            <span>Markdown</span>
-          </a>
+          <Button variant="outline" asChild>
+            <Link href={`/pages/${page.id}/revisions`}>
+              <History aria-hidden />
+              履歴
+            </Link>
+          </Button>
+          <Button variant="outline" asChild>
+            <a href={`/pages/${page.id}/markdown?download=1`} download>
+              <Download aria-hidden />
+              Markdown
+            </a>
+          </Button>
           {editable && (
-            <ConfirmButton
+            <ConfirmAction
               action={deletePageAction.bind(null, page.id)}
-              message={`ページ「${page.title}」を削除します。よろしいですか？`}
-              className="button button-danger"
-            >
-              <Trash2 size={18} aria-hidden />
-              <span>削除</span>
-            </ConfirmButton>
+              title="ページを削除しますか？"
+              description={`ページ「${page.title}」を削除します。変更履歴も一緒に削除され、元に戻せません。`}
+              confirmLabel="削除する"
+              destructive
+              trigger={
+                <Button variant="outline" className="text-destructive hover:text-destructive">
+                  <Trash2 aria-hidden />
+                  削除
+                </Button>
+              }
+            />
           )}
         </div>
       </header>
 
       <Toc target=".page > .markdown-body" />
 
-      {page.body.trim() ? <Markdown source={page.body} /> : <p className="muted">本文はまだありません。</p>}
+      {page.body.trim() ? <Markdown source={page.body} /> : <p className="text-muted-foreground">本文はまだありません。</p>}
 
       {backlinks.length > 0 && (
-        <section className="related">
-          <h2>
-            <LinkIcon size={16} aria-hidden /> このページへのリンク
+        <section className="clear-both mt-10">
+          <Separator className="mb-3" />
+          <h2 className="mb-2 flex items-center gap-1.5 text-base font-semibold">
+            <LinkIcon className="size-4" aria-hidden /> このページへのリンク
           </h2>
-          <ul>
+          <ul className="grid gap-1">
             {backlinks.map((link) => (
               <li key={link.id}>
-                <Link href={`/pages/${link.id}`}>{link.title}</Link>
+                <Link href={`/pages/${link.id}`} className="text-link hover:underline">
+                  {link.title}
+                </Link>
               </li>
             ))}
           </ul>

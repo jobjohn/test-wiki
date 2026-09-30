@@ -1,15 +1,18 @@
 import { Tag as TagIcon } from "lucide-react";
 import Link from "next/link";
+import { Badge } from "@/components/ui/badge";
 
 export function Tags({ tags }: { tags: { id: number; name: string }[] }) {
   if (!tags.length) return null;
   return (
-    <span className="tags">
+    <span className="inline-flex flex-wrap gap-1.5">
       {tags.map((tag) => (
-        <Link key={tag.id} href={`/tags/${encodeURIComponent(tag.name)}`} className="tag">
-          <TagIcon size={12} aria-hidden />
-          {tag.name}
-        </Link>
+        <Badge key={tag.id} variant="highlight" asChild>
+          <Link href={`/tags/${encodeURIComponent(tag.name)}`}>
+            <TagIcon aria-hidden />
+            {tag.name}
+          </Link>
+        </Badge>
       ))}
     </span>
   );

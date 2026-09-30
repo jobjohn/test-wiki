@@ -3,34 +3,33 @@
 import { ShieldCheck } from "lucide-react";
 import { useActionState } from "react";
 import { mfaChallengeAction } from "@/actions/auth";
+import { Input } from "@/components/ui/input";
+import { Field } from "./Field";
 import { FormErrors } from "./FormErrors";
 import { SubmitButton } from "./SubmitButton";
 
 export function MfaChallengeForm({ next }: { next: string }) {
   const [state, action] = useActionState(mfaChallengeAction, {});
   return (
-    <form action={action} className="auth-form">
+    <form action={action} className="grid gap-4">
       <FormErrors errors={state.errors} />
       <input type="hidden" name="next" value={next} />
-      <div className="field">
-        <label htmlFor="code">パスコード</label>
-        <input
-          type="text"
-          name="code"
+      <Field label="パスコード" htmlFor="code" hint="スマートフォンを利用できない場合は、バックアップコード（xxxxx-xxxxx）を入力できます。">
+        <Input
           id="code"
-          className="code-input"
+          name="code"
           inputMode="numeric"
           autoComplete="one-time-code"
           maxLength={16}
           required
           autoFocus
           placeholder="123456"
+          className="h-11 text-center font-mono text-xl tracking-[0.2em]"
         />
-        <p className="hint">スマートフォンを利用できない場合は、バックアップコード（xxxxx-xxxxx）を入力できます。</p>
-      </div>
-      <SubmitButton className="button button-primary button-block" pendingText="確認中...">
-        <ShieldCheck size={18} aria-hidden />
-        <span>確認</span>
+      </Field>
+      <SubmitButton className="w-full" pendingText="確認中...">
+        <ShieldCheck aria-hidden />
+        確認
       </SubmitButton>
     </form>
   );

@@ -1,8 +1,10 @@
 import { Tag, Tags as TagsIcon } from "lucide-react";
 import type { Metadata } from "next";
-import Link from "next/link";
 import { notFound } from "next/navigation";
+import { SimpleBreadcrumb } from "@/components/Breadcrumbs";
 import { PageList } from "@/components/PageList";
+import { PageTitle } from "@/components/PageTitle";
+import { Card, CardContent } from "@/components/ui/card";
 import { canViewContent, requireAccess } from "@/lib/access";
 import { safeDecode } from "@/lib/params";
 import { findTagByName, pagesForTag } from "@/lib/pages";
@@ -20,18 +22,17 @@ export default async function TagPage({ params }: Props) {
   const pages = pagesForTag(tag.id);
 
   return (
-    <>
-      <nav className="breadcrumbs">
-        <Link href="/tags">
-          <TagsIcon size={14} aria-hidden />
-          タグ
-        </Link>
-      </nav>
-      <h1 className="page-title">
-        <Tag size={26} aria-hidden /> {tag.name}
-      </h1>
-      <p className="muted">{pages.length} ページ</p>
-      <PageList pages={pages} />
-    </>
+    <div className="grid gap-4">
+      <div>
+        <SimpleBreadcrumb items={[{ href: "/tags", label: "タグ", icon: <TagsIcon className="size-3.5" aria-hidden /> }]} />
+        <PageTitle icon={Tag}>{tag.name}</PageTitle>
+        <p className="mt-1 text-sm text-muted-foreground">{pages.length} ページ</p>
+      </div>
+      <Card>
+        <CardContent>
+          <PageList pages={pages} />
+        </CardContent>
+      </Card>
+    </div>
   );
 }

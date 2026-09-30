@@ -14,19 +14,17 @@ export default async function MfaChallengePage({ searchParams }: { searchParams:
 
   return (
     <>
-      <div className="auth-lead">
-        <ShieldCheck size={22} aria-hidden />
+      <div className="flex items-start gap-2.5 text-sm">
+        <ShieldCheck className="mt-0.5 size-5 shrink-0 text-primary" aria-hidden />
         <p>
           認証アプリに表示されている <strong>6 桁のパスコード</strong> を入力してください。
         </p>
       </div>
       <MfaChallengeForm next={next} />
-      <p className="auth-footer">
-        <Link href="/login">
-          <ArrowLeft size={14} aria-hidden />
-          ログイン画面に戻る
-        </Link>
-      </p>
+      <Link href="/login" className="inline-flex items-center justify-center gap-1 text-sm text-link hover:underline">
+        <ArrowLeft className="size-3.5" aria-hidden />
+        ログイン画面に戻る
+      </Link>
     </>
   );
 }

@@ -1,10 +1,12 @@
-import { FileText, Folder, FolderInput, FolderOpen, FolderPlus, FilePlus, Trash2 } from "lucide-react";
+import { FilePlus, FileText, Folder, FolderInput, FolderOpen, FolderPlus, Trash2 } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { deleteFolderAction } from "@/actions/folders";
 import { FolderBreadcrumbs } from "@/components/Breadcrumbs";
-import { ConfirmButton } from "@/components/ConfirmButton";
+import { ConfirmAction } from "@/components/ConfirmAction";
+import { PageTitle } from "@/components/PageTitle";
+import { Button } from "@/components/ui/button";
 import { canViewContent, requireAccess } from "@/lib/access";
 import { formatDateTime } from "@/lib/format";
 import { folderCounts, getFolder, listChildFolders } from "@/lib/folders";
@@ -20,6 +22,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   return { title: folder?.name ?? "フォルダ" };
 }
 
+const itemClass = "grid grid-cols-[auto_1fr] gap-x-3 rounded-lg border p-3 transition-colors hover:border-primary hover:bg-accent";
+
 export default async function FolderPage({ params }: Props) {
   const { user } = await requireAccess();
   const folder = getFolder(parseId((await params).id));
@@ -30,56 +34,67 @@ export default async function FolderPage({ params }: Props) {
   const editable = canEdit(user);
 
   return (
-    <>
-      <header className="page-header">
-        <FolderBreadcrumbs folder={folder} includeSelf={false} />
-        <h1 className="page-title">
-          <FolderOpen size={26} aria-hidden /> {folder.name}
-        </h1>
-        <p className="muted small">
+    <div className="grid gap-5">
+      <header className="grid gap-2 border-b pb-4">
+        <div>
+          <FolderBreadcrumbs folder={folder} includeSelf={false} />
+          <PageTitle icon={FolderOpen}>{folder.name}</PageTitle>
+        </div>
+        <p className="text-sm text-muted-foreground">
           {children.length} フォルダ・{pages.length} ページ
         </p>
         {editable && (
-          <div className="page-actions">
-            <Link href={`/pages/new?folder_id=${folder.id}`} className="button button-primary">
-              <FilePlus size={18} aria-hidden />
-              <span>ページを追加</span>
-            </Link>
-            <Link href={`/folders/new?parent_id=${folder.id}`} className="button">
-              <FolderPlus size={18} aria-hidden />
-              <span>サブフォルダを作成</span>
-            </Link>
-            <Link href={`/folders/${folder.id}/edit`} className="button">
-              <FolderInput size={18} aria-hidden />
-              <span>名前変更・移動</span>
-            </Link>
-            <ConfirmButton
+          <div className="flex flex-wrap gap-2">
+            <Button asChild>
+              <Link href={`/pages/new?folder_id=${folder.id}`}>
+                <FilePlus aria-hidden />
+                ページを追加
+              </Link>
+            </Button>
+            <Button variant="outline" asChild>
+              <Link href={`/folders/new?parent_id=${folder.id}`}>
+                <FolderPlus aria-hidden />
+                サブフォルダを作成
+              </Link>
+            </Button>
+            <Button variant="outline" asChild>
+              <Link href={`/folders/${folder.id}/edit`}>
+                <FolderInput aria-hidden />
+                名前変更・移動
+              </Link>
+            </Button>
+            <ConfirmAction
               action={deleteFolderAction.bind(null, folder.id)}
-              message={`フォルダ「${folder.name}」を削除します。中のページやサブフォルダは 1 つ上の階層へ移動します。よろしいですか？`}
-              className="button button-danger"
-            >
-              <Trash2 size={18} aria-hidden />
-              <span>削除</span>
-            </ConfirmButton>
+              title="フォルダを削除しますか？"
+              description={`フォルダ「${folder.name}」を削除します。中のページやサブフォルダは削除されず、1 つ上の階層へ移動します。`}
+              confirmLabel="削除する"
+              destructive
+              trigger={
+                <Button variant="outline" className="text-destructive hover:text-destructive">
+                  <Trash2 aria-hidden />
+                  削除
+                </Button>
+              }
+            />
           </div>
         )}
       </header>
 
       {children.length === 0 && pages.length === 0 ? (
-        <div className="empty-state">
-          <Folder size={40} aria-hidden />
+        <div className="grid justify-items-center gap-2 rounded-lg border-2 border-dashed p-10 text-muted-foreground">
+          <Folder className="size-10" aria-hidden />
           <p>このフォルダは空です。</p>
         </div>
       ) : (
-        <ul className="folder-contents">
+        <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {children.map((child) => {
             const counts = folderCounts(child.id);
             return (
               <li key={`f${child.id}`}>
-                <Link href={`/folders/${child.id}`} className="folder-item">
-                  <Folder size={20} className="folder-item-icon" aria-hidden />
-                  <span className="folder-item-name">{child.name}</span>
-                  <span className="muted small">
+                <Link href={`/folders/${child.id}`} className={itemClass}>
+                  <Folder className="row-span-2 mt-0.5 size-5 text-highlight-text" aria-hidden />
+                  <span className="truncate font-semibold">{child.name}</span>
+                  <span className="text-xs text-muted-foreground">
                     {counts.folders} フォルダ・{counts.pages} ページ
                   </span>
                 </Link>
@@ -88,15 +103,15 @@ export default async function FolderPage({ params }: Props) {
           })}
           {pages.map((page) => (
             <li key={`p${page.id}`}>
-              <Link href={`/pages/${page.id}`} className="folder-item">
-                <FileText size={20} className="folder-item-icon page-icon" aria-hidden />
-                <span className="folder-item-name">{page.title}</span>
-                <span className="muted small">{formatDateTime(page.updatedAt)}</span>
+              <Link href={`/pages/${page.id}`} className={itemClass}>
+                <FileText className="row-span-2 mt-0.5 size-5 text-primary" aria-hidden />
+                <span className="truncate font-semibold">{page.title}</span>
+                <span className="text-xs text-muted-foreground">{formatDateTime(page.updatedAt)}</span>
               </Link>
             </li>
           ))}
         </ul>
       )}
-    </>
+    </div>
   );
 }

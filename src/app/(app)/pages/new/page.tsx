@@ -1,6 +1,7 @@
 import { FilePlus } from "lucide-react";
 import type { Metadata } from "next";
 import { PageForm } from "@/components/PageForm";
+import { PageTitle } from "@/components/PageTitle";
 import { requireAccess } from "@/lib/access";
 import { folderOptions, getFolder } from "@/lib/folders";
 import { first } from "@/lib/params";
@@ -15,10 +16,8 @@ export default async function NewPage({ searchParams }: { searchParams: Promise<
   const title = first(query.title).slice(0, 200);
 
   return (
-    <>
-      <h1 className="page-title">
-        <FilePlus size={26} aria-hidden /> 新規ページ作成
-      </h1>
+    <div className="grid gap-5">
+      <PageTitle icon={FilePlus}>新規ページ作成</PageTitle>
       <PageForm
         pageId={null}
         initial={{ title, body: "", folderId, position: "0", tags: "", lockVersion: 0 }}
@@ -26,6 +25,6 @@ export default async function NewPage({ searchParams }: { searchParams: Promise<
         tagSuggestions={listTagNames()}
         cancelHref={folderId ? `/folders/${folderId}` : "/"}
       />
-    </>
+    </div>
   );
 }

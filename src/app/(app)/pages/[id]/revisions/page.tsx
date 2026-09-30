@@ -3,7 +3,13 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { restoreRevisionAction } from "@/actions/pages";
-import { ConfirmButton } from "@/components/ConfirmButton";
+import { SimpleBreadcrumb } from "@/components/Breadcrumbs";
+import { ConfirmAction } from "@/components/ConfirmAction";
+import { PageTitle } from "@/components/PageTitle";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { requireAccess } from "@/lib/access";
 import { formatDateTime } from "@/lib/format";
 import { parseId } from "@/lib/params";
@@ -19,57 +25,62 @@ export default async function RevisionsPage({ params }: { params: Promise<{ id: 
   const revisions = listRevisions(page.id);
 
   return (
-    <>
-      <nav className="breadcrumbs">
-        <Link href={`/pages/${page.id}`}>
-          <FileText size={14} aria-hidden />
-          {page.title}
-        </Link>
-      </nav>
-      <h1 className="page-title">
-        <History size={26} aria-hidden /> 変更履歴
-      </h1>
-      <table className="table">
-        <thead>
-          <tr>
-            <th>版</th>
-            <th>日時</th>
-            <th>編集者</th>
-            <th>タイトル</th>
-            <th>要約</th>
-            <th />
-          </tr>
-        </thead>
-        <tbody>
-          {revisions.map((revision, index) => (
-            <tr key={revision.id}>
-              <td>
-                <Link href={`/pages/${page.id}/revisions/${revision.number}`}>第{revision.number}版</Link>
-              </td>
-              <td className="nowrap">{formatDateTime(revision.createdAt)}</td>
-              <td>{revision.userName ?? "—"}</td>
-              <td>{revision.title}</td>
-              <td>{revision.summary}</td>
-              <td className="nowrap">
-                {index === 0 ? (
-                  <span className="badge">現在</span>
-                ) : (
-                  canEdit(user) && (
-                    <ConfirmButton
-                      action={restoreRevisionAction.bind(null, page.id, revision.number)}
-                      message={`第${revision.number}版の内容に戻しますか？（新しい版として保存されます）`}
-                      className="button button-small"
-                    >
-                      <RotateCcw size={14} aria-hidden />
-                      <span>この版に戻す</span>
-                    </ConfirmButton>
-                  )
-                )}
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </>
+    <div className="grid gap-4">
+      <div>
+        <SimpleBreadcrumb items={[{ href: `/pages/${page.id}`, label: page.title, icon: <FileText className="size-3.5" aria-hidden /> }]} />
+        <PageTitle icon={History}>変更履歴</PageTitle>
+      </div>
+      <Card className="py-2">
+        <CardContent className="px-2">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>版</TableHead>
+                <TableHead>日時</TableHead>
+                <TableHead>編集者</TableHead>
+                <TableHead>タイトル</TableHead>
+                <TableHead>要約</TableHead>
+                <TableHead />
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {revisions.map((revision, index) => (
+                <TableRow key={revision.id}>
+                  <TableCell>
+                    <Link href={`/pages/${page.id}/revisions/${revision.number}`} className="text-link hover:underline">
+                      第{revision.number}版
+                    </Link>
+                  </TableCell>
+                  <TableCell className="whitespace-nowrap">{formatDateTime(revision.createdAt)}</TableCell>
+                  <TableCell>{revision.userName ?? "—"}</TableCell>
+                  <TableCell>{revision.title}</TableCell>
+                  <TableCell>{revision.summary}</TableCell>
+                  <TableCell className="text-right whitespace-nowrap">
+                    {index === 0 ? (
+                      <Badge variant="success">現在</Badge>
+                    ) : (
+                      canEdit(user) && (
+                        <ConfirmAction
+                          action={restoreRevisionAction.bind(null, page.id, revision.number)}
+                          title={`第${revision.number}版に戻しますか？`}
+                          description="この版の内容に戻します。現在の内容は履歴に残り、戻した内容が新しい版として保存されます。"
+                          confirmLabel="この版に戻す"
+                          trigger={
+                            <Button variant="outline" size="sm">
+                              <RotateCcw aria-hidden />
+                              この版に戻す
+                            </Button>
+                          }
+                        />
+                      )
+                    )}
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
+    </div>
   );
 }

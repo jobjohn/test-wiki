@@ -42,11 +42,19 @@ export function contrastColor(hex: string): string {
   return 0.2126 * r + 0.7152 * g + 0.0722 * b > 0.4 ? "#111827" : "#ffffff";
 }
 
-export function cssVariables(settings: ThemeColors): string {
-  const pairs: [string, string][] = [
-    ["primary", settings.primaryColor],
-    ["secondary", settings.secondaryColor],
-    ["accent", settings.accentColor],
-  ];
-  return pairs.map(([name, value]) => `--${name}: ${value}; --${name}-fg: ${contrastColor(value)};`).join(" ");
+/**
+ * テーマの 3 色を CSS 変数にする（shadcn/ui の命名に合わせる）。
+ *   --primary   メインカラー（ボタン・リンク・選択中）
+ *   --base      ベースカラー（ヘッダーなど画面の基調）
+ *   --highlight 差し色（タグ・強調・フォルダアイコン）
+ * それぞれの上に置く文字色は --*-foreground。その他の色（背景・枠線・淡い面など）は globals.css で導出する。
+ */
+export const THEME_VARIABLES = [
+  { name: "primary", key: "primaryColor" },
+  { name: "base", key: "secondaryColor" },
+  { name: "highlight", key: "accentColor" },
+] as const;
+
+export function cssVariables(colors: ThemeColors): string {
+  return THEME_VARIABLES.map(({ name, key }) => `--${name}: ${colors[key]}; --${name}-foreground: ${contrastColor(colors[key])};`).join(" ");
 }

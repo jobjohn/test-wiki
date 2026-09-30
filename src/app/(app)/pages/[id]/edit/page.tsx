@@ -2,6 +2,7 @@ import { Pencil } from "lucide-react";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { PageForm } from "@/components/PageForm";
+import { PageTitle } from "@/components/PageTitle";
 import { requireAccess } from "@/lib/access";
 import { folderOptions } from "@/lib/folders";
 import { parseId } from "@/lib/params";
@@ -16,11 +17,10 @@ export default async function EditPage({ params }: { params: Promise<{ id: strin
   if (!page) notFound();
 
   return (
-    <>
-      <h1 className="page-title">
-        <Pencil size={26} aria-hidden /> ページを編集
-      </h1>
+    <div className="grid gap-5">
+      <PageTitle icon={Pencil}>ページを編集</PageTitle>
       <PageForm
+        key={`${page.id}-${page.lockVersion}`}
         pageId={page.id}
         initial={{
           title: page.title,
@@ -34,6 +34,6 @@ export default async function EditPage({ params }: { params: Promise<{ id: strin
         tagSuggestions={listTagNames()}
         cancelHref={`/pages/${page.id}`}
       />
-    </>
+    </div>
   );
 }

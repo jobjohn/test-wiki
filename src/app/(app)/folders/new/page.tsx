@@ -1,6 +1,7 @@
 import { FolderPlus } from "lucide-react";
 import type { Metadata } from "next";
 import { FolderForm } from "@/components/FolderForm";
+import { PageTitle } from "@/components/PageTitle";
 import { requireAccess } from "@/lib/access";
 import { folderOptions, getFolder } from "@/lib/folders";
 import { first } from "@/lib/params";
@@ -13,11 +14,9 @@ export default async function NewFolderPage({ searchParams }: { searchParams: Pr
   const parentId = /^\d+$/.test(raw) && getFolder(Number(raw)) ? raw : "";
 
   return (
-    <>
-      <h1 className="page-title">
-        <FolderPlus size={26} aria-hidden /> 新しいフォルダ
-      </h1>
+    <div className="grid max-w-2xl gap-5">
+      <PageTitle icon={FolderPlus}>新しいフォルダ</PageTitle>
       <FolderForm folderId={null} initial={{ name: "", parentId, position: "0" }} options={folderOptions()} cancelHref={parentId ? `/folders/${parentId}` : "/"} />
-    </>
+    </div>
   );
 }

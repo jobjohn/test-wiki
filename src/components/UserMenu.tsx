@@ -2,59 +2,61 @@
 
 import { LogOut, Settings, User as UserIcon, Users } from "lucide-react";
 import Link from "next/link";
-import { useEffect, useRef } from "react";
 import { logoutAction } from "@/actions/auth";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 
 export function UserMenu({ name, username, roleName, isAdmin }: { name: string; username: string; roleName: string; isAdmin: boolean }) {
-  const ref = useRef<HTMLDetailsElement>(null);
-
-  useEffect(() => {
-    const close = (event: Event) => {
-      if (ref.current?.open && !ref.current.contains(event.target as Node)) ref.current.open = false;
-    };
-    document.addEventListener("click", close);
-    return () => document.removeEventListener("click", close);
-  }, []);
-
-  const closeMenu = () => {
-    if (ref.current) ref.current.open = false;
-  };
-
   return (
-    <details className="user-menu" ref={ref}>
-      <summary className="icon-button" aria-label="ユーザーメニュー">
-        <span className="avatar">{Array.from(name)[0]?.toUpperCase()}</span>
-      </summary>
-      <div className="dropdown">
-        <div className="dropdown-header">
-          <strong>{name}</strong>
-          <span className="muted small">
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button variant="ghost" size="icon" className="rounded-full hover:bg-header-foreground/10" aria-label="ユーザーメニュー">
+          <Avatar>
+            <AvatarFallback>{Array.from(name)[0]?.toUpperCase()}</AvatarFallback>
+          </Avatar>
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end" className="w-60">
+        <DropdownMenuLabel className="grid gap-0.5 font-normal">
+          <span className="font-semibold">{name}</span>
+          <span className="text-xs text-muted-foreground">
             @{username}・{roleName}
           </span>
-        </div>
-        <Link href="/account" onClick={closeMenu}>
-          <UserIcon size={18} aria-hidden />
-          <span>アカウント</span>
-        </Link>
+        </DropdownMenuLabel>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem asChild>
+          <Link href="/account">
+            <UserIcon aria-hidden />
+            アカウント
+          </Link>
+        </DropdownMenuItem>
         {isAdmin && (
           <>
-            <Link href="/settings" onClick={closeMenu}>
-              <Settings size={18} aria-hidden />
-              <span>Wiki の設定</span>
-            </Link>
-            <Link href="/users" onClick={closeMenu}>
-              <Users size={18} aria-hidden />
-              <span>ユーザー管理</span>
-            </Link>
+            <DropdownMenuItem asChild>
+              <Link href="/settings">
+                <Settings aria-hidden />
+                Wiki の設定
+              </Link>
+            </DropdownMenuItem>
+            <DropdownMenuItem asChild>
+              <Link href="/users">
+                <Users aria-hidden />
+                ユーザー管理
+              </Link>
+            </DropdownMenuItem>
           </>
         )}
+        <DropdownMenuSeparator />
         <form action={logoutAction}>
-          <button type="submit" className="dropdown-button">
-            <LogOut size={18} aria-hidden />
-            <span>ログアウト</span>
-          </button>
+          <DropdownMenuItem asChild>
+            <button type="submit" className="w-full">
+              <LogOut aria-hidden />
+              ログアウト
+            </button>
+          </DropdownMenuItem>
         </form>
-      </div>
-    </details>
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }

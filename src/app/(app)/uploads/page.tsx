@@ -1,9 +1,13 @@
 import { Paperclip, Trash2 } from "lucide-react";
 import type { Metadata } from "next";
 import { deleteUploadAction } from "@/actions/uploads";
-import { ConfirmButton } from "@/components/ConfirmButton";
+import { ConfirmAction } from "@/components/ConfirmAction";
 import { CopyText } from "@/components/CopyText";
+import { PageTitle } from "@/components/PageTitle";
 import { UploadForm } from "@/components/UploadForm";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { requireAccess } from "@/lib/access";
 import { formatBytes, formatDateTime } from "@/lib/format";
 import { isImage, listUploads, uploadMarkdown, uploadPath } from "@/lib/uploads";
@@ -17,59 +21,65 @@ export default async function UploadsPage() {
   const editable = canEdit(user);
 
   return (
-    <>
-      <h1 className="page-title">
-        <Paperclip size={26} aria-hidden /> ファイル
-      </h1>
+    <div className="grid gap-4">
+      <PageTitle icon={Paperclip}>ファイル</PageTitle>
       {editable && <UploadForm />}
       {uploads.length ? (
-        <table className="table">
-          <thead>
-            <tr>
-              <th />
-              <th>ファイル名</th>
-              <th>サイズ</th>
-              <th>日時</th>
-              <th>Markdown</th>
-              <th />
-            </tr>
-          </thead>
-          <tbody>
-            {uploads.map((upload) => (
-              <tr key={upload.id}>
-                <td>
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  {isImage(upload.contentType) && <img src={uploadPath(upload)} alt="" className="thumb" />}
-                </td>
-                <td>
-                  <a href={uploadPath(upload)} target="_blank" rel="noopener noreferrer">
-                    {upload.filename}
-                  </a>
-                </td>
-                <td className="nowrap">{formatBytes(upload.byteSize)}</td>
-                <td className="nowrap">{formatDateTime(upload.createdAt)}</td>
-                <td>
-                  <CopyText text={uploadMarkdown(upload)} />
-                </td>
-                <td>
-                  {editable && (
-                    <ConfirmButton
-                      action={deleteUploadAction.bind(null, upload.id)}
-                      message="このファイルを削除しますか？ページ内のリンクは表示されなくなります。"
-                      className="icon-button icon-button-danger"
-                      title="削除"
-                    >
-                      <Trash2 size={16} aria-hidden />
-                    </ConfirmButton>
-                  )}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+        <Card className="py-2">
+          <CardContent className="px-2">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead />
+                  <TableHead>ファイル名</TableHead>
+                  <TableHead>サイズ</TableHead>
+                  <TableHead>日時</TableHead>
+                  <TableHead>Markdown</TableHead>
+                  <TableHead />
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {uploads.map((upload) => (
+                  <TableRow key={upload.id}>
+                    <TableCell>
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      {isImage(upload.contentType) && <img src={uploadPath(upload)} alt="" className="max-h-12 max-w-16 rounded" />}
+                    </TableCell>
+                    <TableCell>
+                      <a href={uploadPath(upload)} target="_blank" rel="noopener noreferrer" className="text-link hover:underline">
+                        {upload.filename}
+                      </a>
+                    </TableCell>
+                    <TableCell className="whitespace-nowrap">{formatBytes(upload.byteSize)}</TableCell>
+                    <TableCell className="whitespace-nowrap">{formatDateTime(upload.createdAt)}</TableCell>
+                    <TableCell>
+                      <CopyText text={uploadMarkdown(upload)} />
+                    </TableCell>
+                    <TableCell className="text-right">
+                      {editable && (
+                        <ConfirmAction
+                          action={deleteUploadAction.bind(null, upload.id)}
+                          title="ファイルを削除しますか？"
+                          description={`「${upload.filename}」を削除します。このファイルを使っているページでは、画像やリンクが表示されなくなります。`}
+                          confirmLabel="削除する"
+                          destructive
+                          trigger={
+                            <Button variant="ghost" size="icon-sm" className="text-destructive hover:text-destructive" aria-label={`${upload.filename} を削除`}>
+                              <Trash2 aria-hidden />
+                            </Button>
+                          }
+                        />
+                      )}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
       ) : (
-        <p className="muted">アップロードされたファイルはありません。</p>
+        <p className="text-muted-foreground">アップロードされたファイルはありません。</p>
       )}
-    </>
+    </div>
   );
 }

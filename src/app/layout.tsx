@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import type { ReactNode } from "react";
+import { Toaster } from "@/components/ui/sonner";
 import { cssVariables, getSettings } from "@/lib/settings";
 import "./globals.css";
 
@@ -21,7 +22,10 @@ export default function RootLayout({ children }: { children: ReactNode }) {
         {/* 色は #rrggbb 形式に検証済みの値のみ */}
         <style id="theme-variables" dangerouslySetInnerHTML={{ __html: `:root { ${cssVariables(settings)} }` }} />
       </head>
-      <body>{children}</body>
+      <body>
+        {children}
+        <Toaster position="bottom-right" closeButton />
+      </body>
     </html>
   );
 }

@@ -43,6 +43,7 @@ docker compose down
 
 ### 見た目
 
+- UI は [shadcn/ui](https://ui.shadcn.com)（Tailwind CSS v4 + Radix UI）。ボタン・フォーム・ダイアログ・ドロップダウン・タブ・通知などの部品は `src/components/ui/` にあり、`components.json` も含まれているので、`npx shadcn@latest add <部品名>` で追加できます
 - アイコンは [Lucide](https://lucide.dev)（`lucide-react`）で統一
 - **3 色（ベースカラー・メインカラー・差し色）** で全体の配色が決まるカラーテーマ。標準はベース白・メイン青・差し色緑。7 種類のプリセットのほか、色を自由に選べるカスタムテーマに対応（設定画面でリアルタイムにプレビュー）
 - 表示モード: システムに合わせる / ライト / ダーク
@@ -109,6 +110,7 @@ npm run typecheck  # 型チェック
 ## 構成
 
 - Next.js 16（App Router / Server Actions）/ React 19 / TypeScript
+- UI: shadcn/ui（new-york スタイル）/ Tailwind CSS v4 / Radix UI / sonner（通知）。配色は shadcn/ui の CSS 変数（`--primary` など）に、管理者が選んだ 3 色を割り当てて導出しています
 - データベース: SQLite（Node.js 標準の `node:sqlite`。ネイティブ拡張なし）
 - 認証: セッション Cookie + scrypt、二段階認証: TOTP（RFC 6238）を自前実装、シークレットは AES-256-GCM で暗号化
 - Markdown: unified（remark / rehype）+ highlight.js、HTML は `rehype-sanitize` で制限

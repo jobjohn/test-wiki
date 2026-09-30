@@ -2,6 +2,7 @@ import { FolderInput } from "lucide-react";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { FolderForm } from "@/components/FolderForm";
+import { PageTitle } from "@/components/PageTitle";
 import { requireAccess } from "@/lib/access";
 import { folderOptions, getFolder, selfAndDescendantIds } from "@/lib/folders";
 import { parseId } from "@/lib/params";
@@ -14,16 +15,14 @@ export default async function EditFolderPage({ params }: { params: Promise<{ id:
   if (!folder) notFound();
 
   return (
-    <>
-      <h1 className="page-title">
-        <FolderInput size={26} aria-hidden /> フォルダの名前変更・移動
-      </h1>
+    <div className="grid max-w-2xl gap-5">
+      <PageTitle icon={FolderInput}>フォルダの名前変更・移動</PageTitle>
       <FolderForm
         folderId={folder.id}
         initial={{ name: folder.name, parentId: folder.parentId === null ? "" : String(folder.parentId), position: String(folder.position) }}
         options={folderOptions(selfAndDescendantIds(folder.id))}
         cancelHref={`/folders/${folder.id}`}
       />
-    </>
+    </div>
   );
 }

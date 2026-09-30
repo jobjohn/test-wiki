@@ -1,34 +1,34 @@
 "use client";
 
-import { LogIn, Lock, User } from "lucide-react";
+import { Lock, LogIn, User } from "lucide-react";
 import { useActionState } from "react";
 import { loginAction } from "@/actions/auth";
+import { Input } from "@/components/ui/input";
+import { Field } from "./Field";
 import { FormErrors } from "./FormErrors";
 import { SubmitButton } from "./SubmitButton";
 
 export function LoginForm({ next }: { next: string }) {
   const [state, action] = useActionState(loginAction, {});
   return (
-    <form action={action} className="auth-form">
+    <form action={action} className="grid gap-4">
       <FormErrors errors={state.errors} />
       <input type="hidden" name="next" value={next} />
-      <div className="field">
-        <label htmlFor="username">ユーザー名</label>
-        <div className="input-icon">
-          <User size={16} aria-hidden />
-          <input type="text" name="username" id="username" defaultValue={state.values?.username} autoComplete="username" autoCapitalize="none" required autoFocus />
+      <Field label="ユーザー名" htmlFor="username">
+        <div className="relative">
+          <User className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" aria-hidden />
+          <Input id="username" name="username" defaultValue={state.values?.username} autoComplete="username" autoCapitalize="none" required autoFocus className="pl-9" />
         </div>
-      </div>
-      <div className="field">
-        <label htmlFor="password">パスワード</label>
-        <div className="input-icon">
-          <Lock size={16} aria-hidden />
-          <input type="password" name="password" id="password" autoComplete="current-password" required />
+      </Field>
+      <Field label="パスワード" htmlFor="password">
+        <div className="relative">
+          <Lock className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" aria-hidden />
+          <Input type="password" id="password" name="password" autoComplete="current-password" required className="pl-9" />
         </div>
-      </div>
-      <SubmitButton className="button button-primary button-block" pendingText="確認中...">
-        <LogIn size={18} aria-hidden />
-        <span>ログイン</span>
+      </Field>
+      <SubmitButton className="w-full" pendingText="確認中...">
+        <LogIn aria-hidden />
+        ログイン
       </SubmitButton>
     </form>
   );

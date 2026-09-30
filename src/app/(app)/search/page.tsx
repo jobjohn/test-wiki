@@ -4,7 +4,11 @@ import Form from "next/form";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { PageList } from "@/components/PageList";
+import { PageTitle } from "@/components/PageTitle";
 import { Pagination } from "@/components/Pagination";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import { requireAccess } from "@/lib/access";
 import { first } from "@/lib/params";
 import { findPageByTitle, searchPages } from "@/lib/pages";
@@ -26,34 +30,36 @@ export default async function SearchPage({ searchParams }: { searchParams: Promi
   const result = q ? searchPages(q, PER_PAGE, (pageNumber - 1) * PER_PAGE) : { pages: [], total: 0 };
 
   return (
-    <>
-      <h1 className="page-title">
-        <Search size={26} aria-hidden /> 検索
-      </h1>
-      <Form action="/search" className="search-form">
-        <input type="search" name="q" defaultValue={q} placeholder="キーワード（空白区切りで AND 検索）" autoFocus={!q} />
-        <button type="submit" className="button button-primary">
-          <Search size={18} aria-hidden />
-          <span>検索</span>
-        </button>
+    <div className="grid gap-4">
+      <PageTitle icon={Search}>検索</PageTitle>
+      <Form action="/search" className="flex gap-2">
+        <Input type="search" name="q" defaultValue={q} placeholder="キーワード（空白区切りで AND 検索）" autoFocus={!q} aria-label="キーワード" />
+        <Button type="submit">
+          <Search aria-hidden />
+          検索
+        </Button>
       </Form>
 
       {q && (
         <>
-          <p className="muted">
+          <p className="text-sm text-muted-foreground">
             「{q}」の検索結果: {result.total} 件
           </p>
           {canEdit(user) && !exact && (
-            <p>
-              <Link href={`/pages/new?title=${encodeURIComponent(q)}`}>
-                <FilePlus size={16} aria-hidden /> ページ「{q}」を新規作成
-              </Link>
-            </p>
+            <Link href={`/pages/new?title=${encodeURIComponent(q)}`} className="inline-flex w-fit items-center gap-1.5 text-sm text-link hover:underline">
+              <FilePlus className="size-4" aria-hidden /> ページ「{q}」を新規作成
+            </Link>
           )}
-          <PageList pages={result.pages} query={q} />
+          {result.pages.length > 0 && (
+            <Card>
+              <CardContent>
+                <PageList pages={result.pages} query={q} />
+              </CardContent>
+            </Card>
+          )}
           <Pagination basePath="/search" params={{ q }} page={pageNumber} hasNext={result.total > pageNumber * PER_PAGE} />
         </>
       )}
-    </>
+    </div>
   );
 }

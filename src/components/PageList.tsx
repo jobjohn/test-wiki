@@ -18,7 +18,15 @@ function Snippet({ body, query, radius = 60 }: { body: string; query: string; ra
   const pattern = new RegExp(`(${terms.map((t) => t.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("|")})`, "gi");
   return (
     <>
-      {excerpt.split(pattern).map((part, i) => (i % 2 === 1 ? <mark key={i}>{part}</mark> : part))}
+      {excerpt.split(pattern).map((part, i) =>
+        i % 2 === 1 ? (
+          <mark key={i} className="rounded-sm bg-highlight/25 px-0.5 text-foreground">
+            {part}
+          </mark>
+        ) : (
+          part
+        ),
+      )}
     </>
   );
 }
@@ -26,23 +34,24 @@ function Snippet({ body, query, radius = 60 }: { body: string; query: string; ra
 export function PageList({ pages, query }: { pages: Page[]; query?: string }) {
   const tags = tagsForPages(pages.map((p) => p.id));
   return (
-    <ul className="page-list">
+    <ul className="divide-y">
       {pages.map((page) => (
-        <li key={page.id}>
-          <div className="page-list-main">
-            <FileText size={16} className="muted" aria-hidden />
-            <Link href={`/pages/${page.id}`} className="page-list-title">
+        <li key={page.id} className="grid gap-1 py-3 first:pt-0 last:pb-0">
+          <div className="flex flex-wrap items-center gap-2">
+            <FileText className="size-4 text-muted-foreground" aria-hidden />
+            <Link href={`/pages/${page.id}`} className="font-semibold text-link hover:underline">
               {page.title}
             </Link>
             <Tags tags={tags.get(page.id) ?? []} />
           </div>
           {query && (
-            <p className="snippet">
+            <p className="text-sm text-muted-foreground">
               <Snippet body={page.body} query={query} />
             </p>
           )}
-          <span className="muted small">
-            <Clock size={12} aria-hidden /> {formatDateTime(page.updatedAt)}
+          <span className="flex items-center gap-1 text-xs text-muted-foreground">
+            <Clock className="size-3" aria-hidden />
+            {formatDateTime(page.updatedAt)}
           </span>
         </li>
       ))}

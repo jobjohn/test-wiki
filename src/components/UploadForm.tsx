@@ -3,6 +3,9 @@
 import { Upload } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useRef, useState } from "react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 const MAX_MB = 20;
 
@@ -32,7 +35,7 @@ export function UploadForm() {
 
   return (
     <div
-      className={`upload-drop${dragOver ? " dragover" : ""}`}
+      className={cn("mb-6 grid justify-items-center gap-3 rounded-lg border-2 border-dashed p-6 text-center text-sm text-muted-foreground transition-colors", dragOver && "border-primary bg-accent text-foreground")}
       onDragOver={(e) => {
         e.preventDefault();
         setDragOver(true);
@@ -45,10 +48,10 @@ export function UploadForm() {
       }}
     >
       <p>ここにファイルをドラッグ＆ドロップするか、ボタンから選択してください（最大 {MAX_MB}MB）。</p>
-      <button type="button" className="button button-primary" disabled={busy} onClick={() => inputRef.current?.click()}>
-        <Upload size={18} aria-hidden />
-        <span>{busy ? "アップロード中..." : "ファイルを選択"}</span>
-      </button>
+      <Button type="button" disabled={busy} onClick={() => inputRef.current?.click()}>
+        <Upload aria-hidden />
+        {busy ? "アップロード中..." : "ファイルを選択"}
+      </Button>
       <input
         ref={inputRef}
         type="file"
@@ -60,7 +63,11 @@ export function UploadForm() {
           void upload(files);
         }}
       />
-      {error && <p className="flash flash-alert" role="alert">{error}</p>}
+      {error && (
+        <Alert variant="destructive" className="text-left">
+          <AlertDescription className="text-destructive">{error}</AlertDescription>
+        </Alert>
+      )}
     </div>
   );
 }

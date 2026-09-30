@@ -4,6 +4,14 @@ import { Eye, Paperclip, Pencil, Save, TriangleAlert } from "lucide-react";
 import Link from "next/link";
 import { useActionState, useEffect, useRef, useState } from "react";
 import { savePageAction } from "@/actions/pages";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { NativeSelect } from "@/components/ui/native-select";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Textarea } from "@/components/ui/textarea";
+import { cn } from "@/lib/utils";
+import { Field } from "./Field";
 import { FormErrors } from "./FormErrors";
 import { SubmitButton } from "./SubmitButton";
 
@@ -155,27 +163,26 @@ export function PageForm({
   };
 
   return (
-    <form ref={formRef} action={action} className="page-form">
+    <form ref={formRef} action={action} className="grid gap-5">
       <FormErrors errors={state.errors} />
       {state.conflict && !conflictDismissed && (
-        <div className="conflict">
-          <p className="conflict-title">
-            <TriangleAlert size={16} aria-hidden /> あなたが保存しようとした本文（コピーして残しておけます）
-          </p>
-          <textarea readOnly rows={8} value={state.conflict.yourBody} onFocus={(e) => e.currentTarget.select()} />
-          <button type="button" className="button" onClick={loadLatest}>
-            最新の内容を読み込む（この画面の編集内容は置き換わります）
-          </button>
-        </div>
+        <Alert variant="destructive" className="gap-y-2">
+          <TriangleAlert aria-hidden />
+          <AlertTitle>あなたが保存しようとした本文（コピーして残しておけます）</AlertTitle>
+          <AlertDescription className="w-full gap-3">
+            <Textarea readOnly rows={8} value={state.conflict.yourBody} onFocus={(e) => e.currentTarget.select()} className="bg-background font-mono text-foreground" />
+            <Button type="button" variant="outline" onClick={loadLatest}>
+              最新の内容を読み込む（この画面の編集内容は置き換わります）
+            </Button>
+          </AlertDescription>
+        </Alert>
       )}
 
       {pageId !== null && <input type="hidden" name="id" value={pageId} />}
       <input type="hidden" name="lockVersion" value={lockVersion} />
 
-      <div className="field">
-        <label htmlFor="title">タイトル</label>
-        <input
-          type="text"
+      <Field label="タイトル" htmlFor="title">
+        <Input
           id="title"
           name="title"
           value={title}
@@ -184,138 +191,139 @@ export function PageForm({
           maxLength={MAX_TITLE}
           autoFocus={!initial.title}
           placeholder="ページタイトル"
+          className="h-10 text-base"
         />
-      </div>
+      </Field>
 
-      <div className="field-row">
-        <div className="field">
-          <label htmlFor="folderId">フォルダ</label>
-          <select id="folderId" name="folderId" value={folderId} onChange={(e) => setFolderId(e.target.value)}>
+      <div className="grid gap-5 md:grid-cols-[1fr_1fr_7rem]">
+        <Field label="フォルダ" htmlFor="folderId">
+          <NativeSelect id="folderId" name="folderId" value={folderId} onChange={(e) => setFolderId(e.target.value)}>
             <option value="">（トップ）</option>
             {folders.map((f) => (
               <option key={f.id} value={f.id}>
                 {f.label}
               </option>
             ))}
-          </select>
-        </div>
-        <div className="field">
-          <label htmlFor="tags">タグ</label>
-          <input
-            type="text"
-            id="tags"
-            name="tags"
-            value={tags}
-            onChange={(e) => setTags(e.target.value)}
-            list="tag-suggestions"
-            placeholder="カンマ・空白区切り（例: 手順書, 開発）"
-          />
+          </NativeSelect>
+        </Field>
+        <Field label="タグ" htmlFor="tags">
+          <Input id="tags" name="tags" value={tags} onChange={(e) => setTags(e.target.value)} list="tag-suggestions" placeholder="カンマ・空白区切り（例: 手順書, 開発）" />
           <datalist id="tag-suggestions">
             {tagSuggestions.map((name) => (
               <option key={name} value={name} />
             ))}
           </datalist>
-        </div>
-        <div className="field field-narrow">
-          <label htmlFor="position">表示順</label>
-          <input type="number" id="position" name="position" step={1} value={position} onChange={(e) => setPosition(e.target.value)} />
-        </div>
+        </Field>
+        <Field label="表示順" htmlFor="position">
+          <Input type="number" id="position" name="position" step={1} value={position} onChange={(e) => setPosition(e.target.value)} />
+        </Field>
       </div>
 
-      <div className="editor">
-        <div className="editor-toolbar">
-          <div className="tabs" role="tablist">
-            <button type="button" role="tab" aria-selected={tab === "write"} className={`tab${tab === "write" ? " active" : ""}`} onClick={showWrite}>
-              <Pencil size={14} aria-hidden />
-              <span>編集</span>
-            </button>
-            <button type="button" role="tab" aria-selected={tab === "preview"} className={`tab${tab === "preview" ? " active" : ""}`} onClick={showPreview}>
-              <Eye size={14} aria-hidden />
-              <span>プレビュー</span>
-            </button>
+      <div className="grid gap-2">
+        <Tabs value={tab} onValueChange={(v) => (v === "preview" ? void showPreview() : showWrite())}>
+          <div className="flex items-center justify-between gap-2">
+            <TabsList>
+              <TabsTrigger value="write">
+                <Pencil aria-hidden />
+                編集
+              </TabsTrigger>
+              <TabsTrigger value="preview">
+                <Eye aria-hidden />
+                プレビュー
+              </TabsTrigger>
+            </TabsList>
+            <Button variant="outline" size="sm" asChild>
+              <label className="cursor-pointer">
+                <Paperclip aria-hidden />
+                ファイル添付
+                <input
+                  type="file"
+                  multiple
+                  hidden
+                  onChange={(e) => {
+                    const files = [...(e.target.files ?? [])];
+                    e.target.value = "";
+                    void uploadFiles(files);
+                  }}
+                />
+              </label>
+            </Button>
           </div>
-          <label className="button button-small upload-button">
-            <Paperclip size={14} aria-hidden />
-            <span>ファイル添付</span>
-            <input
-              type="file"
-              multiple
-              hidden
-              onChange={(e) => {
-                const files = [...(e.target.files ?? [])];
-                e.target.value = "";
-                void uploadFiles(files);
+
+          {/* 送信するため、編集欄は非表示のときも DOM に残す（forceMount） */}
+          <TabsContent value="write" forceMount className="data-[state=inactive]:hidden">
+            <Textarea
+              ref={textareaRef}
+              id="body"
+              name="body"
+              aria-label="本文（Markdown）"
+              rows={22}
+              value={body}
+              onChange={(e) => setBody(e.target.value)}
+              placeholder={"Markdown で記述できます。\n[[ページ名]] で他のページへリンク、画像はドラッグ＆ドロップや貼り付けで添付できます。"}
+              className={cn("min-h-[26rem] resize-y font-mono text-sm leading-relaxed", dragOver && "border-primary ring-[3px] ring-primary/30")}
+              onDragOver={(e) => {
+                if ([...e.dataTransfer.types].includes("Files")) {
+                  e.preventDefault();
+                  setDragOver(true);
+                }
+              }}
+              onDragLeave={() => setDragOver(false)}
+              onDrop={(e) => {
+                setDragOver(false);
+                if (e.dataTransfer.files.length) {
+                  e.preventDefault();
+                  void uploadFiles([...e.dataTransfer.files]);
+                }
+              }}
+              onPaste={(e) => {
+                const files = [...e.clipboardData.files];
+                if (files.length) {
+                  e.preventDefault();
+                  void uploadFiles(files);
+                }
+              }}
+              onKeyDown={(e) => {
+                const el = e.currentTarget;
+                if (e.key === "Tab" && !e.shiftKey && !e.nativeEvent.isComposing && el.selectionStart === el.selectionEnd) {
+                  e.preventDefault();
+                  const pos = el.selectionStart;
+                  setBody((prev) => `${prev.slice(0, pos)}  ${prev.slice(pos)}`);
+                  requestAnimationFrame(() => el.setSelectionRange(pos + 2, pos + 2));
+                }
               }}
             />
-          </label>
-        </div>
-
-        <textarea
-          ref={textareaRef}
-          id="body"
-          name="body"
-          aria-label="本文（Markdown）"
-          className={`editor-textarea${dragOver ? " dragover" : ""}`}
-          rows={22}
-          hidden={tab !== "write"}
-          value={body}
-          onChange={(e) => setBody(e.target.value)}
-          placeholder={"Markdown で記述できます。\n[[ページ名]] で他のページへリンク、画像はドラッグ＆ドロップや貼り付けで添付できます。"}
-          onDragOver={(e) => {
-            if ([...e.dataTransfer.types].includes("Files")) {
-              e.preventDefault();
-              setDragOver(true);
-            }
-          }}
-          onDragLeave={() => setDragOver(false)}
-          onDrop={(e) => {
-            setDragOver(false);
-            if (e.dataTransfer.files.length) {
-              e.preventDefault();
-              void uploadFiles([...e.dataTransfer.files]);
-            }
-          }}
-          onPaste={(e) => {
-            const files = [...e.clipboardData.files];
-            if (files.length) {
-              e.preventDefault();
-              void uploadFiles(files);
-            }
-          }}
-          onKeyDown={(e) => {
-            const el = e.currentTarget;
-            if (e.key === "Tab" && !e.shiftKey && !e.nativeEvent.isComposing && el.selectionStart === el.selectionEnd) {
-              e.preventDefault();
-              const pos = el.selectionStart;
-              setBody((prev) => `${prev.slice(0, pos)}  ${prev.slice(pos)}`);
-              requestAnimationFrame(() => el.setSelectionRange(pos + 2, pos + 2));
-            }
-          }}
-        />
-        <div className="editor-preview markdown-body" hidden={tab !== "preview"}>
-          {previewState === "loading" && <p className="muted">プレビューを生成中...</p>}
-          {previewState === "error" && <p className="flash flash-alert">プレビューを表示できませんでした。</p>}
-          {previewState === "idle" &&
-            (previewHtml ? <div dangerouslySetInnerHTML={{ __html: previewHtml }} /> : <p className="muted">（内容がありません）</p>)}
-        </div>
-        <p className="muted small">
-          Markdown（GitHub 形式）対応 ・ <code>[[ページ名]]</code> / <code>[[ページ名|表示名]]</code> で Wiki リンク ・ Ctrl/⌘ + S で保存
+          </TabsContent>
+          <TabsContent value="preview" forceMount className="data-[state=inactive]:hidden">
+            <div className="min-h-[26rem] rounded-md border p-5">
+              {previewState === "loading" && <p className="text-muted-foreground">プレビューを生成中...</p>}
+              {previewState === "error" && (
+                <Alert variant="destructive">
+                  <AlertDescription className="text-destructive">プレビューを表示できませんでした。</AlertDescription>
+                </Alert>
+              )}
+              {previewState === "idle" &&
+                (previewHtml ? <div className="markdown-body" dangerouslySetInnerHTML={{ __html: previewHtml }} /> : <p className="text-muted-foreground">（内容がありません）</p>)}
+            </div>
+          </TabsContent>
+        </Tabs>
+        <p className="text-xs text-muted-foreground">
+          Markdown（GitHub 形式）対応 ・ <code className="rounded bg-muted px-1">[[ページ名]]</code> / <code className="rounded bg-muted px-1">[[ページ名|表示名]]</code> で Wiki リンク ・ Ctrl/⌘ + S で保存
         </p>
       </div>
 
-      <div className="field">
-        <label htmlFor="summary">変更内容の要約（任意）</label>
-        <input type="text" id="summary" name="summary" maxLength={200} value={summary} onChange={(e) => setSummary(e.target.value)} placeholder="例: 手順を追記" />
-      </div>
+      <Field label="変更内容の要約（任意）" htmlFor="summary">
+        <Input id="summary" name="summary" maxLength={200} value={summary} onChange={(e) => setSummary(e.target.value)} placeholder="例: 手順を追記" />
+      </Field>
 
-      <div className="form-actions">
-        <SubmitButton className="button button-primary" pendingText="保存中...">
-          <Save size={18} aria-hidden />
-          <span>保存</span>
+      <div className="flex gap-2">
+        <SubmitButton pendingText="保存中...">
+          <Save aria-hidden />
+          保存
         </SubmitButton>
-        <Link href={cancelHref} className="button">
-          キャンセル
-        </Link>
+        <Button variant="outline" asChild>
+          <Link href={cancelHref}>キャンセル</Link>
+        </Button>
       </div>
     </form>
   );

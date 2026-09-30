@@ -1,7 +1,10 @@
 import { History } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
+import { PageTitle } from "@/components/PageTitle";
 import { Pagination } from "@/components/Pagination";
+import { Card, CardContent } from "@/components/ui/card";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { requireAccess } from "@/lib/access";
 import { formatDateTime } from "@/lib/format";
 import { first } from "@/lib/params";
@@ -17,43 +20,49 @@ export default async function ChangesPage({ searchParams }: { searchParams: Prom
   const revisions = rows.slice(0, PER_PAGE);
 
   return (
-    <>
-      <h1 className="page-title">
-        <History size={26} aria-hidden /> 最近の更新
-      </h1>
+    <div className="grid gap-4">
+      <PageTitle icon={History}>最近の更新</PageTitle>
       {revisions.length ? (
         <>
-          <table className="table">
-            <thead>
-              <tr>
-                <th>日時</th>
-                <th>ページ</th>
-                <th>版</th>
-                <th>編集者</th>
-                <th>要約</th>
-              </tr>
-            </thead>
-            <tbody>
-              {revisions.map((revision) => (
-                <tr key={revision.id}>
-                  <td className="nowrap">{formatDateTime(revision.createdAt)}</td>
-                  <td>
-                    <Link href={`/pages/${revision.pageId}`}>{revision.pageTitle}</Link>
-                  </td>
-                  <td className="nowrap">
-                    <Link href={`/pages/${revision.pageId}/revisions/${revision.number}`}>第{revision.number}版</Link>
-                  </td>
-                  <td>{revision.userName ?? "—"}</td>
-                  <td>{revision.summary}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+          <Card className="py-2">
+            <CardContent className="px-2">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>日時</TableHead>
+                    <TableHead>ページ</TableHead>
+                    <TableHead>版</TableHead>
+                    <TableHead>編集者</TableHead>
+                    <TableHead>要約</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {revisions.map((revision) => (
+                    <TableRow key={revision.id}>
+                      <TableCell className="whitespace-nowrap">{formatDateTime(revision.createdAt)}</TableCell>
+                      <TableCell>
+                        <Link href={`/pages/${revision.pageId}`} className="text-link hover:underline">
+                          {revision.pageTitle}
+                        </Link>
+                      </TableCell>
+                      <TableCell className="whitespace-nowrap">
+                        <Link href={`/pages/${revision.pageId}/revisions/${revision.number}`} className="text-link hover:underline">
+                          第{revision.number}版
+                        </Link>
+                      </TableCell>
+                      <TableCell>{revision.userName ?? "—"}</TableCell>
+                      <TableCell>{revision.summary}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
           <Pagination basePath="/changes" page={pageNumber} hasNext={rows.length > PER_PAGE} />
         </>
       ) : (
-        <p className="muted">まだ更新はありません。</p>
+        <p className="text-muted-foreground">まだ更新はありません。</p>
       )}
-    </>
+    </div>
   );
 }

@@ -1,6 +1,8 @@
 import { Tag, Tags as TagsIcon } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
+import { PageTitle } from "@/components/PageTitle";
+import { Badge } from "@/components/ui/badge";
 import { requireAccess } from "@/lib/access";
 import { listTagsWithCounts } from "@/lib/pages";
 
@@ -10,22 +12,22 @@ export default async function TagsPage() {
   await requireAccess();
   const tags = listTagsWithCounts();
   return (
-    <>
-      <h1 className="page-title">
-        <TagsIcon size={26} aria-hidden /> タグ
-      </h1>
+    <div className="grid gap-5">
+      <PageTitle icon={TagsIcon}>タグ</PageTitle>
       {tags.length ? (
-        <div className="tag-cloud">
+        <div className="flex flex-wrap gap-2">
           {tags.map((tag) => (
-            <Link key={tag.id} href={`/tags/${encodeURIComponent(tag.name)}`} className="tag tag-large">
-              <Tag size={14} aria-hidden />
-              {tag.name} <span className="count">{tag.count}</span>
-            </Link>
+            <Badge key={tag.id} variant="highlight" className="px-3 py-1 text-sm" asChild>
+              <Link href={`/tags/${encodeURIComponent(tag.name)}`}>
+                <Tag aria-hidden />
+                {tag.name} <span className="opacity-70">{tag.count}</span>
+              </Link>
+            </Badge>
           ))}
         </div>
       ) : (
-        <p className="muted">タグはまだありません。ページ編集画面でタグを付けられます。</p>
+        <p className="text-muted-foreground">タグはまだありません。ページ編集画面でタグを付けられます。</p>
       )}
-    </>
+    </div>
   );
 }

@@ -2,8 +2,11 @@ import { RotateCcw, ShieldCheck, User as UserIcon } from "lucide-react";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { resetUserMfaAction } from "@/actions/users";
-import { ConfirmButton } from "@/components/ConfirmButton";
+import { ConfirmAction } from "@/components/ConfirmAction";
+import { PageTitle } from "@/components/PageTitle";
 import { UserForm } from "@/components/UserForm";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { requireAccess } from "@/lib/access";
 import { parseId } from "@/lib/params";
 import { getUser } from "@/lib/users";
@@ -16,26 +19,38 @@ export default async function EditUserPage({ params }: { params: Promise<{ id: s
   if (!user) notFound();
 
   return (
-    <>
-      <h1 className="page-title">
-        <UserIcon size={26} aria-hidden /> ユーザーの編集
-      </h1>
+    <div className="grid max-w-2xl gap-5">
+      <PageTitle icon={UserIcon}>ユーザーの編集</PageTitle>
       <UserForm
         userId={user.id}
         initial={{ username: user.username, displayName: user.displayName ?? "", role: user.role, mustChangePassword: user.mustChangePassword }}
       />
       {user.mfaEnabled && (
-        <section className="card danger-zone">
-          <h2>
-            <ShieldCheck size={18} aria-hidden /> 二段階認証
-          </h2>
-          <p>このユーザーは二段階認証を有効にしています。スマートフォンの紛失などでログインできなくなった場合はリセットしてください。</p>
-          <ConfirmButton action={resetUserMfaAction.bind(null, user.id)} message="二段階認証をリセットしますか？" className="button button-danger">
-            <RotateCcw size={18} aria-hidden />
-            <span>二段階認証をリセット</span>
-          </ConfirmButton>
-        </section>
+        <Card className="border-destructive/40">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-base">
+              <ShieldCheck className="size-[18px] text-primary" aria-hidden />
+              二段階認証
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="grid gap-3">
+            <p className="text-sm">このユーザーは二段階認証を有効にしています。スマートフォンの紛失などでログインできなくなった場合はリセットしてください。</p>
+            <ConfirmAction
+              action={resetUserMfaAction.bind(null, user.id)}
+              title="二段階認証をリセットしますか？"
+              description={`ユーザー「${user.username}」の二段階認証を解除します。本人が再度設定するまで、パスワードだけでログインできる状態になります。`}
+              confirmLabel="リセットする"
+              destructive
+              trigger={
+                <Button variant="outline" className="w-fit text-destructive hover:text-destructive">
+                  <RotateCcw aria-hidden />
+                  二段階認証をリセット
+                </Button>
+              }
+            />
+          </CardContent>
+        </Card>
       )}
-    </>
+    </div>
   );
 }
