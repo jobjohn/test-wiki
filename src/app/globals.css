@@ -1,0 +1,384 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+/* shadcn/ui の部品が使う状態バリアント（shadcn/tailwind.css と同じ定義） */
+@custom-variant data-open {
+  &:where([data-state="open"]),
+  &:where([data-open]:not([data-open="false"])) {
+    @slot;
+  }
+}
+
+@custom-variant data-closed {
+  &:where([data-state="closed"]),
+  &:where([data-closed]:not([data-closed="false"])) {
+    @slot;
+  }
+}
+
+@custom-variant data-checked {
+  &:where([data-state="checked"]),
+  &:where([data-checked]:not([data-checked="false"])) {
+    @slot;
+  }
+}
+
+@custom-variant data-unchecked {
+  &:where([data-state="unchecked"]),
+  &:where([data-unchecked]:not([data-unchecked="false"])) {
+    @slot;
+  }
+}
+
+@custom-variant data-selected {
+  &:where([data-selected="true"]) {
+    @slot;
+  }
+}
+
+@custom-variant data-disabled {
+  &:where([data-disabled="true"]),
+  &:where([data-disabled]:not([data-disabled="false"])) {
+    @slot;
+  }
+}
+
+@custom-variant data-active {
+  &:where([data-state="active"]),
+  &:where([data-active]:not([data-active="false"])) {
+    @slot;
+  }
+}
+
+@custom-variant data-horizontal {
+  &:where([data-orientation="horizontal"]) {
+    @slot;
+  }
+}
+
+@custom-variant data-vertical {
+  &:where([data-orientation="vertical"]) {
+    @slot;
+  }
+}
+
+@utility no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+
+/*
+ * shadcn/ui のテーマ（CSS 変数方式）。プリセット b6rtA2I08（スタイル nova・角丸 none・ベース olive・テーマ green）の値。
+ *   --highlight / --highlight-foreground 差し色（Button・Badge・Alert の highlight / warning で使う）
+ */
+
+@theme inline {
+  --font-sans: "Noto Sans JP Variable", "Noto Sans JP", "Hiragino Sans", "Hiragino Kaku Gothic ProN", Meiryo, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
+
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+
+  /* この Wiki 独自のトークン */
+  --color-highlight: var(--highlight);
+  --color-highlight-foreground: var(--highlight-foreground);
+  --color-highlight-text: var(--highlight-text);
+  --color-link: var(--link);
+  --color-success: var(--success);
+
+  --animate-caret-blink: caret-blink 1.25s ease-out infinite;
+
+  /* shadcn/ui の角丸の段階（プリセット b6rtA2I08: 角丸 none = 0） */
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+  --radius-4xl: calc(var(--radius) * 2.6);
+}
+
+:root {
+  --radius: 0;
+
+  /* メインカラー（テーマ green）と差し色 */
+  --primary: oklch(0.527 0.154 150.069);
+  --primary-foreground: oklch(0.982 0.018 155.826);
+  --highlight: oklch(0.394 0.023 107.4);
+  --highlight-foreground: oklch(0.988 0.003 106.5);
+
+  /* 面と文字は shadcn/ui のベースカラー「olive」（プリセット b6rtA2I08） */
+  --background: oklch(1 0 0);
+  --foreground: oklch(0.153 0.006 107.1);
+  --card: var(--background);
+  --card-foreground: var(--foreground);
+  --popover: var(--background);
+  --popover-foreground: var(--foreground);
+  --secondary: oklch(0.966 0.005 106.5);
+  --secondary-foreground: oklch(0.228 0.013 107.4);
+  --muted: oklch(0.966 0.005 106.5);
+  --muted-foreground: oklch(0.58 0.031 107.3);
+  --accent: oklch(0.966 0.005 106.5);
+  --accent-foreground: oklch(0.228 0.013 107.4);
+  --destructive: oklch(0.577 0.245 27.325);
+  --border: oklch(0.93 0.007 106.5);
+  --input: oklch(0.93 0.007 106.5);
+  --ring: oklch(0.737 0.021 106.9);
+
+  --sidebar: oklch(0.988 0.003 106.5);
+  --sidebar-foreground: oklch(0.153 0.006 107.1);
+  --sidebar-primary: oklch(0.627 0.194 149.214);
+  --sidebar-primary-foreground: oklch(0.982 0.018 155.826);
+  --sidebar-accent: oklch(0.966 0.005 106.5);
+  --sidebar-accent-foreground: oklch(0.228 0.013 107.4);
+  --sidebar-border: oklch(0.93 0.007 106.5);
+  --sidebar-ring: oklch(0.737 0.021 106.9);
+
+  --link: var(--primary);
+  --highlight-text: color-mix(in srgb, var(--highlight) 55%, var(--foreground));
+  --success: #15803d;
+
+  --hl-comment: #6b7280;
+  --hl-keyword: #cf222e;
+  --hl-string: #0a3069;
+  --hl-number: #0550ae;
+  --hl-title: #8250df;
+  --hl-builtin: #953800;
+  --hl-tag: #116329;
+  --hl-meta: #6e7781;
+}
+
+/* ダークモード（設定が「ダーク」、または「システムに合わせる」で OS がダークのとき） */
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --background: oklch(0.153 0.006 107.1);
+  --foreground: oklch(0.988 0.003 106.5);
+  --card: oklch(0.228 0.013 107.4);
+  --popover: oklch(0.228 0.013 107.4);
+  --secondary: oklch(0.286 0.016 107.4);
+  --secondary-foreground: oklch(0.988 0.003 106.5);
+  --muted: oklch(0.286 0.016 107.4);
+  --muted-foreground: oklch(0.737 0.021 106.9);
+  --accent: oklch(0.286 0.016 107.4);
+  --accent-foreground: oklch(0.988 0.003 106.5);
+  --destructive: oklch(0.704 0.191 22.216);
+  --border: oklch(1 0 0 / 10%);
+  --input: oklch(1 0 0 / 15%);
+  --ring: oklch(0.58 0.031 107.3);
+  --primary: oklch(0.448 0.119 151.328);
+  --highlight: oklch(0.93 0.007 106.5);
+  --highlight-foreground: oklch(0.228 0.013 107.4);
+  --sidebar: oklch(0.228 0.013 107.4);
+  --sidebar-foreground: oklch(0.988 0.003 106.5);
+  --sidebar-primary: oklch(0.723 0.219 149.579);
+  --sidebar-accent: oklch(0.286 0.016 107.4);
+  --sidebar-accent-foreground: oklch(0.988 0.003 106.5);
+  --sidebar-border: oklch(1 0 0 / 10%);
+  --sidebar-ring: oklch(0.58 0.031 107.3);
+  /* リンクの文字は、暗い背景でも読めるよう明るい緑（テーマ green のダーク用の明るい色） */
+  --link: oklch(0.723 0.219 149.579);
+  --highlight-text: color-mix(in srgb, var(--highlight) 70%, #ffffff);
+  --success: #4ade80;
+  --hl-comment: #8b949e;
+  --hl-keyword: #ff7b72;
+  --hl-string: #a5d6ff;
+  --hl-number: #79c0ff;
+  --hl-title: #d2a8ff;
+  --hl-builtin: #ffa657;
+  --hl-tag: #7ee787;
+  --hl-meta: #8b949e;
+}
+@media (prefers-color-scheme: dark) {
+  /* 「システムに合わせる」で OS がダークのときも、ダークモードと同じ配色にする */
+  :root[data-theme="system"] {
+    color-scheme: dark;
+    --background: oklch(0.153 0.006 107.1);
+    --foreground: oklch(0.988 0.003 106.5);
+    --card: oklch(0.228 0.013 107.4);
+    --popover: oklch(0.228 0.013 107.4);
+    --secondary: oklch(0.286 0.016 107.4);
+    --secondary-foreground: oklch(0.988 0.003 106.5);
+    --muted: oklch(0.286 0.016 107.4);
+    --muted-foreground: oklch(0.737 0.021 106.9);
+    --accent: oklch(0.286 0.016 107.4);
+    --accent-foreground: oklch(0.988 0.003 106.5);
+    --destructive: oklch(0.704 0.191 22.216);
+    --border: oklch(1 0 0 / 10%);
+    --input: oklch(1 0 0 / 15%);
+    --ring: oklch(0.58 0.031 107.3);
+    --primary: oklch(0.448 0.119 151.328);
+    --highlight: oklch(0.93 0.007 106.5);
+    --highlight-foreground: oklch(0.228 0.013 107.4);
+    --sidebar: oklch(0.228 0.013 107.4);
+    --sidebar-foreground: oklch(0.988 0.003 106.5);
+    --sidebar-primary: oklch(0.723 0.219 149.579);
+    --sidebar-accent: oklch(0.286 0.016 107.4);
+    --sidebar-accent-foreground: oklch(0.988 0.003 106.5);
+    --sidebar-border: oklch(1 0 0 / 10%);
+    --sidebar-ring: oklch(0.58 0.031 107.3);
+    /* リンクの文字は、暗い背景でも読めるよう明るい緑（テーマ green のダーク用の明るい色） */
+  --link: oklch(0.723 0.219 149.579);
+    --highlight-text: color-mix(in srgb, var(--highlight) 70%, #ffffff);
+    --success: #4ade80;
+    --hl-comment: #8b949e;
+    --hl-keyword: #ff7b72;
+    --hl-string: #a5d6ff;
+    --hl-number: #79c0ff;
+    --hl-title: #d2a8ff;
+    --hl-builtin: #ffa657;
+    --hl-tag: #7ee787;
+    --hl-meta: #8b949e;
+  }
+}
+:root[data-theme="light"] {
+  color-scheme: light;
+}
+
+@keyframes caret-blink {
+  0%,
+  70%,
+  100% {
+    opacity: 1;
+  }
+  20%,
+  50% {
+    opacity: 0;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  html {
+    scroll-padding-top: 4.5rem;
+  }
+  body {
+    @apply bg-background text-foreground font-sans antialiased;
+    font-size: 15px;
+    line-height: 1.7;
+  }
+  a {
+    text-underline-offset: 3px;
+  }
+}
+
+/* ---- Markdown 本文 ---- */
+@layer components {
+  .markdown-body {
+    overflow-wrap: anywhere;
+  }
+  /* 目次（右に回り込ませる）と重ならないよう、罫線や背景のあるブロックは回り込みの横に収める */
+  .markdown-body :is(h1, h2, blockquote, pre, hr) { display: flow-root; }
+  .markdown-body > :first-child { margin-top: 0; }
+  .markdown-body > :last-child { margin-bottom: 0; }
+  .markdown-body :is(h1, h2, h3, h4) { margin: 1.6em 0 0.6em; line-height: 1.35; font-weight: 700; }
+  .markdown-body :is(h1, h2) { padding-bottom: 0.3em; border-bottom: 1px solid var(--border); }
+  .markdown-body h1 { font-size: 1.6rem; }
+  .markdown-body h2 { font-size: 1.35rem; }
+  .markdown-body h2::before {
+    content: "";
+    display: inline-block;
+    width: 4px;
+    height: 0.9em;
+    margin-right: 10px;
+    background: var(--highlight);
+    border-radius: 2px;
+    vertical-align: -0.05em;
+  }
+  .markdown-body h3 { font-size: 1.15rem; }
+  .markdown-body :is(p, ul, ol, blockquote, table, pre) { margin: 0 0 1em; }
+  .markdown-body :is(ul, ol) { padding-left: 2em; }
+  .markdown-body ul { list-style: disc; }
+  .markdown-body ol { list-style: decimal; }
+  .markdown-body li + li { margin-top: 0.2em; }
+  .markdown-body a { color: var(--link); text-decoration: underline; }
+  .markdown-body a.wikilink { text-decoration: none; border-bottom: 1px solid color-mix(in srgb, var(--link) 45%, transparent); }
+  .markdown-body a.wikilink:hover { background: var(--accent); }
+  .markdown-body a.wikilink-missing { color: var(--destructive); text-decoration: underline dotted; }
+  .markdown-body blockquote {
+    padding: 0.2em 1em;
+    color: var(--muted-foreground);
+    border-left: 4px solid var(--primary);
+    background: var(--accent);
+    border-radius: 0 var(--radius-md) var(--radius-md) 0;
+  }
+  .markdown-body :not(pre) > code {
+    font-family: var(--font-mono);
+    font-size: 0.88em;
+    padding: 0.15em 0.4em;
+    background: var(--muted);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+  }
+  .markdown-body pre {
+    padding: 14px 16px;
+    overflow: auto;
+    font-size: 0.88em;
+    line-height: 1.5;
+    background: var(--muted);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+  }
+  .markdown-body pre code { font-family: var(--font-mono); }
+  .markdown-body table { border-collapse: collapse; display: block; overflow-x: auto; max-width: 100%; }
+  .markdown-body :is(th, td) { border: 1px solid var(--border); padding: 6px 12px; }
+  .markdown-body th { background: var(--muted); font-weight: 600; }
+  .markdown-body img { max-width: 100%; height: auto; border-radius: 4px; }
+  .markdown-body hr { border: none; border-top: 1px solid var(--border); margin: 1.5em 0; }
+  .markdown-body .contains-task-list { list-style: none; padding-left: 0.4em; }
+  .markdown-body .task-list-item input { margin-right: 0.4em; accent-color: var(--primary); }
+  .markdown-body section[data-footnotes] {
+    font-size: 0.88em;
+    color: var(--muted-foreground);
+    border-top: 1px solid var(--border);
+    margin-top: 2em;
+  }
+  .markdown-body .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; }
+
+  /* コードのシンタックスハイライト（highlight.js） */
+  .hljs-comment, .hljs-quote { color: var(--hl-comment); font-style: italic; }
+  .hljs-keyword, .hljs-selector-tag, .hljs-doctag, .hljs-type, .hljs-name { color: var(--hl-keyword); }
+  .hljs-string, .hljs-regexp, .hljs-addition, .hljs-meta .hljs-string { color: var(--hl-string); }
+  .hljs-number, .hljs-literal, .hljs-attr, .hljs-attribute, .hljs-variable, .hljs-template-variable, .hljs-symbol, .hljs-bullet { color: var(--hl-number); }
+  .hljs-title, .hljs-section, .hljs-function .hljs-title, .hljs-selector-id, .hljs-selector-class { color: var(--hl-title); }
+  .hljs-built_in, .hljs-params { color: var(--hl-builtin); }
+  .hljs-tag { color: var(--hl-tag); }
+  .hljs-meta { color: var(--hl-meta); }
+  .hljs-deletion { color: var(--destructive); }
+  .hljs-emphasis { font-style: italic; }
+  .hljs-strong { font-weight: 700; }
+}
+
+@media print {
+  header, [data-slot="sidebar"], .print\:hidden { display: none !important; }
+}

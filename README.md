@@ -1,54 +1,132 @@
-# React + TypeScript + Vite
+# Wiki
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Next.js 製のシンプルで実用的な Wiki です。Docker があればコマンド 1 つで起動できます。
 
-Currently, two official plugins are available:
+## 起動方法
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react/README.md) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
-
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default tseslint.config({
-  extends: [
-    // Remove ...tseslint.configs.recommended and replace with this
-    ...tseslint.configs.recommendedTypeChecked,
-    // Alternatively, use this for stricter rules
-    ...tseslint.configs.strictTypeChecked,
-    // Optionally, add this for stylistic rules
-    ...tseslint.configs.stylisticTypeChecked,
-  ],
-  languageOptions: {
-    // other options...
-    parserOptions: {
-      project: ['./tsconfig.node.json', './tsconfig.app.json'],
-      tsconfigRootDir: import.meta.dirname,
-    },
-  },
-})
+```bash
+docker compose up -d --build
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+ブラウザで <http://localhost:3000> を開き、初期ユーザーでログインしてください。
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+| ユーザー名 | 初期パスワード |
+| --- | --- |
+| `wikiadmin` | `wikiadmin`（環境変数 `WIKI_ADMIN_PASSWORD` で変更可） |
 
-export default tseslint.config({
-  plugins: {
-    // Add the react-x and react-dom plugins
-    'react-x': reactX,
-    'react-dom': reactDom,
-  },
-  rules: {
-    // other rules...
-    // Enable its recommended typescript rules
-    ...reactX.configs['recommended-typescript'].rules,
-    ...reactDom.configs.recommended.rules,
-  },
-})
+初回ログイン時に **初期設定画面** が表示され、次の項目を設定します（あとから「Wiki の設定」で変更できます）。
+
+1. Wiki の名前と説明（どんな Wiki か）
+2. 管理者パスワードの変更
+
+停止する場合:
+
+```bash
+docker compose down
 ```
+
+データ（ページ・履歴・アップロードファイル）は Docker ボリューム `wiki-data` に保存されるため、コンテナを作り直しても消えません。
+`docker compose down -v` を実行するとボリュームごと削除されます。
+
+## 主な機能
+
+- **フォルダ**: フォルダの中にフォルダを作って何階層でも整理できます（サイドバーにツリー表示）。名前変更・移動・削除（中身は 1 つ上へ移動）に対応
+- **Markdown（GitHub 形式）**: 表、チェックリスト、脚注、コードのシンタックスハイライト。改行はそのまま改行になります
+- **Wiki リンク**: `[[ページ名]]` / `[[ページ名|表示名]]`。未作成のページは赤字で表示され、クリックで作成できます
+- **タグ**、**全文検索**（日本語対応・該当箇所を強調）
+- **変更履歴**: 編集者つきで版を保存。差分表示、過去の版への復元
+- **同時編集の検知**: 他の人が先に保存していた場合は上書きせず警告し、自分の編集内容を残したまま最新の内容を読み込めます
+- **ファイル添付**: ドラッグ＆ドロップ、クリップボードからの画像貼り付け
+- プレビュー、目次、被リンク表示、Markdown ダウンロード、最近の更新
+- ショートカット: `/` で検索、編集画面で `Ctrl/⌘ + S` 保存
+
+### 見た目
+
+- UI は [shadcn/ui](https://ui.shadcn.com)（Tailwind CSS v4 + Radix UI）。ボタン・フォーム・ダイアログ・ドロップダウン・タブ・通知などの部品は `src/components/ui/` にあり、`components.json` も含まれているので、`npx shadcn@latest add <部品名>` で追加できます
+- アイコンは [Lucide](https://lucide.dev)（`lucide-react`）で統一
+- 画面では shadcn/ui の部品をそのまま使い、色・角丸・影などの見た目を上書きしません（画面側で指定するのは配置だけ）
+- 配色は shadcn/ui のプリセット `b6rtA2I08`（スタイル nova・角丸 none・ベース olive・テーマ green）で固定です。差し色（`--highlight`）は Button・Badge の `highlight` バリアントで使います
+- 表示モード: システムに合わせる / ライト / ダーク
+- スマートフォン対応
+
+### ユーザーとセキュリティ
+
+- ユーザー管理（管理者）。権限は **管理者 / 編集者 / 閲覧者**
+- **二段階認証（MFA）**: 認証アプリ（Google Authenticator など）のパスコードによるログイン。各ユーザーが任意で設定でき、管理者は全員に必須化することも可能。スマートフォン紛失時用のバックアップコード付き
+- 「ログインなしで閲覧を許可」設定（閲覧のみ公開、編集はログイン必須）
+- ログイン試行回数の制限、パスワード変更時に他の端末のログインを無効化
+- Markdown の HTML は安全な要素だけに制限。アップロードされた SVG / HTML はブラウザで実行されないようダウンロード扱い
+
+## 設定
+
+Wiki の名前・説明・表示モード・アクセス設定は、管理者でログインして画面右上のメニュー →「Wiki の設定」から変更します。
+
+起動時の設定は `.env.example` を `.env` にコピーして編集します。
+
+| 変数 | 既定値 | 説明 |
+| --- | --- | --- |
+| `WIKI_PORT` | `3000` | 公開するポート |
+| `WIKI_ADMIN_PASSWORD` | `wikiadmin` | 初期ユーザー `wikiadmin` の初期パスワード（最初の起動前に設定） |
+| `WIKI_HOME_PAGE` | `ホーム` | ホーム画面に表示するページのタイトル |
+| `TZ` | `Asia/Tokyo` | タイムゾーン |
+| `FORCE_SSL` | （なし） | `true` にすると Cookie に Secure を付けます（リバースプロキシで HTTPS 化する場合） |
+| `SECRET_KEY_BASE` | 自動生成 | 二段階認証の情報を暗号化する鍵。未設定の場合は初回に生成し、データ領域に保存します |
+
+設定を変更したら `docker compose up -d` で反映されます。
+
+リバースプロキシの背後で使う場合は、`Host`（または `X-Forwarded-Host`）を元のホスト名のまま渡してください。
+
+### ログインできなくなった場合
+
+管理者のパスワードを忘れた場合や、二段階認証の端末を紛失した場合は、次のコマンドでリセットできます（次回ログイン時にパスワードの変更を求められます）。
+
+```bash
+# ランダムなパスワードを発行
+docker compose exec wiki node scripts/reset-password.mjs wikiadmin
+
+# パスワードを指定し、二段階認証も解除する
+docker compose exec wiki node scripts/reset-password.mjs wikiadmin 新しいパスワード --reset-mfa
+```
+
+## バックアップ
+
+```bash
+docker compose cp wiki:/data ./backup
+```
+
+SQLite データベース（`wiki.sqlite3`）とアップロードファイル（`files/`）が含まれます。復元するときは、`docker compose down` のあとでボリュームに書き戻してください。
+
+## 開発
+
+Node.js 22.13 以上が必要です。
+
+```bash
+npm install
+npm run dev        # http://localhost:3000（データは ./storage に保存）
+npm test           # テスト
+npm run typecheck  # 型チェック
+npm run storybook  # 部品の一覧（http://localhost:6006）
+```
+
+### Storybook（部品の一覧）
+
+画面で使っている部品を、状態ごとに確認できます。ツールバーで、ライト／ダークを切り替えられます。
+
+```bash
+npm run storybook         # 開発用サーバー http://localhost:6006
+npm run build-storybook   # 静的なサイトとして storybook-static/ に出力
+```
+
+- 部品は `部品名.stories.tsx` として、部品と同じ場所に置きます（`src/components/` の部品にストーリーがないと、`npm test` が失敗します）。
+- フォームのサーバーアクションとデータベースは、Storybook ではモックに差し替わっています（`.storybook/main.ts`）。送信しても何も保存されません。
+- 見た目を統一していく計画は [docs/design-system-plan.md](docs/design-system-plan.md) にあります。
+
+## 構成
+
+- Next.js 16（App Router / Server Actions）/ React 19 / TypeScript
+- UI: shadcn/ui（nova スタイル・角丸なし）/ Tailwind CSS v4 / Radix UI / sonner（通知）
+- データベース: SQLite（Node.js 標準の `node:sqlite`。ネイティブ拡張なし）
+- 認証: セッション Cookie + scrypt、二段階認証: TOTP（RFC 6238）を自前実装、シークレットは AES-256-GCM で暗号化
+- Markdown: unified（remark / rehype）+ highlight.js、HTML は `rehype-sanitize` で制限
+- ファイル保存: ローカルディスク（`/data/files`）
+- アイコン: [lucide-react](https://lucide.dev)

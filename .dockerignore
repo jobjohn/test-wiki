@@ -1,0 +1,17 @@
+.git
+node_modules
+.next
+storage
+data
+.env
+.env.*
+!.env.example
+Dockerfile
+compose.yaml
+tests
+*.md
+
+.storybook
+storybook-static
+**/*.stories.tsx
+src/stories
