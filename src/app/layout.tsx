@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import type { ReactNode } from "react";
 import { Toaster } from "@/components/ui/sonner";
 import { cssVariables, getSettings } from "@/lib/settings";
+import "@fontsource-variable/noto-sans-jp";
 import "./globals.css";
 
 // 設定・ログイン状態に応じて毎回描画する（ビルド時にデータベースへ接続しない）

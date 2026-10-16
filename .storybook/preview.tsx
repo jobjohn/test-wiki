@@ -4,6 +4,7 @@ import { useLayoutEffect } from "react";
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { contrastColor, THEME_VARIABLES, THEMES, type ThemeKey } from "@/lib/themes";
+import "@fontsource-variable/noto-sans-jp";
 import "../src/app/globals.css";
 
 /** ツールバーで選んだカラーテーマ（ベース・メイン・差し色の 3 色）を、アプリ本体と同じ CSS 変数として適用する */
