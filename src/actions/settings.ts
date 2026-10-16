@@ -4,7 +4,6 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { guardAction } from "@/lib/access";
 import { transaction } from "@/lib/db";
-import { defaultAdminPassword } from "@/lib/env";
 import { ValidationError } from "@/lib/errors";
 import { setFlash } from "@/lib/flash";
 import { bool, type FormState, str } from "@/lib/form";
@@ -48,7 +47,6 @@ export async function completeSetupAction(_prev: FormState, data: FormData): Pro
   const password = str(data, "password");
   if (user.mustChangePassword) {
     errors.push(...validatePassword(password, str(data, "passwordConfirmation")));
-    if (password === defaultAdminPassword()) errors.push("パスワードは初期パスワードと異なるものにしてください");
   }
 
   try {

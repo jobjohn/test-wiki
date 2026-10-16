@@ -22,6 +22,7 @@ import {
   verifyMfaCode,
 } from "@/lib/users";
 import { decrypt } from "@/lib/secret";
+import { initialAdminCredentials } from "@/lib/env";
 
 const loginId = (email: string, password: string) => {
   const result = authenticate(email, password);
@@ -29,15 +30,34 @@ const loginId = (email: string, password: string) => {
 };
 
 describe("初期ユーザー", () => {
-  it("新しいデータベースに初期管理者が作られ、メールアドレスでログインでき、初回パスワード変更が必要", () => {
+  it("新しいデータベースに、環境変数で指定した初期管理者が作られ、メールアドレスでログインできる", () => {
     getDb();
     const admin = findUserByEmail("Admin@Example.com")!;
     expect(admin.role).toBe("admin");
     expect(admin.status).toBe("active");
-    expect(admin.mustChangePassword).toBe(true);
+    // パスワードは本人が環境変数で決めたものなので、変更は求めない
+    expect(admin.mustChangePassword).toBe(false);
     expect(loginId("admin@example.com", "wikiadmin")).toBe(admin.id);
     expect(loginId("admin@example.com", "wrong")).toBe("invalid");
     expect(loginId("nobody@example.com", "wikiadmin")).toBe("invalid");
+  });
+
+  it("環境変数が未設定・不正なら、初期管理者の情報は得られない", () => {
+    const saved = { email: process.env.WIKI_ADMIN_EMAIL, password: process.env.WIKI_ADMIN_PASSWORD };
+    try {
+      delete process.env.WIKI_ADMIN_EMAIL;
+      expect(initialAdminCredentials()).toBeNull();
+      process.env.WIKI_ADMIN_EMAIL = "not-an-email";
+      expect(initialAdminCredentials()).toBeNull();
+      process.env.WIKI_ADMIN_EMAIL = "admin@example.com";
+      process.env.WIKI_ADMIN_PASSWORD = "short";
+      expect(initialAdminCredentials()).toBeNull();
+      process.env.WIKI_ADMIN_PASSWORD = "long-enough";
+      expect(initialAdminCredentials()).toEqual({ email: "admin@example.com", password: "long-enough" });
+    } finally {
+      process.env.WIKI_ADMIN_EMAIL = saved.email;
+      process.env.WIKI_ADMIN_PASSWORD = saved.password;
+    }
   });
 
   it("ユーザーが既にいれば作らない", () => {

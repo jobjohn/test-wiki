@@ -1,15 +1,14 @@
-import { ArrowLeft, Info } from "lucide-react";
+import { ArrowLeft, TriangleAlert } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { LoginForm } from "@/components/LoginForm";
-import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { safeNext } from "@/lib/access";
 import { getCurrentUser } from "@/lib/session";
 import { getSettings } from "@/lib/settings";
-import { defaultAdminEmail } from "@/lib/env";
+import { ensureDefaultAdmin, hasUsers } from "@/lib/users";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 
 export const metadata: Metadata = { title: "ログイン" };
 
@@ -17,31 +16,18 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
   const next = safeNext((await searchParams).next) ?? "";
   if (await getCurrentUser()) redirect(next || "/");
   const settings = getSettings();
+  // 環境変数が後から設定された場合も、ここで初期管理者を作る
+  ensureDefaultAdmin();
 
   return (
     <>
       <LoginForm next={next} />
-      {!settings.setupCompletedAt && (
-        <Alert variant="warning">
-          <Info aria-hidden />
+      {!hasUsers() && (
+        <Alert variant="destructive">
+          <TriangleAlert aria-hidden />
+          <AlertTitle>初期管理者が作成されていません</AlertTitle>
           <AlertDescription>
-            <p>
-              <strong>初回セットアップ</strong>
-              <br />
-              メールアドレス <Badge variant="outline">{defaultAdminEmail()}</Badge>
-              {process.env.WIKI_ADMIN_PASSWORD ? (
-                <>
-                  {" "}
-                  と環境変数 <Badge variant="outline">WIKI_ADMIN_PASSWORD</Badge> のパスワードでログインしてください。
-                </>
-              ) : (
-                <>
-                  {" "}
-                  / パスワード <Badge variant="outline">wikiadmin</Badge> でログインしてください。
-                </>
-              )}
-              ログイン後に初期設定とパスワード変更を行います。
-            </p>
+            環境変数 WIKI_ADMIN_EMAIL（メールアドレス）と WIKI_ADMIN_PASSWORD（8 文字以上のパスワード）を設定して、起動し直してください。
           </AlertDescription>
         </Alert>
       )}

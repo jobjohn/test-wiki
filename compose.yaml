@@ -6,9 +6,10 @@ services:
     ports:
       - "${WIKI_PORT:-3000}:3000"
     environment:
-      # 初期管理者のメールアドレス（未指定なら "admin@example.com"）と初期パスワード（未指定なら "wikiadmin"。初回ログイン時に変更を求められます）
-      WIKI_ADMIN_EMAIL: ${WIKI_ADMIN_EMAIL:-}
-      WIKI_ADMIN_PASSWORD: ${WIKI_ADMIN_PASSWORD:-}
+      # 初期管理者のメールアドレスとパスワード（必須）。.env に書いてください（.env.example を参照）。
+      # データベースが空のとき（初回起動時）に、この内容で管理者を作成します。
+      WIKI_ADMIN_EMAIL: ${WIKI_ADMIN_EMAIL:?.env に WIKI_ADMIN_EMAIL（初期管理者のメールアドレス）を設定してください}
+      WIKI_ADMIN_PASSWORD: ${WIKI_ADMIN_PASSWORD:?.env に WIKI_ADMIN_PASSWORD（初期管理者のパスワード、8 文字以上）を設定してください}
       TZ: ${TZ:-Asia/Tokyo}
       # リバースプロキシで HTTPS 化している場合は true（Cookie に Secure を付けます）
       FORCE_SSL: ${FORCE_SSL:-}

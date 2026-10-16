@@ -1,6 +1,6 @@
 import { createHash } from "node:crypto";
 import { all, get, run, transaction } from "./db";
-import { defaultAdminEmail, defaultAdminPassword } from "./env";
+import { initialAdminCredentials } from "./env";
 import { ValidationError } from "./errors";
 import { hashPassword, verifyDummyPassword, verifyPassword } from "./password";
 import { decrypt, encrypt } from "./secret";
@@ -81,16 +81,15 @@ export const canEdit = (user: Pick<User, "role" | "status"> | null | undefined) 
 /** ユーザー管理・Wiki の設定ができるか（有効な管理者） */
 export const isAdmin = (user: Pick<User, "role" | "status"> | null | undefined) => isActive(user) && user?.role === "admin";
 
-/** ユーザーが 1 人もいなければ初期管理者を作成する */
+/** ユーザーが 1 人もいなければ、環境変数で指定された初期管理者を作成する */
 export function ensureDefaultAdmin() {
-  if (get<{ n: number }>("SELECT COUNT(*) AS n FROM users")!.n > 0) return;
-  createUser({
-    email: defaultAdminEmail(),
-    displayName: "Wiki 管理者",
-    role: "admin",
-    password: defaultAdminPassword(),
-    mustChangePassword: true,
-  });
+  if (hasUsers()) return;
+  const admin = initialAdminCredentials();
+  if (admin) createUser({ email: admin.email, displayName: "Wiki 管理者", role: "admin", password: admin.password });
+}
+
+export function hasUsers(): boolean {
+  return get<{ n: number }>("SELECT COUNT(*) AS n FROM users")!.n > 0;
 }
 
 export function validatePassword(password: string, confirmation?: string): string[] {

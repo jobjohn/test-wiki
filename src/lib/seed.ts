@@ -1,5 +1,5 @@
 import type { DatabaseSync } from "node:sqlite";
-import { defaultAdminEmail, defaultAdminPassword, homePageTitle } from "./env";
+import { homePageTitle, initialAdminCredentials } from "./env";
 import { hashPassword } from "./password";
 import { keyOf, now } from "./text";
 
@@ -73,10 +73,14 @@ export function seedFreshDatabase(db: DatabaseSync) {
   const timestamp = now();
 
   db.prepare("INSERT INTO settings (id) VALUES (1)").run();
-  db.prepare(
-    `INSERT INTO users (email, email_key, display_name, password_hash, role, must_change_password, created_at, updated_at)
-     VALUES (?, ?, 'Wiki 管理者', ?, 'admin', 1, ?, ?)`,
-  ).run(defaultAdminEmail(), keyOf(defaultAdminEmail()), hashPassword(defaultAdminPassword()), timestamp, timestamp);
+  // 初期管理者は環境変数で指定されたときだけ作る（未設定なら、設定後の初回ログイン時に作る）
+  const admin = initialAdminCredentials();
+  if (admin) {
+    db.prepare(
+      `INSERT INTO users (email, email_key, display_name, password_hash, role, created_at, updated_at)
+       VALUES (?, ?, 'Wiki 管理者', ?, 'admin', ?, ?)`,
+    ).run(admin.email, keyOf(admin.email), hashPassword(admin.password), timestamp, timestamp);
+  }
 
   const insertFolder = db.prepare("INSERT INTO folders (name, name_key, created_at, updated_at) VALUES (?, ?, ?, ?)");
   const insertPage = db.prepare("INSERT INTO pages (title, title_key, body, folder_id, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)");

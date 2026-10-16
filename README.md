@@ -4,20 +4,17 @@ Next.js 製のシンプルで実用的な Wiki です。Docker があればコ�
 
 ## 起動方法
 
+まず、初期管理者のメールアドレスとパスワードを `.env` に書きます（未設定のままでは起動できません）。
+
 ```bash
+cp .env.example .env
+# .env の WIKI_ADMIN_EMAIL と WIKI_ADMIN_PASSWORD（8 文字以上）を書き換える
 docker compose up -d --build
 ```
 
-ブラウザで <http://localhost:3000> を開き、初期管理者のメールアドレスとパスワードでログインしてください。
+ブラウザで <http://localhost:3000> を開き、`.env` に書いたメールアドレスとパスワードでログインしてください。初回起動時（データベースが空のとき）に、この内容で管理者が作られます。
 
-| メールアドレス | 初期パスワード |
-| --- | --- |
-| `admin@example.com`（環境変数 `WIKI_ADMIN_EMAIL` で変更可） | `wikiadmin`（環境変数 `WIKI_ADMIN_PASSWORD` で変更可） |
-
-初回ログイン時に **初期設定画面** が表示され、次の項目を設定します（あとから「Wiki の設定」で変更できます）。
-
-1. Wiki の名前と説明（どんな Wiki か）
-2. 管理者のメールアドレスの確認とパスワードの変更
+初回ログイン時に **初期設定画面** が表示され、Wiki の名前と説明（どんな Wiki か）を設定します（あとから「Wiki の設定」で変更できます）。
 
 停止する場合:
 
@@ -64,13 +61,13 @@ docker compose down
 
 Wiki の名前・説明・表示モード・アクセス設定は、管理者でログインして画面右上のメニュー →「Wiki の設定」から変更します。
 
-起動時の設定は `.env.example` を `.env` にコピーして編集します。
+起動時の設定は `.env.example` を `.env` にコピーして編集します。`WIKI_ADMIN_EMAIL` と `WIKI_ADMIN_PASSWORD` は必須です。
 
 | 変数 | 既定値 | 説明 |
 | --- | --- | --- |
 | `WIKI_PORT` | `3000` | 公開するポート |
-| `WIKI_ADMIN_EMAIL` | `admin@example.com` | 初期管理者のメールアドレス（最初の起動前に設定。初期設定画面でも変更できます） |
-| `WIKI_ADMIN_PASSWORD` | `wikiadmin` | 初期管理者の初期パスワード（最初の起動前に設定） |
+| `WIKI_ADMIN_EMAIL` | （必須） | 初期管理者のメールアドレス。データベースが空のときだけ使います（作成後に変えても、既存の管理者は変わりません） |
+| `WIKI_ADMIN_PASSWORD` | （必須） | 初期管理者のパスワード（8 文字以上）。同上 |
 | `WIKI_HOME_PAGE` | `ホーム` | ホーム画面に表示するページのタイトル |
 | `TZ` | `Asia/Tokyo` | タイムゾーン |
 | `FORCE_SSL` | （なし） | `true` にすると Cookie に Secure を付けます（リバースプロキシで HTTPS 化する場合） |
@@ -86,13 +83,13 @@ Wiki の名前・説明・表示モード・アクセス設定は、管理者で
 
 ```bash
 # ランダムなパスワードを発行
-docker compose exec wiki node scripts/reset-password.mjs admin@example.com
+docker compose exec wiki node scripts/reset-password.mjs you@example.com
 
 # パスワードを指定し、二段階認証も解除する
-docker compose exec wiki node scripts/reset-password.mjs admin@example.com 新しいパスワード --reset-mfa
+docker compose exec wiki node scripts/reset-password.mjs you@example.com 新しいパスワード --reset-mfa
 
 # 無効になっているユーザーを有効に戻す
-docker compose exec wiki node scripts/reset-password.mjs admin@example.com 新しいパスワード --activate
+docker compose exec wiki node scripts/reset-password.mjs you@example.com 新しいパスワード --activate
 ```
 
 ## バックアップ
@@ -109,6 +106,8 @@ Node.js 22.13 以上が必要です。
 
 ```bash
 npm install
+# 初期管理者を .env.local に書く（Next.js が自動で読み込みます）
+printf 'WIKI_ADMIN_EMAIL=you@example.com\nWIKI_ADMIN_PASSWORD=change-me-please\n' > .env.local
 npm run dev        # http://localhost:3000（データは ./storage に保存）
 npm test           # テスト
 npm run typecheck  # 型チェック

@@ -14,13 +14,15 @@ export function timeZone(): string {
   return process.env.TZ || "Asia/Tokyo";
 }
 
-/** 初期管理者のメールアドレス（ログインに使う） */
-export function defaultAdminEmail(): string {
-  return (process.env.WIKI_ADMIN_EMAIL || "admin@example.com").trim();
-}
-
-export function defaultAdminPassword(): string {
-  return process.env.WIKI_ADMIN_PASSWORD || "wikiadmin";
+/**
+ * 初期管理者のメールアドレスとパスワード（環境変数 WIKI_ADMIN_EMAIL / WIKI_ADMIN_PASSWORD）。
+ * 既定値は持たず、未設定や不正な値のときは null を返す（初期管理者を作らない）。
+ */
+export function initialAdminCredentials(): { email: string; password: string } | null {
+  const email = (process.env.WIKI_ADMIN_EMAIL ?? "").trim();
+  const password = process.env.WIKI_ADMIN_PASSWORD ?? "";
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) || password.length < 8 || password.length > 72) return null;
+  return { email, password };
 }
 
 export function homePageTitle(): string {
