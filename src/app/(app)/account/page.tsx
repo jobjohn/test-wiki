@@ -35,16 +35,12 @@ export default async function AccountPage() {
         </CardHeader>
         <CardContent className="grid gap-4">
           <dl className="grid grid-cols-[max-content_1fr] items-center gap-x-4 gap-y-2 text-sm">
-            <dt className="text-muted-foreground">ユーザー名</dt>
-            <dd>
-              <Badge variant="outline">{user.username}</Badge>
-            </dd>
-            <dt className="text-muted-foreground">権限</dt>
+            <dt className="text-muted-foreground">ロール</dt>
             <dd>
               <Badge variant={user.role === "admin" ? "highlight" : "secondary"}>{ROLES[user.role]}</Badge>
             </dd>
           </dl>
-          <ProfileForm displayName={user.displayName ?? ""} />
+          <ProfileForm email={user.email} displayName={user.displayName ?? ""} />
         </CardContent>
       </Card>
 

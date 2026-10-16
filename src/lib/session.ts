@@ -69,14 +69,17 @@ async function loadSession(): Promise<SessionRow | undefined> {
 export const getCurrentUser = cache(async (): Promise<User | null> => {
   const session = await loadSession();
   if (!session || session.pending_mfa) return null;
-  return getUser(session.user_id) ?? null;
+  const user = getUser(session.user_id);
+  // 無効にされたユーザーは、ログイン中でも利用できない
+  return user?.status === "active" ? user : null;
 });
 
 /** パスワード確認済みで、MFA のパスコード入力待ちのユーザー */
 export async function getPendingMfaUser(): Promise<User | null> {
   const session = await loadSession();
   if (!session || !session.pending_mfa) return null;
-  return getUser(session.user_id) ?? null;
+  const user = getUser(session.user_id);
+  return user?.status === "active" ? user : null;
 }
 
 export async function currentSessionId(): Promise<string | undefined> {

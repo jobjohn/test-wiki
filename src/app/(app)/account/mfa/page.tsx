@@ -17,7 +17,7 @@ export default async function MfaSetupPage() {
   if (user.mfaEnabled) redirect("/account");
 
   const secret = pendingMfaSecret(user.id);
-  const uri = otpauthUri(secret, user.username, settings.wikiName);
+  const uri = otpauthUri(secret, user.email, settings.wikiName);
   const qrSvg = await QRCode.toString(uri, { type: "svg", margin: 1 });
 
   return (

@@ -11,7 +11,7 @@ export default async function NewUserPage() {
   return (
     <div className="grid max-w-2xl gap-5">
       <PageTitle icon={UserPlus}>ユーザーを追加</PageTitle>
-      <UserForm userId={null} initial={{ username: "", displayName: "", role: "editor", mustChangePassword: true }} />
+      <UserForm userId={null} initial={{ email: "", displayName: "", role: "general", status: "active", mustChangePassword: true }} />
     </div>
   );
 }

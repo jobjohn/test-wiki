@@ -80,9 +80,11 @@ export const listPagesInFolder = (folderId: number | null): Page[] =>
 
 /** サイドバー用: 全ページの (id, title, folderId) */
 export const listPageOutlines = (): { id: number; title: string; folderId: number | null }[] =>
-  all<{ id: number; title: string; folder_id: number | null }>(
-    "SELECT id, title, folder_id FROM pages ORDER BY position, title_key",
-  ).map((r) => ({ id: r.id, title: r.title, folderId: r.folder_id }));
+  all<{ id: number; title: string; folder_id: number | null }>("SELECT id, title, folder_id FROM pages ORDER BY position, title_key").map((r) => ({
+    id: r.id,
+    title: r.title,
+    folderId: r.folder_id,
+  }));
 
 /** タイトルキー → ページ ID（Wiki リンクの解決用） */
 export function pageIdsByTitle(titles: string[]): Map<string, number> {
@@ -115,7 +117,10 @@ export function tagsForPages(pageIds: number[]): Map<number, Tag[]> {
 
 export const tagsForPage = (pageId: number): Tag[] => tagsForPages([pageId]).get(pageId) ?? [];
 
-export const tagList = (pageId: number): string => tagsForPage(pageId).map((t) => t.name).join(", ");
+export const tagList = (pageId: number): string =>
+  tagsForPage(pageId)
+    .map((t) => t.name)
+    .join(", ");
 
 export const listTagNames = (): string[] => all<{ name: string }>("SELECT name FROM tags ORDER BY name_key").map((t) => t.name);
 
@@ -128,10 +133,7 @@ export const listTagsWithCounts = (): (Tag & { count: number })[] =>
 export const findTagByName = (name: string): Tag | undefined => get<Tag>("SELECT id, name FROM tags WHERE name_key = ?", keyOf(name));
 
 export const pagesForTag = (tagId: number): Page[] =>
-  all<PageRow>(
-    "SELECT p.* FROM pages p JOIN taggings tg ON tg.page_id = p.id WHERE tg.tag_id = ? ORDER BY p.title_key",
-    tagId,
-  ).map(mapPage);
+  all<PageRow>("SELECT p.* FROM pages p JOIN taggings tg ON tg.page_id = p.id WHERE tg.tag_id = ? ORDER BY p.title_key", tagId).map(mapPage);
 
 function replaceTags(pageId: number, names: string[]) {
   run("DELETE FROM taggings WHERE page_id = ?", pageId);
@@ -250,7 +252,7 @@ interface RevisionRow {
   user_name: string | null;
 }
 
-const REVISION_SELECT = `SELECT r.*, COALESCE(u.display_name, u.username) AS user_name FROM revisions r LEFT JOIN users u ON u.id = r.user_id`;
+const REVISION_SELECT = `SELECT r.*, COALESCE(u.display_name, u.email) AS user_name FROM revisions r LEFT JOIN users u ON u.id = r.user_id`;
 
 const mapRevision = (row: RevisionRow): Revision => ({
   id: row.id,
@@ -279,7 +281,7 @@ export const latestRevision = (pageId: number): Revision | undefined => {
 
 export const recentRevisions = (limit: number, offset: number): (Revision & { pageTitle: string })[] =>
   all<RevisionRow & { page_title: string }>(
-    `SELECT r.*, COALESCE(u.display_name, u.username) AS user_name, p.title AS page_title
+    `SELECT r.*, COALESCE(u.display_name, u.email) AS user_name, p.title AS page_title
      FROM revisions r JOIN pages p ON p.id = r.page_id LEFT JOIN users u ON u.id = r.user_id
      ORDER BY r.created_at DESC, r.id DESC LIMIT ? OFFSET ?`,
     limit,
@@ -309,7 +311,10 @@ export function restoreRevision(pageId: number, number: number, userId: number |
 // ---- 検索・リンク ----
 
 function searchClause(query: string): { where: string; params: string[] } {
-  const terms = query.split(/[\s　]+/).filter(Boolean).slice(0, 10);
+  const terms = query
+    .split(/[\s　]+/)
+    .filter(Boolean)
+    .slice(0, 10);
   const where = terms.map(() => "(p.title LIKE ? ESCAPE '\\' OR p.body LIKE ? ESCAPE '\\')").join(" AND ");
   const params = terms.flatMap((t) => [`%${escapeLike(t)}%`, `%${escapeLike(t)}%`]);
   return { where: where || "0", params };

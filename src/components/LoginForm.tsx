@@ -1,6 +1,6 @@
 "use client";
 
-import { Lock, LogIn, User } from "lucide-react";
+import { Lock, LogIn, Mail } from "lucide-react";
 import { useActionState } from "react";
 import { loginAction } from "@/actions/auth";
 import { InputGroup, InputGroupAddon, InputGroupInput } from "@/components/ui/input-group";
@@ -16,19 +16,20 @@ export function LoginForm({ next }: { next: string }) {
         <FormErrors errors={state.errors} />
         <input type="hidden" name="next" value={next} />
         <Field>
-          <FieldLabel htmlFor="username">ユーザー名</FieldLabel>
+          <FieldLabel htmlFor="email">メールアドレス</FieldLabel>
           <InputGroup>
             <InputGroupInput
-              id="username"
-              name="username"
-              defaultValue={state.values?.username}
+              type="email"
+              id="email"
+              name="email"
+              defaultValue={state.values?.email}
               autoComplete="username"
               autoCapitalize="none"
               required
               autoFocus
             />
             <InputGroupAddon>
-              <User aria-hidden />
+              <Mail aria-hidden />
             </InputGroupAddon>
           </InputGroup>
         </Field>

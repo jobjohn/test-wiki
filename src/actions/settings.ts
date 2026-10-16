@@ -4,15 +4,14 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { guardAction } from "@/lib/access";
 import { transaction } from "@/lib/db";
-import { defaultAdminPassword } from "@/lib/env";
 import { ValidationError } from "@/lib/errors";
 import { setFlash } from "@/lib/flash";
 import { bool, type FormState, str } from "@/lib/form";
 import { currentSessionId } from "@/lib/session";
 import { updateSettings, type SettingsInput } from "@/lib/settings";
-import { changePassword, validatePassword } from "@/lib/users";
+import { changePassword, updateProfile, validatePassword } from "@/lib/users";
 
-const FIELDS = ["wikiName", "description", "colorMode"];
+const FIELDS = ["wikiName", "description", "colorMode", "email"];
 
 function settingsInput(data: FormData): SettingsInput {
   return {
@@ -38,7 +37,7 @@ export async function saveSettingsAction(_prev: FormState, data: FormData): Prom
   redirect("/settings");
 }
 
-/** 初回ログイン時の初期設定（Wiki の名前・説明・管理者パスワード） */
+/** 初回ログイン時の初期設定（Wiki の名前・説明・管理者のメールアドレスとパスワード） */
 export async function completeSetupAction(_prev: FormState, data: FormData): Promise<FormState> {
   const guard = await guardAction("admin", { gate: false });
   if ("error" in guard) return { errors: [guard.error] };
@@ -48,7 +47,6 @@ export async function completeSetupAction(_prev: FormState, data: FormData): Pro
   const password = str(data, "password");
   if (user.mustChangePassword) {
     errors.push(...validatePassword(password, str(data, "passwordConfirmation")));
-    if (password === defaultAdminPassword()) errors.push("パスワードは初期パスワードと異なるものにしてください");
   }
 
   try {
@@ -56,7 +54,10 @@ export async function completeSetupAction(_prev: FormState, data: FormData): Pro
     const sessionId = await currentSessionId();
     transaction(() => {
       updateSettings(settingsInput(data), { completeSetup: true });
-      if (user.mustChangePassword) changePassword(user.id, password, sessionId);
+      if (user.mustChangePassword) {
+        updateProfile(user.id, { email: str(data, "email"), displayName: user.displayName ?? "" });
+        changePassword(user.id, password, sessionId);
+      }
     });
   } catch (error) {
     if (error instanceof ValidationError) return { errors: error.messages, values: collect(data) };

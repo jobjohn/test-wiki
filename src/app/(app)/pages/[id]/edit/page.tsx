@@ -11,7 +11,7 @@ import { getPage, listTagNames, tagList } from "@/lib/pages";
 export const metadata: Metadata = { title: "ページを編集" };
 
 export default async function EditPage({ params }: { params: Promise<{ id: string }> }) {
-  await requireAccess("editor");
+  await requireAccess("edit");
   const id = parseId((await params).id);
   const page = getPage(id);
   if (!page) notFound();

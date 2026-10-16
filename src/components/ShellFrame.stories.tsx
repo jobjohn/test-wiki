@@ -22,14 +22,14 @@ const meta = {
     wikiName: "開発チーム Wiki",
     tree,
     flash: null,
-    user: { name: "Wiki 管理者", username: "wikiadmin", roleName: "管理者", isAdmin: true, canEdit: true },
+    user: { name: "Wiki 管理者", email: "admin@example.com", roleName: "管理者", isAdmin: true, canEdit: true },
     children: <p className="text-muted-foreground">ページの内容がここに入ります。</p>,
   },
 } satisfies Meta<typeof ShellFrame>;
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-export const Editor: Story = {};
-export const Viewer: Story = { args: { user: { name: "閲覧 花子", username: "viewer1", roleName: "閲覧者", isAdmin: false, canEdit: false } } };
+export const Admin: Story = {};
+export const General: Story = { args: { user: { name: "山田 太郎", email: "yamada@example.com", roleName: "一般", isAdmin: false, canEdit: true } } };
 export const LoggedOut: Story = { args: { user: null } };
 export const Mobile: Story = { globals: { viewport: { value: "mobile1", isRotated: false } } };

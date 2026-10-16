@@ -14,16 +14,23 @@ const withNext = (path: string, next: string | null) => (next ? `${path}?next=${
 
 export async function loginAction(_prev: FormState, data: FormData): Promise<FormState> {
   ensureDefaultAdmin();
-  const username = str(data, "username");
+  const email = str(data, "email");
   const next = safeNext(str(data, "next"));
 
-  // X-Forwarded-For は信頼できるプロキシの背後でないと偽装できるため、ユーザー名単位の制限も併用する
-  const allowed = allowAttempt(`login:${await clientIp()}`, 10, WINDOW) && allowAttempt(`login-user:${keyOf(username)}`, 20, 10 * 60_000);
+  // X-Forwarded-For は信頼できるプロキシの背後でないと偽装できるため、メールアドレス単位の制限も併用する
+  const allowed = allowAttempt(`login:${await clientIp()}`, 10, WINDOW) && allowAttempt(`login-user:${keyOf(email)}`, 20, 10 * 60_000);
   if (!allowed) {
-    return { errors: ["ログイン試行回数が多すぎます。しばらく待ってから再度お試しください。"], values: { username } };
+    return { errors: ["ログイン試行回数が多すぎます。しばらく待ってから再度お試しください。"], values: { email } };
   }
-  const user = authenticate(username, str(data, "password"));
-  if (!user) return { errors: ["ユーザー名またはパスワードが正しくありません。"], values: { username } };
+  const result = authenticate(email, str(data, "password"));
+  if ("error" in result) {
+    const message =
+      result.error === "disabled"
+        ? "このアカウントは無効になっています。管理者にお問い合わせください。"
+        : "メールアドレスまたはパスワードが正しくありません。";
+    return { errors: [message], values: { email } };
+  }
+  const { user } = result;
 
   if (user.mfaEnabled) {
     await startSession(user.id, { pendingMfa: true });

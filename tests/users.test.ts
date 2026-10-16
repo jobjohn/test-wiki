@@ -11,24 +11,53 @@ import {
   disableMfa,
   enableMfa,
   ensureDefaultAdmin,
-  findUserByUsername,
+  findUserByEmail,
   getUser,
   pendingMfaSecret,
+  canEdit,
+  isAdmin,
   regenerateBackupCodes,
+  updateProfile,
   updateUser,
   verifyMfaCode,
 } from "@/lib/users";
 import { decrypt } from "@/lib/secret";
+import { initialAdminCredentials } from "@/lib/env";
+
+const loginId = (email: string, password: string) => {
+  const result = authenticate(email, password);
+  return "user" in result ? result.user.id : result.error;
+};
 
 describe("初期ユーザー", () => {
-  it("新しいデータベースに wikiadmin が作られ、初回パスワード変更が必要", () => {
+  it("新しいデータベースに、環境変数で指定した初期管理者が作られ、メールアドレスでログインできる", () => {
     getDb();
-    const admin = findUserByUsername("WikiAdmin")!;
+    const admin = findUserByEmail("Admin@Example.com")!;
     expect(admin.role).toBe("admin");
-    expect(admin.mustChangePassword).toBe(true);
-    expect(authenticate("wikiadmin", "wikiadmin")?.id).toBe(admin.id);
-    expect(authenticate("wikiadmin", "wrong")).toBeUndefined();
-    expect(authenticate("nobody", "wikiadmin")).toBeUndefined();
+    expect(admin.status).toBe("active");
+    // パスワードは本人が環境変数で決めたものなので、変更は求めない
+    expect(admin.mustChangePassword).toBe(false);
+    expect(loginId("admin@example.com", "wikiadmin")).toBe(admin.id);
+    expect(loginId("admin@example.com", "wrong")).toBe("invalid");
+    expect(loginId("nobody@example.com", "wikiadmin")).toBe("invalid");
+  });
+
+  it("環境変数が未設定・不正なら、初期管理者の情報は得られない", () => {
+    const saved = { email: process.env.WIKI_ADMIN_EMAIL, password: process.env.WIKI_ADMIN_PASSWORD };
+    try {
+      delete process.env.WIKI_ADMIN_EMAIL;
+      expect(initialAdminCredentials()).toBeNull();
+      process.env.WIKI_ADMIN_EMAIL = "not-an-email";
+      expect(initialAdminCredentials()).toBeNull();
+      process.env.WIKI_ADMIN_EMAIL = "admin@example.com";
+      process.env.WIKI_ADMIN_PASSWORD = "short";
+      expect(initialAdminCredentials()).toBeNull();
+      process.env.WIKI_ADMIN_PASSWORD = "long-enough";
+      expect(initialAdminCredentials()).toEqual({ email: "admin@example.com", password: "long-enough" });
+    } finally {
+      process.env.WIKI_ADMIN_EMAIL = saved.email;
+      process.env.WIKI_ADMIN_PASSWORD = saved.password;
+    }
   });
 
   it("ユーザーが既にいれば作らない", () => {
@@ -41,29 +70,69 @@ describe("初期ユーザー", () => {
 });
 
 describe("ユーザー管理", () => {
-  it("ユーザー名とパスワードを検証する", () => {
-    expect(() => createUser({ username: "ab", role: "editor", password: "password123" })).toThrow(ValidationError);
-    expect(() => createUser({ username: "valid_name", role: "editor", password: "short" })).toThrow(ValidationError);
-    expect(() => createUser({ username: "valid_name", role: "editor", password: "password123", passwordConfirmation: "x" })).toThrow(ValidationError);
-    const id = createUser({ username: "Valid_Name", role: "editor", password: "password123" });
-    expect(() => createUser({ username: "valid_NAME", role: "viewer", password: "password123" })).toThrow(/既に使われています/);
-    expect(getUser(id)?.username).toBe("Valid_Name");
+  it("メールアドレスとパスワードを検証する", () => {
+    expect(() => createUser({ email: "not-an-email", role: "general", password: "password123" })).toThrow(/メールアドレスの形式/);
+    expect(() => createUser({ email: "valid@example.com", role: "general", password: "short" })).toThrow(ValidationError);
+    expect(() => createUser({ email: "valid@example.com", role: "general", password: "password123", passwordConfirmation: "x" })).toThrow(
+      ValidationError,
+    );
+    expect(() => createUser({ email: "valid@example.com", role: "viewer" as never, password: "password123" })).toThrow(/ロールが不正/);
+    const id = createUser({ email: "Valid@Example.com", role: "general", password: "password123" });
+    expect(() => createUser({ email: "valid@EXAMPLE.com", role: "general", password: "password123" })).toThrow(/既に使われています/);
+    expect(getUser(id)?.email).toBe("Valid@Example.com");
+    expect(getUser(id)?.name).toBe("Valid");
   });
 
-  it("最後の管理者は降格も削除もできない", () => {
-    const admin = findUserByUsername("wikiadmin")!;
-    expect(() => updateUser(admin.id, { username: "wikiadmin", role: "editor" })).toThrow(/管理者が 1 人もいなくなります/);
-    expect(() => deleteUser(admin.id)).toThrow(/最後の管理者/);
+  it("一般ユーザーは編集できるが管理はできない。無効なユーザーはどちらもできない", () => {
+    const general = { role: "general" as const, status: "active" as const };
+    expect(canEdit(general)).toBe(true);
+    expect(isAdmin(general)).toBe(false);
+    expect(isAdmin({ role: "admin", status: "active" })).toBe(true);
+    expect(canEdit({ role: "admin", status: "disabled" })).toBe(false);
+    expect(isAdmin({ role: "admin", status: "disabled" })).toBe(false);
+  });
 
-    const second = createUser({ username: "admin2", role: "admin", password: "password123" });
-    updateUser(admin.id, { username: "wikiadmin", role: "editor" });
-    expect(getUser(admin.id)?.role).toBe("editor");
-    expect(() => deleteUser(second)).toThrow(/最後の管理者/);
-    updateUser(admin.id, { username: "wikiadmin", role: "admin" });
+  it("最後の有効な管理者は、降格・無効化・削除ができない", () => {
+    const admin = findUserByEmail("admin@example.com")!;
+    const base = { email: "admin@example.com", role: "admin" as const, status: "active" as const };
+    expect(() => updateUser(admin.id, { ...base, role: "general" })).toThrow(/有効な管理者が 1 人もいなくなります/);
+    expect(() => updateUser(admin.id, { ...base, status: "disabled" })).toThrow(/有効な管理者が 1 人もいなくなります/);
+    expect(() => deleteUser(admin.id)).toThrow(/最後の有効な管理者/);
+
+    // 無効な管理者は数に入らない
+    const disabledAdmin = createUser({ email: "off-admin@example.com", role: "admin", status: "disabled", password: "password123" });
+    expect(() => updateUser(admin.id, { ...base, role: "general" })).toThrow(/有効な管理者/);
+
+    const second = createUser({ email: "admin2@example.com", role: "admin", password: "password123" });
+    updateUser(admin.id, { ...base, role: "general" });
+    expect(getUser(admin.id)?.role).toBe("general");
+    expect(() => deleteUser(second)).toThrow(/最後の有効な管理者/);
+    updateUser(admin.id, base);
+    deleteUser(disabledAdmin);
+  });
+
+  it("無効にするとログインできず、ログイン中のセッションも消える。有効に戻すとログインできる", () => {
+    const id = createUser({ email: "member@example.com", displayName: "メンバー", role: "general", password: "password123" });
+    getDb().prepare("INSERT INTO sessions (id, user_id, pending_mfa, created_at, expires_at) VALUES ('m1', ?, 0, 'x', 'y')").run(id);
+    const base = { email: "member@example.com", displayName: "メンバー", role: "general" as const };
+    updateUser(id, { ...base, status: "disabled" });
+    expect(getUser(id)?.status).toBe("disabled");
+    expect(loginId("member@example.com", "password123")).toBe("disabled");
+    expect(loginId("member@example.com", "wrong-pass")).toBe("invalid");
+    expect(getDb().prepare("SELECT COUNT(*) AS n FROM sessions WHERE user_id = ?").get(id)).toEqual({ n: 0 });
+    updateUser(id, { ...base, status: "active" });
+    expect(loginId("member@example.com", "password123")).toBe(id);
+  });
+
+  it("本人がメールアドレスと表示名を変更できる（他人のアドレスは使えない）", () => {
+    const id = createUser({ email: "profile@example.com", role: "general", password: "password123" });
+    updateProfile(id, { email: "renamed@example.com", displayName: "改名" });
+    expect(getUser(id)).toMatchObject({ email: "renamed@example.com", displayName: "改名" });
+    expect(() => updateProfile(id, { email: "admin@example.com", displayName: "" })).toThrow(/既に使われています/);
   });
 
   it("パスワード変更は他の端末のセッションを無効化する", () => {
-    const id = createUser({ username: "session_user", role: "editor", password: "password123" });
+    const id = createUser({ email: "session@example.com", role: "general", password: "password123" });
     const db = getDb();
     const insert = db.prepare("INSERT INTO sessions (id, user_id, pending_mfa, created_at, expires_at) VALUES (?, ?, 0, 'x', 'y')");
     insert.run("keep", id);
@@ -71,14 +140,14 @@ describe("ユーザー管理", () => {
     changePassword(id, "new-password-1", "keep");
     const ids = (db.prepare("SELECT id FROM sessions WHERE user_id = ?").all(id) as { id: string }[]).map((r) => r.id);
     expect(ids).toEqual(["keep"]);
-    expect(authenticate("session_user", "new-password-1")?.id).toBe(id);
-    expect(authenticate("session_user", "password123")).toBeUndefined();
+    expect(loginId("session@example.com", "new-password-1")).toBe(id);
+    expect(loginId("session@example.com", "password123")).toBe("invalid");
   });
 });
 
 describe("二段階認証", () => {
   it("設定 → パスコード確認 → 有効化、シークレットは暗号化して保存される", () => {
-    const id = createUser({ username: "mfa_user", role: "editor", password: "password123" });
+    const id = createUser({ email: "mfa-user@example.com", role: "general", password: "password123" });
     const secret = pendingMfaSecret(id);
     expect(pendingMfaSecret(id)).toBe(secret);
     expect(getUser(id)?.mfaEnabled).toBe(false);
@@ -94,7 +163,7 @@ describe("二段階認証", () => {
   });
 
   it("パスコードは 1 回だけ使え、バックアップコードも 1 回だけ使える", () => {
-    const id = createUser({ username: "mfa_login", role: "editor", password: "password123" });
+    const id = createUser({ email: "mfa-login@example.com", role: "general", password: "password123" });
     const secret = "JBSWY3DPEHPK3PXP";
     const codes = enableMfa(id, secret);
 

@@ -113,4 +113,16 @@ export const MIGRATIONS: string[] = [
   ALTER TABLE settings DROP COLUMN secondary_color;
   ALTER TABLE settings DROP COLUMN accent_color;
   `,
+  // メールアドレスでのログイン、ロール（一般・管理者）、ステータス（有効・無効）
+  `
+  ALTER TABLE users RENAME COLUMN username TO email;
+  ALTER TABLE users RENAME COLUMN username_key TO email_key;
+  ALTER TABLE users ADD COLUMN status TEXT NOT NULL DEFAULT 'active';
+  UPDATE users SET email = 'admin@example.com' WHERE email_key = 'wikiadmin';
+  UPDATE users SET email = email || '@example.com' WHERE email NOT LIKE '%@%';
+  UPDATE users SET email_key = lower(email);
+  UPDATE users SET role = 'general' WHERE role != 'admin';
+  DROP INDEX index_users_on_username_key;
+  CREATE UNIQUE INDEX index_users_on_email_key ON users(email_key);
+  `,
 ];

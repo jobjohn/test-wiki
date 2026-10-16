@@ -6,9 +6,9 @@ import { guardAction } from "@/lib/access";
 import { ValidationError } from "@/lib/errors";
 import { setFlash } from "@/lib/flash";
 import { bool, type FormState, optionalId, str, values } from "@/lib/form";
-import { createUser, deleteUser, disableMfa, getUser, updateUser, type Role } from "@/lib/users";
+import { createUser, deleteUser, disableMfa, getUser, type Role, type Status, updateUser } from "@/lib/users";
 
-const FIELDS = ["username", "displayName", "role", "mustChangePassword"];
+const FIELDS = ["email", "displayName", "role", "status", "mustChangePassword"];
 
 export async function saveUserAction(_prev: FormState, data: FormData): Promise<FormState> {
   const guard = await guardAction("admin");
@@ -16,14 +16,16 @@ export async function saveUserAction(_prev: FormState, data: FormData): Promise<
 
   const id = optionalId(data, "id");
   const input = {
-    username: str(data, "username"),
+    email: str(data, "email"),
     displayName: str(data, "displayName"),
     role: str(data, "role") as Role,
+    status: (str(data, "status") || "active") as Status,
     password: str(data, "password"),
     passwordConfirmation: str(data, "passwordConfirmation"),
     mustChangePassword: bool(data, "mustChangePassword"),
   };
   try {
+    if (id === guard.user.id && input.status !== "active") throw new ValidationError("自分自身を無効にすることはできません");
     if (id === null) createUser(input);
     else updateUser(id, input);
   } catch (error) {
@@ -31,7 +33,7 @@ export async function saveUserAction(_prev: FormState, data: FormData): Promise<
     throw error;
   }
   revalidatePath("/", "layout");
-  await setFlash("notice", `ユーザー「${input.username.trim()}」を${id === null ? "作成" : "更新"}しました。`);
+  await setFlash("notice", `ユーザー「${input.email.trim()}」を${id === null ? "作成" : "更新"}しました。`);
   redirect("/users");
 }
 
@@ -46,7 +48,7 @@ export async function deleteUserAction(id: number) {
     if (!target) throw new ValidationError("ユーザーが見つかりません。");
     if (target.id === guard.user.id) throw new ValidationError("自分自身は削除できません。");
     deleteUser(id);
-    await setFlash("notice", `ユーザー「${target.username}」を削除しました。`);
+    await setFlash("notice", `ユーザー「${target.email}」を削除しました。`);
   } catch (error) {
     if (!(error instanceof ValidationError)) throw error;
     await setFlash("alert", error.messages.join("、"));
@@ -64,4 +66,3 @@ export async function resetUserMfaAction(id: number) {
   await setFlash("notice", "二段階認証をリセットしました。");
   redirect(`/users/${id}/edit`);
 }
-

@@ -17,7 +17,7 @@ import { UserMenu } from "./UserMenu";
 
 export interface ShellUser {
   name: string;
-  username: string;
+  email: string;
   roleName: string;
   isAdmin: boolean;
   canEdit: boolean;
@@ -105,7 +105,7 @@ export function ShellFrame({
             </Button>
           )}
           {user ? (
-            <UserMenu name={user.name} username={user.username} roleName={user.roleName} isAdmin={user.isAdmin} />
+            <UserMenu name={user.name} email={user.email} roleName={user.roleName} isAdmin={user.isAdmin} />
           ) : (
             <Button variant="ghost" asChild>
               <Link href="/login">

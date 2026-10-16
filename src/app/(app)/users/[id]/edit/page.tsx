@@ -23,7 +23,13 @@ export default async function EditUserPage({ params }: { params: Promise<{ id: s
       <PageTitle icon={UserIcon}>ユーザーの編集</PageTitle>
       <UserForm
         userId={user.id}
-        initial={{ username: user.username, displayName: user.displayName ?? "", role: user.role, mustChangePassword: user.mustChangePassword }}
+        initial={{
+          email: user.email,
+          displayName: user.displayName ?? "",
+          role: user.role,
+          status: user.status,
+          mustChangePassword: user.mustChangePassword,
+        }}
       />
       {user.mfaEnabled && (
         <Card>
@@ -40,7 +46,7 @@ export default async function EditUserPage({ params }: { params: Promise<{ id: s
             <ConfirmAction
               action={resetUserMfaAction.bind(null, user.id)}
               title="二段階認証をリセットしますか？"
-              description={`ユーザー「${user.username}」の二段階認証を解除します。本人が再度設定するまで、パスワードだけでログインできる状態になります。`}
+              description={`ユーザー「${user.email}」の二段階認証を解除します。本人が再度設定するまで、パスワードだけでログインできる状態になります。`}
               confirmLabel="リセットする"
               destructive
               trigger={

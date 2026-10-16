@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/nextjs-vite";
-import { Search, User } from "lucide-react";
+import { Mail, Search } from "lucide-react";
 import { InputGroup, InputGroupAddon, InputGroupInput } from "./input-group";
 import { Kbd } from "./kbd";
 
@@ -10,9 +10,9 @@ type Story = StoryObj<typeof meta>;
 export const WithIcon: Story = {
   render: () => (
     <InputGroup className="max-w-sm">
-      <InputGroupInput placeholder="ユーザー名" aria-label="ユーザー名" />
+      <InputGroupInput placeholder="メールアドレス" aria-label="メールアドレス" />
       <InputGroupAddon>
-        <User aria-hidden />
+        <Mail aria-hidden />
       </InputGroupAddon>
     </InputGroup>
   ),
