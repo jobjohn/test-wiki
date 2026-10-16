@@ -11,7 +11,9 @@
     "start": "next start",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "reset-password": "node scripts/reset-password.mjs"
+    "reset-password": "node scripts/reset-password.mjs",
+    "storybook": "storybook dev -p 6006",
+    "build-storybook": "storybook build"
   },
   "dependencies": {
     "class-variance-authority": "^0.7.1",
@@ -39,14 +41,20 @@
     "unist-util-visit": "^5.0.0"
   },
   "devDependencies": {
+    "@storybook/addon-a11y": "^10.6.2",
+    "@storybook/addon-docs": "^10.6.2",
+    "@storybook/addon-themes": "^10.6.2",
+    "@storybook/nextjs-vite": "^10.6.2",
     "@tailwindcss/postcss": "^4.3.3",
     "@types/node": "^22.19.0",
     "@types/qrcode": "^1.5.5",
     "@types/react": "^19.3.0",
     "@types/react-dom": "^19.3.0",
     "postcss": "^8.5.28",
+    "storybook": "^10.6.2",
     "tailwindcss": "^4.3.3",
     "typescript": "~5.9.3",
+    "vite": "^8.3.4",
     "vitest": "^5.0.2"
   }
 }

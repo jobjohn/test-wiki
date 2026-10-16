@@ -105,7 +105,21 @@ npm install
 npm run dev        # http://localhost:3000（データは ./storage に保存）
 npm test           # テスト
 npm run typecheck  # 型チェック
+npm run storybook  # 部品の一覧（http://localhost:6006）
 ```
+
+### Storybook（部品の一覧）
+
+画面で使っている部品を、状態ごとに確認できます。ツールバーで、カラーテーマ（7 種）とライト／ダークを切り替えられます。
+
+```bash
+npm run storybook         # 開発用サーバー http://localhost:6006
+npm run build-storybook   # 静的なサイトとして storybook-static/ に出力
+```
+
+- 部品は `部品名.stories.tsx` として、部品と同じ場所に置きます（`src/components/` の部品にストーリーがないと、`npm test` が失敗します）。
+- フォームのサーバーアクションとデータベースは、Storybook ではモックに差し替わっています（`.storybook/main.ts`）。送信しても何も保存されません。
+- 見た目を統一していく計画は [docs/design-system-plan.md](docs/design-system-plan.md) にあります。
 
 ## 構成
 

@@ -1,0 +1,29 @@
+import { Meta } from "@storybook/addon-docs/blocks";
+
+<Meta title="はじめに" />
+
+# Wiki のデザインシステム
+
+この Storybook は、Wiki の画面で使っている部品を 1 か所に集めて、見た目を揃えるためのものです。
+
+## 見方
+
+- **ツールバー**で、カラーテーマ（ベース・メイン・差し色）と `light` / `dark` / `system`（表示モード）を切り替えられます。どのテーマでも読めるかを、部品ごとに確認します。URL に `?globals=theme:dark;palette:grape` を付けると、その状態のまま共有できます。
+- **Foundations**: 色と文字。見た目の土台です。
+- **UI**: shadcn/ui の部品（ボタン、入力欄、ダイアログなど）。
+- **Components**: Wiki 独自の部品（フィールド、タグ、サイドバーなど）。
+- **Forms**: 入力フォーム（ログイン、ページ編集、設定など）。サーバーアクションはモックで、送信しても何も保存されません。
+- **Layout**: 画面全体の枠。
+
+## 起動
+
+```bash
+npm run storybook        # http://localhost:6006
+npm run build-storybook  # 静的なサイトとして storybook-static/ に出力
+```
+
+## 新しい部品を追加するとき
+
+部品と同じ場所に `部品名.stories.tsx` を置きます。`UI/` と `Components/` の例にならい、状態（通常・無効・エラーなど）ごとにストーリーを作ってください。
+
+統一の進め方は `docs/design-system-plan.md` にあります。

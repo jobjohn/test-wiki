@@ -10,3 +10,8 @@ Dockerfile
 compose.yaml
 tests
 *.md
+
+.storybook
+storybook-static
+**/*.stories.tsx
+src/stories
