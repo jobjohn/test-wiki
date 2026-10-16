@@ -5,7 +5,7 @@ import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTi
 
 export default function NotFound() {
   return (
-    <Empty className="mx-auto my-16 max-w-md border border-dashed">
+    <Empty className="mx-auto my-16 max-w-md">
       <EmptyHeader>
         <EmptyMedia variant="icon">
           <FileQuestion aria-hidden />

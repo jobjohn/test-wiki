@@ -77,7 +77,7 @@
  *
  * 管理者が選ぶ 3 色は、サーバーが <style id="theme-variables"> で次の変数として注入する。
  *   --primary / --primary-foreground     メインカラー（ボタン・リンク・選択中）
- *   --base / --base-foreground           ベースカラー（ヘッダーなど画面の基調）
+ *   --base / --base-foreground           ベースカラー（shadcn/ui の --sidebar 系に割り当てる）
  *   --highlight / --highlight-foreground 差し色（タグ・強調・フォルダアイコン）
  * ここでは、それ以外の shadcn/ui の変数（背景・枠線・淡い面など）を 3 色とライト/ダークから導出する。
  */
@@ -114,12 +114,9 @@
   --color-sidebar-ring: var(--sidebar-ring);
 
   /* この Wiki 独自のトークン */
-  --color-header: var(--header);
-  --color-header-foreground: var(--header-foreground);
   --color-highlight: var(--highlight);
   --color-highlight-foreground: var(--highlight-foreground);
   --color-highlight-text: var(--highlight-text);
-  --color-link: var(--link);
   --color-success: var(--success);
 
   --animate-caret-blink: caret-blink 1.25s ease-out infinite;
@@ -163,17 +160,16 @@
   --input: oklch(0.93 0.007 106.5);
   --ring: oklch(0.737 0.021 106.9);
 
-  --sidebar: oklch(0.988 0.003 106.5);
-  --sidebar-foreground: var(--foreground);
+  /* ベースカラーは shadcn/ui のサイドバーの変数に割り当てる */
+  --sidebar: var(--base);
+  --sidebar-foreground: var(--base-foreground);
   --sidebar-primary: var(--primary);
   --sidebar-primary-foreground: var(--primary-foreground);
-  --sidebar-accent: var(--accent);
-  --sidebar-accent-foreground: var(--foreground);
-  --sidebar-border: var(--border);
+  --sidebar-accent: color-mix(in srgb, var(--base-foreground) 8%, var(--base));
+  --sidebar-accent-foreground: var(--base-foreground);
+  --sidebar-border: color-mix(in srgb, var(--base-foreground) 12%, var(--base));
   --sidebar-ring: var(--ring);
 
-  --header: var(--base);
-  --header-foreground: var(--base-foreground);
   --link: color-mix(in srgb, var(--primary) 88%, var(--foreground));
   --highlight-text: color-mix(in srgb, var(--highlight) 55%, var(--foreground));
   --success: #15803d;
@@ -205,9 +201,11 @@
   --border: oklch(1 0 0 / 10%);
   --input: oklch(1 0 0 / 15%);
   --ring: oklch(0.58 0.031 107.3);
-  --sidebar: oklch(0.228 0.013 107.4);
-  --header: color-mix(in srgb, var(--base) 6%, oklch(0.2 0.01 107.3));
-  --header-foreground: oklch(0.988 0.003 106.5);
+  --sidebar: color-mix(in srgb, var(--base) 8%, oklch(0.228 0.013 107.4));
+  --sidebar-foreground: oklch(0.988 0.003 106.5);
+  --sidebar-accent: oklch(1 0 0 / 8%);
+  --sidebar-accent-foreground: oklch(0.988 0.003 106.5);
+  --sidebar-border: oklch(1 0 0 / 10%);
   --link: color-mix(in srgb, var(--primary) 60%, #ffffff);
   --highlight-text: color-mix(in srgb, var(--highlight) 70%, #ffffff);
   --success: #4ade80;
@@ -221,19 +219,28 @@
   --hl-meta: #8b949e;
 }
 @media (prefers-color-scheme: dark) {
+  /* 「システムに合わせる」で OS がダークのときも、ダークモードと同じ配色にする */
   :root[data-theme="system"] {
     color-scheme: dark;
-    --background: #0f1115;
-    --foreground: #e5e7eb;
-    --card: #171a21;
-    --popover: #171a21;
-    --muted-foreground: #9ca3af;
-    --destructive: #f87171;
-    --border: #2a2f3a;
-    --input: #3a404c;
-    --sidebar: #10151c;
-    --header: color-mix(in srgb, var(--base) 6%, #161a22);
-    --header-foreground: #e5e7eb;
+    --background: oklch(0.153 0.006 107.1);
+    --foreground: oklch(0.988 0.003 106.5);
+    --card: oklch(0.228 0.013 107.4);
+    --popover: oklch(0.228 0.013 107.4);
+    --secondary: oklch(0.286 0.016 107.4);
+    --secondary-foreground: oklch(0.988 0.003 106.5);
+    --muted: oklch(0.286 0.016 107.4);
+    --muted-foreground: oklch(0.737 0.021 106.9);
+    --accent: oklch(0.286 0.016 107.4);
+    --accent-foreground: oklch(0.988 0.003 106.5);
+    --destructive: oklch(0.704 0.191 22.216);
+    --border: oklch(1 0 0 / 10%);
+    --input: oklch(1 0 0 / 15%);
+    --ring: oklch(0.58 0.031 107.3);
+    --sidebar: color-mix(in srgb, var(--base) 8%, oklch(0.228 0.013 107.4));
+    --sidebar-foreground: oklch(0.988 0.003 106.5);
+    --sidebar-accent: oklch(1 0 0 / 8%);
+    --sidebar-accent-foreground: oklch(0.988 0.003 106.5);
+    --sidebar-border: oklch(1 0 0 / 10%);
     --link: color-mix(in srgb, var(--primary) 60%, #ffffff);
     --highlight-text: color-mix(in srgb, var(--highlight) 70%, #ffffff);
     --success: #4ade80;
@@ -368,5 +375,5 @@
 }
 
 @media print {
-  header, aside, .print\:hidden { display: none !important; }
+  header, [data-slot="sidebar"], .print\:hidden { display: none !important; }
 }

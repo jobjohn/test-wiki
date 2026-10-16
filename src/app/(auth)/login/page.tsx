@@ -8,10 +8,10 @@ import { safeNext } from "@/lib/access";
 import { getCurrentUser } from "@/lib/session";
 import { getSettings } from "@/lib/settings";
 import { DEFAULT_ADMIN_USERNAME } from "@/lib/users";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 
 export const metadata: Metadata = { title: "ログイン" };
-
-const code = "rounded bg-muted px-1 font-mono text-xs";
 
 export default async function LoginPage({ searchParams }: { searchParams: Promise<{ next?: string }> }) {
   const next = safeNext((await searchParams).next) ?? "";
@@ -24,20 +24,20 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
       {!settings.setupCompletedAt && (
         <Alert variant="warning">
           <Info aria-hidden />
-          <AlertDescription className="text-foreground">
+          <AlertDescription>
             <p>
               <strong>初回セットアップ</strong>
               <br />
-              ユーザー名 <code className={code}>{DEFAULT_ADMIN_USERNAME}</code>
+              ユーザー名 <Badge variant="outline">{DEFAULT_ADMIN_USERNAME}</Badge>
               {process.env.WIKI_ADMIN_PASSWORD ? (
                 <>
                   {" "}
-                  と環境変数 <code className={code}>WIKI_ADMIN_PASSWORD</code> のパスワードでログインしてください。
+                  と環境変数 <Badge variant="outline">WIKI_ADMIN_PASSWORD</Badge> のパスワードでログインしてください。
                 </>
               ) : (
                 <>
                   {" "}
-                  / パスワード <code className={code}>{DEFAULT_ADMIN_USERNAME}</code> でログインしてください。
+                  / パスワード <Badge variant="outline">{DEFAULT_ADMIN_USERNAME}</Badge> でログインしてください。
                 </>
               )}
               ログイン後に初期設定とパスワード変更を行います。
@@ -46,10 +46,12 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
         </Alert>
       )}
       {settings.publicRead && (
-        <Link href="/" className="inline-flex items-center justify-center gap-1 text-sm text-link hover:underline">
-          <ArrowLeft className="size-3.5" aria-hidden />
-          ログインせずに閲覧する
-        </Link>
+        <Button variant="link" asChild className="h-auto p-0">
+          <Link href="/">
+            <ArrowLeft className="size-3.5" aria-hidden />
+            ログインせずに閲覧する
+          </Link>
+        </Button>
       )}
     </>
   );

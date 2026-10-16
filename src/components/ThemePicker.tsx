@@ -78,7 +78,7 @@ export function ThemePicker({
       <FieldSet>
         <FieldLegend variant="label">カラーテーマ</FieldLegend>
         <FieldDescription>
-          ベースカラー（ヘッダー・画面の基調）・メインカラー（ボタン・リンク）・差し色（タグ・強調）の 3 色で全体の配色が決まります。
+          ベースカラー（サイドバー）・メインカラー（ボタン・リンク）・差し色（タグ・強調）の 3 色で全体の配色が決まります。
         </FieldDescription>
         <RadioGroup value={theme} onValueChange={choose} aria-label="カラーテーマ" className="grid-cols-2 sm:grid-cols-4">
           {[
@@ -129,7 +129,7 @@ export function ThemePicker({
               />
               <FieldContent className="gap-0">
                 <FieldLabel htmlFor={name}>{label}</FieldLabel>
-                <FieldDescription className="font-mono text-xs">{colors[key]}</FieldDescription>
+                <FieldDescription>{colors[key]}</FieldDescription>
               </FieldContent>
             </Field>
           ))}

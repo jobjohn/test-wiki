@@ -28,7 +28,7 @@ function Section({ icon: Icon, title, children }: { icon: typeof BookOpen; title
   return (
     <FieldSet>
       <FieldLegend className="flex items-center gap-2">
-        <Icon className="size-[18px] text-primary" aria-hidden />
+        <Icon className="size-4" aria-hidden />
         {title}
       </FieldLegend>
       <FieldGroup>{children}</FieldGroup>

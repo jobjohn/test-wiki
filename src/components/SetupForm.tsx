@@ -25,7 +25,7 @@ export interface SettingsFormValues {
 function Step({ n, children }: { n: number; children: React.ReactNode }) {
   return (
     <FieldLegend className="flex items-center gap-2.5">
-      <Badge className="size-6 rounded-full p-0 text-sm">{n}</Badge>
+      <Badge>{n}</Badge>
       {children}
     </FieldLegend>
   );

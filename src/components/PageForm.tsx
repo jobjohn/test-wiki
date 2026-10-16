@@ -6,14 +6,15 @@ import { useActionState, useEffect, useRef, useState } from "react";
 import { savePageAction } from "@/actions/pages";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { NativeSelect } from "@/components/ui/native-select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
-import { cn } from "@/lib/utils";
 import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { FormErrors } from "./FormErrors";
 import { SubmitButton } from "./SubmitButton";
+import { Badge } from "@/components/ui/badge";
 
 export interface PageFormValues {
   title: string;
@@ -171,13 +172,7 @@ export function PageForm({
             <TriangleAlert aria-hidden />
             <AlertTitle>あなたが保存しようとした本文（コピーして残しておけます）</AlertTitle>
             <AlertDescription className="w-full gap-3">
-              <Textarea
-                readOnly
-                rows={8}
-                value={state.conflict.yourBody}
-                onFocus={(e) => e.currentTarget.select()}
-                className="bg-background font-mono text-foreground"
-              />
+              <Textarea readOnly rows={8} value={state.conflict.yourBody} onFocus={(e) => e.currentTarget.select()} />
               <Button type="button" variant="outline" onClick={loadLatest}>
                 最新の内容を読み込む（この画面の編集内容は置き換わります）
               </Button>
@@ -199,7 +194,6 @@ export function PageForm({
             maxLength={MAX_TITLE}
             autoFocus={!initial.title}
             placeholder="ページタイトル"
-            className="h-10 text-base"
           />
         </Field>
 
@@ -279,7 +273,7 @@ export function PageForm({
                 value={body}
                 onChange={(e) => setBody(e.target.value)}
                 placeholder={"Markdown で記述できます。\n[[ページ名]] で他のページへリンク、画像はドラッグ＆ドロップや貼り付けで添付できます。"}
-                className={cn("min-h-[26rem] resize-y font-mono text-sm leading-relaxed", dragOver && "border-primary ring-[3px] ring-primary/30")}
+                className="min-h-[26rem]"
                 onDragOver={(e) => {
                   if ([...e.dataTransfer.types].includes("Files")) {
                     e.preventDefault();
@@ -313,25 +307,28 @@ export function PageForm({
               />
             </TabsContent>
             <TabsContent value="preview" forceMount className="data-[state=inactive]:hidden">
-              <div className="min-h-[26rem] rounded-md border p-5">
-                {previewState === "loading" && <p className="text-muted-foreground">プレビューを生成中...</p>}
-                {previewState === "error" && (
-                  <Alert variant="destructive">
-                    <AlertDescription className="text-destructive">プレビューを表示できませんでした。</AlertDescription>
-                  </Alert>
-                )}
-                {previewState === "idle" &&
-                  (previewHtml ? (
-                    <div className="markdown-body" dangerouslySetInnerHTML={{ __html: previewHtml }} />
-                  ) : (
-                    <p className="text-muted-foreground">（内容がありません）</p>
-                  ))}
-              </div>
+              <Card className="min-h-[26rem]">
+                <CardContent>
+                  {previewState === "loading" && <p className="text-muted-foreground">プレビューを生成中...</p>}
+                  {previewState === "error" && (
+                    <Alert variant="destructive">
+                      <AlertDescription>プレビューを表示できませんでした。</AlertDescription>
+                    </Alert>
+                  )}
+                  {previewState === "idle" &&
+                    (previewHtml ? (
+                      <div className="markdown-body" dangerouslySetInnerHTML={{ __html: previewHtml }} />
+                    ) : (
+                      <p className="text-muted-foreground">（内容がありません）</p>
+                    ))}
+                </CardContent>
+              </Card>
             </TabsContent>
           </Tabs>
           <p className="text-xs text-muted-foreground">
-            Markdown（GitHub 形式）対応 ・ <code className="rounded bg-muted px-1">[[ページ名]]</code> /{" "}
-            <code className="rounded bg-muted px-1">[[ページ名|表示名]]</code> で Wiki リンク ・ Ctrl/⌘ + S で保存
+            {dragOver && "ここにドロップすると添付します ・ "}
+            Markdown（GitHub 形式）対応 ・ <Badge variant="outline">[[ページ名]]</Badge> / <Badge variant="outline">[[ページ名|表示名]]</Badge> で
+            Wiki リンク ・ Ctrl/⌘ + S で保存
           </p>
         </div>
 

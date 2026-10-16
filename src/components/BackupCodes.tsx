@@ -12,23 +12,23 @@ export function BackupCodes({ codes, title = "バックアップコード" }: { 
   return (
     <Card className="max-w-lg">
       <CardHeader>
-        <CardTitle className="flex items-center gap-2 text-lg">
-          <KeyRound className="size-[18px] text-primary" aria-hidden />
+        <CardTitle className="flex items-center gap-2">
+          <KeyRound className="size-4" aria-hidden />
           {title}
         </CardTitle>
       </CardHeader>
       <CardContent className="grid gap-4">
         <Alert variant="warning">
           <TriangleAlert aria-hidden />
-          <AlertDescription className="text-foreground">
+          <AlertDescription>
             スマートフォンを紛失した場合などに、パスコードの代わりに使えます。<strong>この画面を離れると再表示できません。</strong>
             印刷するか安全な場所に保管してください（各コードは 1 回のみ使用可能）。
           </AlertDescription>
         </Alert>
-        <ul className="grid grid-cols-2 gap-2 rounded-lg bg-muted p-4">
+        <ul className="grid grid-cols-2 gap-2">
           {codes.map((code) => (
             <li key={code}>
-              <CopyText text={code} className="text-sm" />
+              <CopyText text={code} />
             </li>
           ))}
         </ul>

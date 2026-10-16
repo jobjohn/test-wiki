@@ -18,16 +18,16 @@ export default async function TagsPage() {
       {tags.length ? (
         <div className="flex flex-wrap gap-2">
           {tags.map((tag) => (
-            <Badge key={tag.id} variant="highlight" className="px-3 py-1 text-sm" asChild>
+            <Badge key={tag.id} variant="highlight" asChild>
               <Link href={`/tags/${encodeURIComponent(tag.name)}`}>
                 <Tag aria-hidden />
-                {tag.name} <span className="opacity-70">{tag.count}</span>
+                {tag.name} {tag.count}
               </Link>
             </Badge>
           ))}
         </div>
       ) : (
-        <Empty className="border border-dashed">
+        <Empty>
           <EmptyHeader>
             <EmptyMedia variant="icon">
               <TagsIcon aria-hidden />

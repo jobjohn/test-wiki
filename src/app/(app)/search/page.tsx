@@ -46,9 +46,11 @@ export default async function SearchPage({ searchParams }: { searchParams: Promi
             「{q}」の検索結果: {result.total} 件
           </p>
           {canEdit(user) && !exact && (
-            <Link href={`/pages/new?title=${encodeURIComponent(q)}`} className="inline-flex w-fit items-center gap-1.5 text-sm text-link hover:underline">
-              <FilePlus className="size-4" aria-hidden /> ページ「{q}」を新規作成
-            </Link>
+            <Button variant="link" asChild className="h-auto p-0 w-fit">
+              <Link href={`/pages/new?title=${encodeURIComponent(q)}`}>
+                <FilePlus className="size-4" aria-hidden /> ページ「{q}」を新規作成
+              </Link>
+            </Button>
           )}
           {result.pages.length > 0 && (
             <Card>

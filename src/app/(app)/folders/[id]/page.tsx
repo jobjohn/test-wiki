@@ -15,6 +15,7 @@ import { folderCounts, getFolder, listChildFolders } from "@/lib/folders";
 import { parseId } from "@/lib/params";
 import { listPagesInFolder } from "@/lib/pages";
 import { canEdit } from "@/lib/users";
+import { Separator } from "@/components/ui/separator";
 
 type Props = { params: Promise<{ id: string }> };
 
@@ -35,7 +36,7 @@ export default async function FolderPage({ params }: Props) {
 
   return (
     <div className="grid gap-5">
-      <header className="grid gap-2 border-b pb-4">
+      <header className="grid gap-2">
         <div>
           <FolderBreadcrumbs folder={folder} includeSelf={false} />
           <PageTitle icon={FolderOpen}>{folder.name}</PageTitle>
@@ -70,7 +71,7 @@ export default async function FolderPage({ params }: Props) {
               confirmLabel="削除する"
               destructive
               trigger={
-                <Button variant="outline" className="text-destructive hover:text-destructive">
+                <Button variant="destructive">
                   <Trash2 aria-hidden />
                   削除
                 </Button>
@@ -79,9 +80,10 @@ export default async function FolderPage({ params }: Props) {
           </div>
         )}
       </header>
+      <Separator />
 
       {children.length === 0 && pages.length === 0 ? (
-        <Empty className="border border-dashed">
+        <Empty>
           <EmptyHeader>
             <EmptyMedia variant="icon">
               <Folder aria-hidden />
@@ -97,12 +99,12 @@ export default async function FolderPage({ params }: Props) {
               <li key={`f${child.id}`}>
                 <Item variant="outline" size="sm" asChild>
                   <Link href={`/folders/${child.id}`}>
-                    <ItemMedia variant="icon" className="text-highlight-text">
+                    <ItemMedia variant="icon">
                       <Folder aria-hidden />
                     </ItemMedia>
                     <ItemContent className="min-w-0">
                       <ItemTitle className="w-full truncate">{child.name}</ItemTitle>
-                      <ItemDescription className="text-xs">
+                      <ItemDescription>
                         {counts.folders} フォルダ・{counts.pages} ページ
                       </ItemDescription>
                     </ItemContent>
@@ -115,12 +117,12 @@ export default async function FolderPage({ params }: Props) {
             <li key={`p${page.id}`}>
               <Item variant="outline" size="sm" asChild>
                 <Link href={`/pages/${page.id}`}>
-                  <ItemMedia variant="icon" className="text-primary">
+                  <ItemMedia variant="icon">
                     <FileText aria-hidden />
                   </ItemMedia>
                   <ItemContent className="min-w-0">
                     <ItemTitle className="w-full truncate">{page.title}</ItemTitle>
-                    <ItemDescription className="text-xs">{formatDateTime(page.updatedAt)}</ItemDescription>
+                    <ItemDescription>{formatDateTime(page.updatedAt)}</ItemDescription>
                   </ItemContent>
                 </Link>
               </Item>

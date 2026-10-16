@@ -14,8 +14,8 @@ export const Simple: Story = {
   render: () => (
     <SimpleBreadcrumb
       items={[
-        { href: "/pages/1", label: "認証 API 仕様", icon: <FileText className="size-3.5" aria-hidden /> },
-        { href: "/pages/1/revisions", label: "履歴", icon: <History className="size-3.5" aria-hidden /> },
+        { href: "/pages/1", label: "認証 API 仕様" },
+        { href: "/pages/1/revisions", label: "履歴" },
       ]}
     />
   ),

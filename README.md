@@ -45,6 +45,7 @@ docker compose down
 
 - UI は [shadcn/ui](https://ui.shadcn.com)（Tailwind CSS v4 + Radix UI）。ボタン・フォーム・ダイアログ・ドロップダウン・タブ・通知などの部品は `src/components/ui/` にあり、`components.json` も含まれているので、`npx shadcn@latest add <部品名>` で追加できます
 - アイコンは [Lucide](https://lucide.dev)（`lucide-react`）で統一
+- 画面では shadcn/ui の部品をそのまま使い、色・角丸・影などの見た目を上書きしません（画面側で指定するのは配置だけ）。3 色は shadcn/ui のテーマ変数に割り当てています: メインカラー → `--primary`、ベースカラー → `--sidebar` 系、差し色 → `--highlight`（Button・Badge の `highlight` バリアントで使用）
 - **3 色（ベースカラー・メインカラー・差し色）** で全体の配色が決まるカラーテーマ。標準は shadcn/ui のプリセット `b6tOvLBvU`（スタイル luma・ベース olive・テーマ green）に合わせた、ベース白・メイン緑・差し色オリーブ。7 種類のプリセットのほか、色を自由に選べるカスタムテーマに対応（設定画面でリアルタイムにプレビュー）
 - 表示モード: システムに合わせる / ライト / ダーク
 - スマートフォン対応

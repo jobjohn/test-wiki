@@ -88,7 +88,7 @@ export function Sidebar({ tree, canEdit, ...props }: { tree: TreeData | null; ca
             <SidebarMenuItem>
               <SidebarMenuButton asChild isActive={active}>
                 <Link href={`/folders/${folder.id}`} aria-current={active ? "page" : undefined}>
-                  {open ? <FolderOpen className="text-highlight-text" aria-hidden /> : <Folder className="text-highlight-text" aria-hidden />}
+                  {open ? <FolderOpen aria-hidden /> : <Folder aria-hidden />}
                   <span>{folder.name}</span>
                 </Link>
               </SidebarMenuButton>
@@ -110,7 +110,7 @@ export function Sidebar({ tree, canEdit, ...props }: { tree: TreeData | null; ca
           <SidebarMenuItem key={`p${page.id}`}>
             <SidebarMenuButton asChild isActive={active}>
               <Link href={`/pages/${page.id}`} aria-current={active ? "page" : undefined}>
-                <FileText className="text-muted-foreground" aria-hidden />
+                <FileText aria-hidden />
                 <span>{page.title}</span>
               </Link>
             </SidebarMenuButton>

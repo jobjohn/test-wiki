@@ -15,7 +15,7 @@ export const metadata: Metadata = { title: "アカウント" };
 function SectionTitle({ icon: Icon, children }: { icon: typeof UserIcon; children: React.ReactNode }) {
   return (
     <CardTitle className="flex items-center gap-2">
-      <Icon className="size-[18px] text-primary" aria-hidden />
+      <Icon className="size-4" aria-hidden />
       {children}
     </CardTitle>
   );
@@ -37,7 +37,7 @@ export default async function AccountPage() {
           <dl className="grid grid-cols-[max-content_1fr] items-center gap-x-4 gap-y-2 text-sm">
             <dt className="text-muted-foreground">ユーザー名</dt>
             <dd>
-              <code className="rounded bg-muted px-1.5 py-0.5 font-mono">{user.username}</code>
+              <Badge variant="outline">{user.username}</Badge>
             </dd>
             <dt className="text-muted-foreground">権限</dt>
             <dd>
@@ -82,7 +82,8 @@ export default async function AccountPage() {
           ) : (
             <>
               <p className="text-sm">
-                ログイン時にパスワードに加えて、スマートフォンの認証アプリ（Google Authenticator、Microsoft Authenticator など）に表示されるパスコードを入力するようにできます。
+                ログイン時にパスワードに加えて、スマートフォンの認証アプリ（Google Authenticator、Microsoft Authenticator
+                など）に表示されるパスコードを入力するようにできます。
               </p>
               <Button className="w-fit" asChild>
                 <Link href="/account/mfa">

@@ -1,4 +1,4 @@
-import { FileText, History, RotateCcw } from "lucide-react";
+import { History, RotateCcw } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -27,7 +27,7 @@ export default async function RevisionsPage({ params }: { params: Promise<{ id: 
   return (
     <div className="grid gap-4">
       <div>
-        <SimpleBreadcrumb items={[{ href: `/pages/${page.id}`, label: page.title, icon: <FileText className="size-3.5" aria-hidden /> }]} />
+        <SimpleBreadcrumb items={[{ href: `/pages/${page.id}`, label: page.title }]} />
         <PageTitle icon={History}>変更履歴</PageTitle>
       </div>
       <Card className="py-2">
@@ -47,9 +47,9 @@ export default async function RevisionsPage({ params }: { params: Promise<{ id: 
               {revisions.map((revision, index) => (
                 <TableRow key={revision.id}>
                   <TableCell>
-                    <Link href={`/pages/${page.id}/revisions/${revision.number}`} className="text-link hover:underline">
-                      第{revision.number}版
-                    </Link>
+                    <Button variant="link" asChild className="h-auto p-0">
+                      <Link href={`/pages/${page.id}/revisions/${revision.number}`}>第{revision.number}版</Link>
+                    </Button>
                   </TableCell>
                   <TableCell className="whitespace-nowrap">{formatDateTime(revision.createdAt)}</TableCell>
                   <TableCell>{revision.userName ?? "—"}</TableCell>

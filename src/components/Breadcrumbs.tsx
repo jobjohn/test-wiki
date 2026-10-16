@@ -1,4 +1,4 @@
-import { Folder, House } from "lucide-react";
+import { House } from "lucide-react";
 import Link from "next/link";
 import { Fragment } from "react";
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbSeparator } from "@/components/ui/breadcrumb";
@@ -22,10 +22,7 @@ export function FolderBreadcrumbs({ folder, includeSelf = true }: { folder: Fold
             <BreadcrumbSeparator />
             <BreadcrumbItem>
               <BreadcrumbLink asChild>
-                <Link href={`/folders/${f.id}`}>
-                  <Folder className="size-3.5" aria-hidden />
-                  {f.name}
-                </Link>
+                <Link href={`/folders/${f.id}`}>{f.name}</Link>
               </BreadcrumbLink>
             </BreadcrumbItem>
           </Fragment>
@@ -36,7 +33,7 @@ export function FolderBreadcrumbs({ folder, includeSelf = true }: { folder: Fold
 }
 
 /** 任意のパンくず（リンクと現在地の並び） */
-export function SimpleBreadcrumb({ items }: { items: { href: string; label: string; icon?: React.ReactNode }[] }) {
+export function SimpleBreadcrumb({ items }: { items: { href: string; label: string }[] }) {
   return (
     <Breadcrumb className="mb-1">
       <BreadcrumbList className="gap-1 sm:gap-1.5">
@@ -45,10 +42,7 @@ export function SimpleBreadcrumb({ items }: { items: { href: string; label: stri
             {i > 0 && <BreadcrumbSeparator />}
             <BreadcrumbItem>
               <BreadcrumbLink asChild>
-                <Link href={item.href}>
-                  {item.icon}
-                  {item.label}
-                </Link>
+                <Link href={item.href}>{item.label}</Link>
               </BreadcrumbLink>
             </BreadcrumbItem>
           </Fragment>

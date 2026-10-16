@@ -44,9 +44,9 @@ function SearchBox() {
 
   return (
     <Form action="/search" role="search" className="ml-auto w-full max-w-md flex-1">
-      <InputGroup className="h-9 border-header-foreground/20 bg-header-foreground/10 text-header-foreground">
+      <InputGroup>
         <InputGroupAddon>
-          <Search className="text-header-foreground/70" aria-hidden />
+          <Search aria-hidden />
         </InputGroupAddon>
         <InputGroupInput
           ref={inputRef}
@@ -56,7 +56,6 @@ function SearchBox() {
           defaultValue={pathname === "/search" ? (params.get("q") ?? "") : ""}
           placeholder="検索"
           aria-label="Wiki を検索"
-          className="text-header-foreground placeholder:text-header-foreground/60"
         />
         <InputGroupAddon align="inline-end" className="max-sm:hidden">
           <Kbd>/</Kbd>
@@ -83,15 +82,15 @@ export function ShellFrame({
   return (
     <TooltipProvider>
       <SidebarProvider className="flex-col" style={{ "--header-height": "3.5rem" } as CSSProperties}>
-        <header className="sticky top-0 z-30 flex h-(--header-height) items-center gap-2 border-b bg-header px-3 text-header-foreground md:gap-3 md:px-4">
-          <SidebarTrigger className="size-9 hover:bg-header-foreground/10 hover:text-header-foreground" />
+        <header className="sticky top-0 z-30 flex h-(--header-height) items-center gap-2 border-b bg-background px-3 md:gap-3 md:px-4">
+          <SidebarTrigger />
 
-          <Link href="/" className="flex min-w-0 items-center gap-2.5 font-bold">
-            <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground shadow-[inset_0_-3px_0_var(--highlight)]">
-              <BookOpen className="size-[18px]" aria-hidden />
-            </span>
-            <span className="hidden truncate min-[480px]:inline">{wikiName}</span>
-          </Link>
+          <Button variant="ghost" asChild className="min-w-0">
+            <Link href="/">
+              <BookOpen aria-hidden />
+              <span className="hidden truncate min-[480px]:inline">{wikiName}</span>
+            </Link>
+          </Button>
 
           <Suspense fallback={<div className="ml-auto flex-1" />}>
             <SearchBox />
@@ -108,7 +107,7 @@ export function ShellFrame({
           {user ? (
             <UserMenu name={user.name} username={user.username} roleName={user.roleName} isAdmin={user.isAdmin} />
           ) : (
-            <Button variant="ghost" className="hover:bg-header-foreground/10 hover:text-header-foreground" asChild>
+            <Button variant="ghost" asChild>
               <Link href="/login">
                 <LogIn aria-hidden />
                 ログイン

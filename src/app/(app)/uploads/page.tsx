@@ -44,12 +44,14 @@ export default async function UploadsPage() {
                   <TableRow key={upload.id}>
                     <TableCell>
                       {/* eslint-disable-next-line @next/next/no-img-element */}
-                      {isImage(upload.contentType) && <img src={uploadPath(upload)} alt="" className="max-h-12 max-w-16 rounded" />}
+                      {isImage(upload.contentType) && <img src={uploadPath(upload)} alt="" className="max-h-12 max-w-16" />}
                     </TableCell>
                     <TableCell>
-                      <a href={uploadPath(upload)} target="_blank" rel="noopener noreferrer" className="text-link hover:underline">
-                        {upload.filename}
-                      </a>
+                      <Button variant="link" asChild className="h-auto p-0">
+                        <a href={uploadPath(upload)} target="_blank" rel="noopener noreferrer">
+                          {upload.filename}
+                        </a>
+                      </Button>
                     </TableCell>
                     <TableCell className="whitespace-nowrap">{formatBytes(upload.byteSize)}</TableCell>
                     <TableCell className="whitespace-nowrap">{formatDateTime(upload.createdAt)}</TableCell>
@@ -65,7 +67,7 @@ export default async function UploadsPage() {
                           confirmLabel="削除する"
                           destructive
                           trigger={
-                            <Button variant="ghost" size="icon-sm" className="text-destructive hover:text-destructive" aria-label={`${upload.filename} を削除`}>
+                            <Button variant="destructive" size="icon-sm" aria-label={`${upload.filename} を削除`}>
                               <Trash2 aria-hidden />
                             </Button>
                           }
@@ -79,7 +81,7 @@ export default async function UploadsPage() {
           </CardContent>
         </Card>
       ) : (
-        <Empty className="border border-dashed">
+        <Empty>
           <EmptyHeader>
             <EmptyMedia variant="icon">
               <Paperclip aria-hidden />

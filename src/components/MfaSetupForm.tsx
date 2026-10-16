@@ -25,30 +25,32 @@ export function MfaSetupForm({ secret, qrSvg }: { secret: string; qrSvg: string 
         <FormErrors errors={state.errors} />
         <ol className="grid gap-8">
           <li className="grid gap-3">
-            <div className="flex items-center gap-2.5 font-semibold">
-              <Badge className="size-6 rounded-full p-0 text-sm">1</Badge>
+            <h3 className="flex items-center gap-2.5">
+              <Badge>1</Badge>
               認証アプリで QR コードを読み取ります
-            </div>
+            </h3>
             <p className="text-sm text-muted-foreground">Google Authenticator、Microsoft Authenticator、1Password などが使えます。</p>
-            <div className="w-fit rounded-lg border bg-white p-3 [&_svg]:block [&_svg]:size-48" dangerouslySetInnerHTML={{ __html: qrSvg }} />
-            <Collapsible className="group/manual text-sm">
+            <Card size="sm" className="w-fit">
+              <CardContent className="[&_svg]:block [&_svg]:size-48" dangerouslySetInnerHTML={{ __html: qrSvg }} />
+            </Card>
+            <Collapsible className="group/manual">
               <CollapsibleTrigger asChild>
-                <Button type="button" variant="link" size="sm" className="h-auto px-0 text-muted-foreground">
+                <Button type="button" variant="link" size="sm" className="h-auto px-0">
                   <ChevronRight className="transition-transform group-data-[state=open]/manual:rotate-90" aria-hidden />
                   QR コードを読み取れない場合
                 </Button>
               </CollapsibleTrigger>
               <CollapsibleContent>
                 <p className="my-2 text-muted-foreground">アプリに次のキーを手入力してください。</p>
-                <CopyText text={secret} display={secret.replace(/(.{4})/g, "$1 ").trim()} className="text-base tracking-wider" />
+                <CopyText text={secret} display={secret.replace(/(.{4})/g, "$1 ").trim()} />
               </CollapsibleContent>
             </Collapsible>
           </li>
           <li className="grid gap-3">
-            <div className="flex items-center gap-2.5 font-semibold">
-              <Badge className="size-6 rounded-full p-0 text-sm">2</Badge>
+            <h3 className="flex items-center gap-2.5">
+              <Badge>2</Badge>
               アプリに表示された 6 桁のパスコードを入力します
-            </div>
+            </h3>
             <form action={action} className="flex flex-wrap items-center gap-3">
               <InputOTP
                 name="code"

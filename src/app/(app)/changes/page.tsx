@@ -10,6 +10,7 @@ import { requireAccess } from "@/lib/access";
 import { formatDateTime } from "@/lib/format";
 import { first } from "@/lib/params";
 import { recentRevisions } from "@/lib/pages";
+import { Button } from "@/components/ui/button";
 
 export const metadata: Metadata = { title: "最近の更新" };
 const PER_PAGE = 50;
@@ -42,14 +43,14 @@ export default async function ChangesPage({ searchParams }: { searchParams: Prom
                     <TableRow key={revision.id}>
                       <TableCell className="whitespace-nowrap">{formatDateTime(revision.createdAt)}</TableCell>
                       <TableCell>
-                        <Link href={`/pages/${revision.pageId}`} className="text-link hover:underline">
-                          {revision.pageTitle}
-                        </Link>
+                        <Button variant="link" asChild className="h-auto p-0">
+                          <Link href={`/pages/${revision.pageId}`}>{revision.pageTitle}</Link>
+                        </Button>
                       </TableCell>
                       <TableCell className="whitespace-nowrap">
-                        <Link href={`/pages/${revision.pageId}/revisions/${revision.number}`} className="text-link hover:underline">
-                          第{revision.number}版
-                        </Link>
+                        <Button variant="link" asChild className="h-auto p-0">
+                          <Link href={`/pages/${revision.pageId}/revisions/${revision.number}`}>第{revision.number}版</Link>
+                        </Button>
                       </TableCell>
                       <TableCell>{revision.userName ?? "—"}</TableCell>
                       <TableCell>{revision.summary}</TableCell>
@@ -62,7 +63,7 @@ export default async function ChangesPage({ searchParams }: { searchParams: Prom
           <Pagination basePath="/changes" page={pageNumber} hasNext={rows.length > PER_PAGE} />
         </>
       ) : (
-        <Empty className="border border-dashed">
+        <Empty>
           <EmptyHeader>
             <EmptyMedia variant="icon">
               <History aria-hidden />

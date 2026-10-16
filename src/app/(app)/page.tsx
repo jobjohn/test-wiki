@@ -2,6 +2,7 @@ import { ArrowRight, BookOpen, Clock, FileText, Folder, FolderPlus, Pencil, Tag,
 import Link from "next/link";
 import { Markdown } from "@/components/Markdown";
 import { PageList } from "@/components/PageList";
+import { PageTitle } from "@/components/PageTitle";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardAction, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -20,40 +21,31 @@ export default async function HomePage() {
 
   return (
     <div className="grid gap-6">
-      <Card className="bg-header text-header-foreground">
-        <CardContent className="flex items-start gap-4">
-          <span className="flex shrink-0 rounded-2xl bg-highlight p-3 text-highlight-foreground">
-            <BookOpen className="size-7" aria-hidden />
-          </span>
-          <div className="min-w-0">
-            <h1 className="text-2xl font-bold tracking-tight">{settings.wikiName}</h1>
-            {settings.description ? (
-              <div className="mt-1 opacity-90 [&_.markdown-body_a]:text-inherit">
-                <Markdown source={settings.description} />
-              </div>
-            ) : (
-              isAdmin(user) && (
-                <p className="mt-1 text-sm opacity-80">
-                  この Wiki の説明は
-                  <Link href="/settings" className="underline">
-                    設定
-                  </Link>
-                  から追加できます。
-                </p>
-              )
-            )}
+      <header className="grid gap-1">
+        <PageTitle icon={BookOpen}>{settings.wikiName}</PageTitle>
+        {settings.description ? (
+          <div className="text-muted-foreground">
+            <Markdown source={settings.description} />
           </div>
-        </CardContent>
-      </Card>
+        ) : (
+          isAdmin(user) && (
+            <p className="text-sm text-muted-foreground">
+              この Wiki の説明は
+              <Button variant="link" asChild className="h-auto p-0">
+                <Link href="/settings">設定</Link>
+              </Button>
+              から追加できます。
+            </p>
+          )
+        )}
+      </header>
 
       {home && (
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <FileText className="size-[18px] text-primary" aria-hidden />
-              <Link href={`/pages/${home.id}`} className="hover:underline">
-                {home.title}
-              </Link>
+              <FileText className="size-4" aria-hidden />
+              <Link href={`/pages/${home.id}`}>{home.title}</Link>
             </CardTitle>
             {canEdit(user) && (
               <CardAction>
@@ -76,7 +68,7 @@ export default async function HomePage() {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <Clock className="size-[18px] text-primary" aria-hidden />
+              <Clock className="size-4" aria-hidden />
               最近更新されたページ
             </CardTitle>
           </CardHeader>
@@ -84,19 +76,21 @@ export default async function HomePage() {
             {recent.length ? (
               <>
                 <PageList pages={recent} />
-                <Link href="/changes" className="inline-flex items-center gap-1 text-sm text-link hover:underline">
-                  すべての更新履歴
-                  <ArrowRight className="size-3.5" aria-hidden />
-                </Link>
+                <Button variant="link" asChild className="h-auto p-0">
+                  <Link href="/changes">
+                    すべての更新履歴
+                    <ArrowRight className="size-3.5" aria-hidden />
+                  </Link>
+                </Button>
               </>
             ) : (
               <p className="text-muted-foreground">
                 まだページがありません。
                 {canEdit(user) && (
                   <>
-                    <Link href="/pages/new" className="text-link underline">
-                      最初のページを作成
-                    </Link>
+                    <Button variant="link" asChild className="h-auto p-0">
+                      <Link href="/pages/new">最初のページを作成</Link>
+                    </Button>
                     しましょう。
                   </>
                 )}
@@ -109,7 +103,7 @@ export default async function HomePage() {
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <Folder className="size-[18px] text-primary" aria-hidden />
+                <Folder className="size-4" aria-hidden />
                 フォルダ
               </CardTitle>
             </CardHeader>
@@ -118,10 +112,12 @@ export default async function HomePage() {
                 <ul className="grid gap-1">
                   {folders.map((folder) => (
                     <li key={folder.id}>
-                      <Link href={`/folders/${folder.id}`} className="flex items-center gap-2 rounded-md px-1 py-1 text-link hover:bg-accent">
-                        <Folder className="size-4 text-highlight-text" aria-hidden />
-                        {folder.name}
-                      </Link>
+                      <Button variant="link" asChild className="h-auto p-0">
+                        <Link href={`/folders/${folder.id}`}>
+                          <Folder className="size-4" aria-hidden />
+                          {folder.name}
+                        </Link>
+                      </Button>
                     </li>
                   ))}
                 </ul>
@@ -142,7 +138,7 @@ export default async function HomePage() {
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <TagsIcon className="size-[18px] text-primary" aria-hidden />
+                <TagsIcon className="size-4" aria-hidden />
                 タグ
               </CardTitle>
             </CardHeader>
@@ -153,7 +149,7 @@ export default async function HomePage() {
                     <Badge key={tag.id} variant="highlight" asChild>
                       <Link href={`/tags/${encodeURIComponent(tag.name)}`}>
                         <Tag aria-hidden />
-                        {tag.name} <span className="opacity-70">{tag.count}</span>
+                        {tag.name} {tag.count}
                       </Link>
                     </Badge>
                   ))}

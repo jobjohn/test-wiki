@@ -23,10 +23,10 @@ export function CopyText({ text, display, className }: { text: string; display?:
           /* クリップボードを使えない環境 */
         }
       }}
-      className={cn("h-auto max-w-full py-0.5 font-mono break-all whitespace-normal", copied && "border-success text-success", className)}
+      className={cn("max-w-full", className)}
     >
       <span>{display ?? text}</span>
-      {copied ? <Check data-icon="inline-end" aria-hidden /> : <Copy data-icon="inline-end" className="text-muted-foreground" aria-hidden />}
+      {copied ? <Check data-icon="inline-end" aria-hidden /> : <Copy data-icon="inline-end" aria-hidden />}
       <span className="sr-only">{copied ? "コピーしました" : "コピー"}</span>
     </Button>
   );

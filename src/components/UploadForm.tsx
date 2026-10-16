@@ -7,7 +7,6 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty";
 import { Spinner } from "@/components/ui/spinner";
-import { cn } from "@/lib/utils";
 
 const MAX_MB = 20;
 
@@ -37,7 +36,7 @@ export function UploadForm() {
 
   return (
     <Empty
-      className={cn("mb-6 border border-dashed transition-colors", dragOver && "border-primary bg-accent")}
+      className="mb-6"
       onDragOver={(e) => {
         e.preventDefault();
         setDragOver(true);
@@ -53,7 +52,7 @@ export function UploadForm() {
         <EmptyMedia variant="icon">
           <Upload aria-hidden />
         </EmptyMedia>
-        <EmptyTitle>ファイルをアップロード</EmptyTitle>
+        <EmptyTitle>{dragOver ? "ここにドロップしてアップロード" : "ファイルをアップロード"}</EmptyTitle>
         <EmptyDescription>ここにファイルをドラッグ＆ドロップするか、ボタンから選択してください（最大 {MAX_MB}MB）。</EmptyDescription>
       </EmptyHeader>
       <EmptyContent>
@@ -74,7 +73,7 @@ export function UploadForm() {
         />
         {error && (
           <Alert variant="destructive" className="text-left">
-            <AlertDescription className="text-destructive">{error}</AlertDescription>
+            <AlertDescription>{error}</AlertDescription>
           </Alert>
         )}
       </EmptyContent>

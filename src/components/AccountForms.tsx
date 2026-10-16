@@ -104,7 +104,7 @@ export function MfaManage({ requireMfa }: { requireMfa: boolean }) {
           <Input type="password" name="password" placeholder="パスワード" autoComplete="current-password" required aria-label="パスワード" />
           <AlertDialog>
             <AlertDialogTrigger asChild>
-              <Button type="button" variant="outline" className="text-destructive hover:text-destructive">
+              <Button type="button" variant="destructive">
                 <X aria-hidden />
                 無効にする
               </Button>

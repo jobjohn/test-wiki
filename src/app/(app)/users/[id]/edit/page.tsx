@@ -26,15 +26,17 @@ export default async function EditUserPage({ params }: { params: Promise<{ id: s
         initial={{ username: user.username, displayName: user.displayName ?? "", role: user.role, mustChangePassword: user.mustChangePassword }}
       />
       {user.mfaEnabled && (
-        <Card className="border-destructive/40">
+        <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-base">
-              <ShieldCheck className="size-[18px] text-primary" aria-hidden />
+            <CardTitle className="flex items-center gap-2">
+              <ShieldCheck className="size-4" aria-hidden />
               二段階認証
             </CardTitle>
           </CardHeader>
           <CardContent className="grid gap-3">
-            <p className="text-sm">このユーザーは二段階認証を有効にしています。スマートフォンの紛失などでログインできなくなった場合はリセットしてください。</p>
+            <p className="text-sm">
+              このユーザーは二段階認証を有効にしています。スマートフォンの紛失などでログインできなくなった場合はリセットしてください。
+            </p>
             <ConfirmAction
               action={resetUserMfaAction.bind(null, user.id)}
               title="二段階認証をリセットしますか？"
@@ -42,7 +44,7 @@ export default async function EditUserPage({ params }: { params: Promise<{ id: s
               confirmLabel="リセットする"
               destructive
               trigger={
-                <Button variant="outline" className="w-fit text-destructive hover:text-destructive">
+                <Button variant="destructive" className="w-fit">
                   <RotateCcw aria-hidden />
                   二段階認証をリセット
                 </Button>

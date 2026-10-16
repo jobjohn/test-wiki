@@ -17,17 +17,7 @@ export function MfaChallengeForm({ next }: { next: string }) {
         <input type="hidden" name="next" value={next} />
         <Field>
           <FieldLabel htmlFor="code">パスコード</FieldLabel>
-          <Input
-            id="code"
-            name="code"
-            inputMode="numeric"
-            autoComplete="one-time-code"
-            maxLength={16}
-            required
-            autoFocus
-            placeholder="123456"
-            className="h-11 text-center font-mono text-xl tracking-[0.2em]"
-          />
+          <Input id="code" name="code" inputMode="numeric" autoComplete="one-time-code" maxLength={16} required autoFocus placeholder="123456" />
           <FieldDescription>スマートフォンを利用できない場合は、バックアップコード（xxxxx-xxxxx）を入力できます。</FieldDescription>
         </Field>
         <SubmitButton className="w-full" pendingText="確認中...">

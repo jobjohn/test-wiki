@@ -38,7 +38,7 @@ export default async function PageView({ params }: Props) {
 
   return (
     <article className="page">
-      <header className="mb-5 grid gap-3 border-b pb-4">
+      <header className="grid gap-3">
         <div>
           {folder && <FolderBreadcrumbs folder={folder} />}
           <PageTitle>{page.title}</PageTitle>
@@ -88,7 +88,7 @@ export default async function PageView({ params }: Props) {
               confirmLabel="削除する"
               destructive
               trigger={
-                <Button variant="outline" className="text-destructive hover:text-destructive">
+                <Button variant="destructive">
                   <Trash2 aria-hidden />
                   削除
                 </Button>
@@ -97,6 +97,7 @@ export default async function PageView({ params }: Props) {
           )}
         </div>
       </header>
+      <Separator className="my-5" />
 
       <Toc target=".page > .markdown-body" />
 
@@ -105,15 +106,15 @@ export default async function PageView({ params }: Props) {
       {backlinks.length > 0 && (
         <section className="clear-both mt-10">
           <Separator className="mb-3" />
-          <h2 className="mb-2 flex items-center gap-1.5 text-base font-semibold">
+          <h2 className="mb-2 flex items-center gap-1.5">
             <LinkIcon className="size-4" aria-hidden /> このページへのリンク
           </h2>
           <ul className="grid gap-1">
             {backlinks.map((link) => (
               <li key={link.id}>
-                <Link href={`/pages/${link.id}`} className="text-link hover:underline">
-                  {link.title}
-                </Link>
+                <Button variant="link" asChild className="h-auto p-0">
+                  <Link href={`/pages/${link.id}`}>{link.title}</Link>
+                </Button>
               </li>
             ))}
           </ul>

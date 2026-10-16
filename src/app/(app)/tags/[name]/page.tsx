@@ -1,4 +1,4 @@
-import { Tag, Tags as TagsIcon } from "lucide-react";
+import { Tag } from "lucide-react";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { SimpleBreadcrumb } from "@/components/Breadcrumbs";
@@ -24,7 +24,7 @@ export default async function TagPage({ params }: Props) {
   return (
     <div className="grid gap-4">
       <div>
-        <SimpleBreadcrumb items={[{ href: "/tags", label: "タグ", icon: <TagsIcon className="size-3.5" aria-hidden /> }]} />
+        <SimpleBreadcrumb items={[{ href: "/tags", label: "タグ" }]} />
         <PageTitle icon={Tag}>{tag.name}</PageTitle>
         <p className="mt-1 text-sm text-muted-foreground">{pages.length} ページ</p>
       </div>

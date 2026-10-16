@@ -50,7 +50,7 @@ export default async function UsersPage() {
                 <TableRow key={user.id}>
                   <TableCell>
                     <span className="flex items-center gap-3">
-                      <Avatar className="size-8">
+                      <Avatar>
                         <AvatarFallback>{Array.from(user.name)[0]?.toUpperCase()}</AvatarFallback>
                       </Avatar>
                       <span className="grid leading-tight">
@@ -87,7 +87,7 @@ export default async function UsersPage() {
                         confirmLabel="削除する"
                         destructive
                         trigger={
-                          <Button variant="ghost" size="icon-sm" className="text-destructive hover:text-destructive" aria-label={`${user.username} を削除`}>
+                          <Button variant="destructive" size="icon-sm" aria-label={`${user.username} を削除`}>
                             <Trash2 aria-hidden />
                           </Button>
                         }
@@ -103,8 +103,8 @@ export default async function UsersPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-base">
-            <Info className="size-4 text-primary" aria-hidden />
+          <CardTitle className="flex items-center gap-2">
+            <Info className="size-4" aria-hidden />
             権限について
           </CardTitle>
         </CardHeader>

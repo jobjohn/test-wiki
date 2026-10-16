@@ -11,7 +11,7 @@ export interface ThemeColors {
 
 /**
  * 基本 3 色のプリセット
- *   secondary: ベースカラー（ヘッダー・画面の基調色）
+ *   secondary: ベースカラー（サイドバーの色）
  *   primary:   メインカラー（ボタン・リンク・選択中の項目）
  *   accent:    差し色（タグ・強調・フォルダアイコン）
  */
@@ -45,7 +45,7 @@ export function contrastColor(hex: string): string {
 /**
  * テーマの 3 色を CSS 変数にする（shadcn/ui の命名に合わせる）。
  *   --primary   メインカラー（ボタン・リンク・選択中）
- *   --base      ベースカラー（ヘッダーなど画面の基調）
+ *   --base      ベースカラー（shadcn/ui の --sidebar 系に割り当てる）
  *   --highlight 差し色（タグ・強調・フォルダアイコン）
  * それぞれの上に置く文字色は --*-foreground。その他の色（背景・枠線・淡い面など）は globals.css で導出する。
  */

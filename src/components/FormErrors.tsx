@@ -7,7 +7,7 @@ export function FormErrors({ errors }: { errors?: string[] }) {
     <Alert variant="destructive">
       <TriangleAlert aria-hidden />
       <AlertDescription>
-        <ul className="list-disc pl-4 text-destructive">
+        <ul className="list-disc pl-4">
           {errors.map((message) => (
             <li key={message}>{message}</li>
           ))}
