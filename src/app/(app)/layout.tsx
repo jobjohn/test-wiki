@@ -20,7 +20,7 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
       user={
         user && {
           name: user.name,
-          username: user.username,
+          email: user.email,
           roleName: ROLES[user.role],
           isAdmin: isAdmin(user),
           canEdit: canEdit(user),

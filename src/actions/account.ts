@@ -8,23 +8,16 @@ import { type FormState, str } from "@/lib/form";
 import { allowAttempt } from "@/lib/rate-limit";
 import { currentSessionId } from "@/lib/session";
 import { getSettings } from "@/lib/settings";
-import {
-  changePassword,
-  checkPassword,
-  confirmMfa,
-  disableMfa,
-  regenerateBackupCodes,
-  updateDisplayName,
-  validatePassword,
-} from "@/lib/users";
+import { changePassword, checkPassword, confirmMfa, disableMfa, regenerateBackupCodes, updateProfile, validatePassword } from "@/lib/users";
 
 export async function updateProfileAction(_prev: FormState, data: FormData): Promise<FormState> {
-  const guard = await guardAction("viewer");
+  const guard = await guardAction("read");
   if ("error" in guard) return { errors: [guard.error] };
   try {
-    updateDisplayName(guard.user.id, str(data, "displayName"));
+    updateProfile(guard.user.id, { email: str(data, "email"), displayName: str(data, "displayName") });
   } catch (error) {
-    if (error instanceof ValidationError) return { errors: error.messages, values: { displayName: str(data, "displayName") } };
+    if (error instanceof ValidationError)
+      return { errors: error.messages, values: { email: str(data, "email"), displayName: str(data, "displayName") } };
     throw error;
   }
   await setFlash("notice", "プロフィールを更新しました。");
@@ -33,7 +26,7 @@ export async function updateProfileAction(_prev: FormState, data: FormData): Pro
 
 export async function changePasswordAction(_prev: FormState, data: FormData): Promise<FormState> {
   // 初回ログイン時のパスワード変更画面でも使うため、必須手続きの確認は行わない
-  const guard = await guardAction("viewer", { gate: false });
+  const guard = await guardAction("read", { gate: false });
   if ("error" in guard) return { errors: [guard.error] };
   const { user } = guard;
 
@@ -57,9 +50,10 @@ export async function changePasswordAction(_prev: FormState, data: FormData): Pr
 
 /** 認証アプリに表示されたパスコードを確認して二段階認証を有効にする */
 export async function enableMfaAction(_prev: FormState, data: FormData): Promise<FormState> {
-  const guard = await guardAction("viewer", { gate: false });
+  const guard = await guardAction("read", { gate: false });
   if ("error" in guard) return { errors: [guard.error] };
-  if (!allowAttempt(`mfa-setup:${guard.user.id}`, 10, 3 * 60_000)) return { errors: ["試行回数が多すぎます。しばらく待ってから再度お試しください。"] };
+  if (!allowAttempt(`mfa-setup:${guard.user.id}`, 10, 3 * 60_000))
+    return { errors: ["試行回数が多すぎます。しばらく待ってから再度お試しください。"] };
 
   const codes = confirmMfa(guard.user.id, str(data, "code"));
   if (!codes) return { errors: ["パスコードが正しくありません。認証アプリに表示されている 6 桁の数字を入力してください。"] };
@@ -67,14 +61,14 @@ export async function enableMfaAction(_prev: FormState, data: FormData): Promise
 }
 
 export async function regenerateBackupCodesAction(_prev: FormState, data: FormData): Promise<FormState> {
-  const guard = await guardAction("viewer");
+  const guard = await guardAction("read");
   if ("error" in guard) return { errors: [guard.error] };
   if (!guard.user.mfaEnabled || !checkPassword(guard.user.id, str(data, "password"))) return { errors: ["パスワードが正しくありません。"] };
   return { backupCodes: regenerateBackupCodes(guard.user.id) };
 }
 
 export async function disableMfaAction(_prev: FormState, data: FormData): Promise<FormState> {
-  const guard = await guardAction("viewer");
+  const guard = await guardAction("read");
   if ("error" in guard) return { errors: [guard.error] };
   if (getSettings().requireMfa) return { errors: ["この Wiki では二段階認証が必須のため無効にできません。"] };
   if (!checkPassword(guard.user.id, str(data, "password"))) return { errors: ["パスワードが正しくありません。"] };

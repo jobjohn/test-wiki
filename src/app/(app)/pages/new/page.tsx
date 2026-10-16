@@ -10,7 +10,7 @@ import { listTagNames } from "@/lib/pages";
 export const metadata: Metadata = { title: "新規ページ" };
 
 export default async function NewPage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
-  await requireAccess("editor");
+  await requireAccess("edit");
   const query = await searchParams;
   const folderId = /^\d+$/.test(first(query.folder_id)) && getFolder(Number(first(query.folder_id))) ? first(query.folder_id) : "";
   const title = first(query.title).slice(0, 200);

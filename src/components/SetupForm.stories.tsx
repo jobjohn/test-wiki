@@ -10,7 +10,7 @@ const meta = {
   title: "Forms/SetupForm",
   component: SetupForm,
   tags: ["autodocs"],
-  args: { initial, mustChangePassword: true },
+  args: { initial, mustChangePassword: true, adminEmail: "admin@example.com" },
   decorators: [
     (Story) => (
       <div className="max-w-3xl">

@@ -4,7 +4,7 @@ import { getCurrentUser } from "./session";
 import { getSettings, type Settings } from "./settings";
 import { canEdit, isAdmin, type User } from "./users";
 
-export type Level = "viewer" | "editor" | "admin";
+export type Level = "read" | "edit" | "admin";
 
 /** ログイン後に戻る先として使える、サイト内のパスだけを通す */
 export function safeNext(value: string | null | undefined): string | null {
@@ -31,16 +31,17 @@ export interface Access {
 
 /**
  * ページの先頭で呼ぶアクセス制御。
- * - viewer: 閲覧（「ログインなしで閲覧を許可」が有効なら未ログインでも可）
- * - editor / admin: 該当する権限のログインが必要
+ * - read: 閲覧（「ログインなしで閲覧を許可」が有効なら未ログインでも可）
+ * - edit: ページの作成・編集（有効なユーザーのログインが必要）
+ * - admin: ユーザー管理・Wiki の設定（有効な管理者のログインが必要）
  * - gate: false にすると、初期設定などの必須手続きへの誘導を行わない（その手続きの画面用）
  */
-export async function requireAccess(level: Level = "viewer", options: { gate?: boolean } = {}): Promise<Access & { user: User | null }> {
+export async function requireAccess(level: Level = "read", options: { gate?: boolean } = {}): Promise<Access & { user: User | null }> {
   const settings = getSettings();
   const user = await getCurrentUser();
 
   if (!user) {
-    if (level === "viewer" && settings.publicRead) return { user: null, settings };
+    if (level === "read" && settings.publicRead) return { user: null, settings };
     const next = await currentPath();
     redirect(next && next !== "/" ? `/login?next=${encodeURIComponent(next)}` : "/login");
   }
@@ -49,13 +50,13 @@ export async function requireAccess(level: Level = "viewer", options: { gate?: b
     const requirement = pendingRequirement(user, settings);
     if (requirement) redirect(requirement);
   }
-  if ((level === "editor" && !canEdit(user)) || (level === "admin" && !isAdmin(user))) redirect("/");
+  if ((level === "edit" && !canEdit(user)) || (level === "admin" && !isAdmin(user))) redirect("/");
   return { user, settings };
 }
 
 /** ログイン済みであることだけを求める（権限不問） */
 export async function requireUser(options: { gate?: boolean } = {}): Promise<{ user: User; settings: Settings }> {
-  const access = await requireAccess("viewer", options);
+  const access = await requireAccess("read", options);
   if (!access.user) redirect("/login");
   return { user: access.user, settings: access.settings };
 }
@@ -67,7 +68,7 @@ export async function guardAction(level: Level, options: { gate?: boolean } = {}
   if (options.gate !== false && pendingRequirement(user, getSettings())) {
     return { error: "先に、必須の設定（初期設定・パスワード変更・二段階認証）を完了してください。" };
   }
-  if ((level === "editor" && !canEdit(user)) || (level === "admin" && !isAdmin(user))) {
+  if ((level === "edit" && !canEdit(user)) || (level === "admin" && !isAdmin(user))) {
     return { error: "この操作を行う権限がありません。" };
   }
   return { user };

@@ -11,7 +11,7 @@ import { createPage, deletePage, getPage, restoreRevision, tagList, updatePage }
 const FIELDS = ["title", "body", "folderId", "position", "tags", "summary"];
 
 export async function savePageAction(_prev: FormState, data: FormData): Promise<FormState> {
-  const guard = await guardAction("editor");
+  const guard = await guardAction("edit");
   if ("error" in guard) return { errors: [guard.error] };
 
   const id = optionalId(data, "id");
@@ -59,7 +59,7 @@ export async function savePageAction(_prev: FormState, data: FormData): Promise<
 }
 
 export async function deletePageAction(id: number) {
-  const guard = await guardAction("editor");
+  const guard = await guardAction("edit");
   if ("error" in guard) {
     await setFlash("alert", guard.error);
     redirect(`/pages/${id}`);
@@ -74,7 +74,7 @@ export async function deletePageAction(id: number) {
 }
 
 export async function restoreRevisionAction(pageId: number, number: number) {
-  const guard = await guardAction("editor");
+  const guard = await guardAction("edit");
   if ("error" in guard) {
     await setFlash("alert", guard.error);
     redirect(`/pages/${pageId}`);

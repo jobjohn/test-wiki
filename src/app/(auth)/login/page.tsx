@@ -7,7 +7,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { safeNext } from "@/lib/access";
 import { getCurrentUser } from "@/lib/session";
 import { getSettings } from "@/lib/settings";
-import { DEFAULT_ADMIN_USERNAME } from "@/lib/users";
+import { defaultAdminEmail } from "@/lib/env";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 
@@ -28,7 +28,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
             <p>
               <strong>初回セットアップ</strong>
               <br />
-              ユーザー名 <Badge variant="outline">{DEFAULT_ADMIN_USERNAME}</Badge>
+              メールアドレス <Badge variant="outline">{defaultAdminEmail()}</Badge>
               {process.env.WIKI_ADMIN_PASSWORD ? (
                 <>
                   {" "}
@@ -37,7 +37,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
               ) : (
                 <>
                   {" "}
-                  / パスワード <Badge variant="outline">{DEFAULT_ADMIN_USERNAME}</Badge> でログインしてください。
+                  / パスワード <Badge variant="outline">wikiadmin</Badge> でログインしてください。
                 </>
               )}
               ログイン後に初期設定とパスワード変更を行います。

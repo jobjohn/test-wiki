@@ -10,7 +10,7 @@ import { parseId } from "@/lib/params";
 export const metadata: Metadata = { title: "フォルダの編集" };
 
 export default async function EditFolderPage({ params }: { params: Promise<{ id: string }> }) {
-  await requireAccess("editor");
+  await requireAccess("edit");
   const folder = getFolder(parseId((await params).id));
   if (!folder) notFound();
 

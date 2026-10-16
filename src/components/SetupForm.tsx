@@ -26,7 +26,15 @@ function Step({ n, children }: { n: number; children: React.ReactNode }) {
   );
 }
 
-export function SetupForm({ initial, mustChangePassword }: { initial: SettingsFormValues; mustChangePassword: boolean }) {
+export function SetupForm({
+  initial,
+  mustChangePassword,
+  adminEmail,
+}: {
+  initial: SettingsFormValues;
+  mustChangePassword: boolean;
+  adminEmail: string;
+}) {
   const [state, action] = useActionState(completeSetupAction, {});
   const v = state.values;
   return (
@@ -66,8 +74,12 @@ export function SetupForm({ initial, mustChangePassword }: { initial: SettingsFo
               <>
                 <FieldSeparator />
                 <FieldSet>
-                  <Step n={2}>管理者パスワードの変更</Step>
-                  <FieldDescription>初期ユーザーのパスワードを変更してください（8 文字以上）。</FieldDescription>
+                  <Step n={2}>管理者のメールアドレスとパスワード</Step>
+                  <FieldDescription>ログインに使うメールアドレスを確認し、初期パスワードを変更してください（8 文字以上）。</FieldDescription>
+                  <Field>
+                    <FieldLabel htmlFor="email">メールアドレス</FieldLabel>
+                    <Input type="email" id="email" name="email" defaultValue={v?.email ?? adminEmail} required autoComplete="email" />
+                  </Field>
                   <div className="grid gap-4 sm:grid-cols-2">
                     <Field>
                       <FieldLabel htmlFor="password">新しいパスワード</FieldLabel>

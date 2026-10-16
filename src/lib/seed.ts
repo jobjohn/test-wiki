@@ -1,5 +1,5 @@
 import type { DatabaseSync } from "node:sqlite";
-import { defaultAdminPassword, homePageTitle } from "./env";
+import { defaultAdminEmail, defaultAdminPassword, homePageTitle } from "./env";
 import { hashPassword } from "./password";
 import { keyOf, now } from "./text";
 
@@ -68,23 +68,19 @@ end
 [^1]: これが脚注です。
 `;
 
-/** 新規に作成したデータベースに、設定・初期ユーザー wikiadmin・案内ページを登録する */
+/** 新規に作成したデータベースに、設定・初期管理者・案内ページを登録する */
 export function seedFreshDatabase(db: DatabaseSync) {
   const timestamp = now();
 
   db.prepare("INSERT INTO settings (id) VALUES (1)").run();
   db.prepare(
-    `INSERT INTO users (username, username_key, display_name, password_hash, role, must_change_password, created_at, updated_at)
-     VALUES ('wikiadmin', 'wikiadmin', 'Wiki 管理者', ?, 'admin', 1, ?, ?)`,
-  ).run(hashPassword(defaultAdminPassword()), timestamp, timestamp);
+    `INSERT INTO users (email, email_key, display_name, password_hash, role, must_change_password, created_at, updated_at)
+     VALUES (?, ?, 'Wiki 管理者', ?, 'admin', 1, ?, ?)`,
+  ).run(defaultAdminEmail(), keyOf(defaultAdminEmail()), hashPassword(defaultAdminPassword()), timestamp, timestamp);
 
   const insertFolder = db.prepare("INSERT INTO folders (name, name_key, created_at, updated_at) VALUES (?, ?, ?, ?)");
-  const insertPage = db.prepare(
-    "INSERT INTO pages (title, title_key, body, folder_id, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)",
-  );
-  const insertRevision = db.prepare(
-    "INSERT INTO revisions (page_id, number, title, body, summary, created_at) VALUES (?, 1, ?, ?, '初期ページ', ?)",
-  );
+  const insertPage = db.prepare("INSERT INTO pages (title, title_key, body, folder_id, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)");
+  const insertRevision = db.prepare("INSERT INTO revisions (page_id, number, title, body, summary, created_at) VALUES (?, 1, ?, ?, '初期ページ', ?)");
   const insertTag = db.prepare("INSERT INTO tags (name, name_key) VALUES (?, ?) ON CONFLICT(name_key) DO NOTHING");
   const selectTag = db.prepare("SELECT id FROM tags WHERE name_key = ?");
   const insertTagging = db.prepare("INSERT INTO taggings (page_id, tag_id) VALUES (?, ?)");
@@ -95,9 +91,7 @@ export function seedFreshDatabase(db: DatabaseSync) {
     { title: "Markdown の書き方", body: MARKDOWN_GUIDE_BODY, folderId: helpFolder, tags: ["はじめに", "ヘルプ"] },
   ];
   for (const page of pages) {
-    const pageId = Number(
-      insertPage.run(page.title, keyOf(page.title), page.body, page.folderId, timestamp, timestamp).lastInsertRowid,
-    );
+    const pageId = Number(insertPage.run(page.title, keyOf(page.title), page.body, page.folderId, timestamp, timestamp).lastInsertRowid);
     insertRevision.run(pageId, page.title, page.body, timestamp);
     for (const tag of page.tags) {
       insertTag.run(tag, keyOf(tag));

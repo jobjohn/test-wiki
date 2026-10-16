@@ -35,7 +35,7 @@ const input = (overrides: Partial<PageInput> = {}): PageInput => ({
 describe("ページと履歴", () => {
   it("作成時と本文・タイトルの変更時に版を記録し、それ以外の変更では記録しない", () => {
     getDb();
-    const userId = createUser({ username: "author", displayName: "編集 太郎", role: "editor", password: "password123" });
+    const userId = createUser({ email: "author@example.com", displayName: "編集 太郎", role: "general", password: "password123" });
     const id = createPage(input({ title: "履歴テスト", body: "one", summary: "作成", userId }));
     expect(listRevisions(id).map((r) => r.number)).toEqual([1]);
 

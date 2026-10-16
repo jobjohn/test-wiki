@@ -17,6 +17,7 @@ export default async function SetupPage() {
       <p className="text-muted-foreground">Wiki の使い始めに必要な設定です。ここで設定した内容は、あとから「Wiki の設定」でいつでも変更できます。</p>
       <SetupForm
         mustChangePassword={!!user?.mustChangePassword}
+        adminEmail={user?.email ?? ""}
         initial={{
           wikiName: settings.wikiName,
           description: settings.description ?? "",

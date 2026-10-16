@@ -19,26 +19,33 @@ import { Button, buttonVariants } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { BackupCodes } from "./BackupCodes";
-import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
+import { Field, FieldDescription, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { FormErrors } from "./FormErrors";
 import { SubmitButton } from "./SubmitButton";
 
-export function ProfileForm({ displayName }: { displayName: string }) {
+export function ProfileForm({ email, displayName }: { email: string; displayName: string }) {
   const [state, action] = useActionState(updateProfileAction, {});
   return (
     <form action={action}>
       <FieldGroup>
         <FormErrors errors={state.errors} />
-        <Field>
-          <FieldLabel htmlFor="displayName">表示名</FieldLabel>
-          <div className="flex gap-2">
+        <div className="grid gap-5 sm:grid-cols-2">
+          <Field>
+            <FieldLabel htmlFor="email">メールアドレス</FieldLabel>
+            <Input type="email" id="email" name="email" defaultValue={state.values?.email ?? email} required autoComplete="email" />
+            <FieldDescription>ログインに使います</FieldDescription>
+          </Field>
+          <Field>
+            <FieldLabel htmlFor="displayName">表示名</FieldLabel>
             <Input id="displayName" name="displayName" defaultValue={state.values?.displayName ?? displayName} maxLength={50} />
-            <SubmitButton variant="outline" pendingText="保存中...">
-              <Save aria-hidden />
-              保存
-            </SubmitButton>
-          </div>
-        </Field>
+          </Field>
+        </div>
+        <div>
+          <SubmitButton variant="outline" pendingText="保存中...">
+            <Save aria-hidden />
+            保存
+          </SubmitButton>
+        </div>
       </FieldGroup>
     </form>
   );

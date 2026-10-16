@@ -15,7 +15,7 @@ type Story = StoryObj<typeof meta>;
 export const Default: Story = {};
 export const Secondary: Story = { args: { variant: "secondary", children: "編集者" } };
 export const Destructive: Story = { args: { variant: "destructive", children: "削除" } };
-export const Outline: Story = { args: { variant: "outline", children: "閲覧者" } };
+export const Outline: Story = { args: { variant: "outline", children: "無効" } };
 export const Highlight: Story = {
   args: { variant: "highlight" },
   render: (args) => (

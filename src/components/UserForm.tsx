@@ -10,7 +10,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { NativeSelect } from "@/components/ui/native-select";
-import { ROLES, type Role } from "@/lib/roles";
+import { ROLES, STATUSES, type Role, type Status } from "@/lib/roles";
 import { ActionForm } from "./ActionForm";
 import { Field, FieldDescription, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { FormErrors } from "./FormErrors";
@@ -21,10 +21,10 @@ export function UserForm({
   initial,
 }: {
   userId: number | null;
-  initial: { username: string; displayName: string; role: Role; mustChangePassword: boolean };
+  initial: { email: string; displayName: string; role: Role; status: Status; mustChangePassword: boolean };
 }) {
   const [state, action] = useActionState(saveUserAction, {});
-  const v = state.values ?? { username: initial.username, displayName: initial.displayName, role: initial.role };
+  const v = state.values ?? { email: initial.email, displayName: initial.displayName, role: initial.role, status: initial.status };
   return (
     <Card>
       <CardContent>
@@ -34,25 +34,39 @@ export function UserForm({
             {userId !== null && <input type="hidden" name="id" value={userId} />}
             <div className="grid gap-5 sm:grid-cols-2">
               <Field>
-                <FieldLabel htmlFor="username">ユーザー名</FieldLabel>
-                <Input id="username" name="username" defaultValue={v.username} required autoCapitalize="none" placeholder="例: yamada" />
-                <FieldDescription>半角英数字と _ . - で 3〜32 文字</FieldDescription>
+                <FieldLabel htmlFor="email">メールアドレス</FieldLabel>
+                <Input type="email" id="email" name="email" defaultValue={v.email} required autoComplete="off" placeholder="例: yamada@example.com" />
+                <FieldDescription>ログインに使います</FieldDescription>
               </Field>
               <Field>
                 <FieldLabel htmlFor="displayName">表示名</FieldLabel>
                 <Input id="displayName" name="displayName" defaultValue={v.displayName} placeholder="例: 山田 太郎" />
               </Field>
             </div>
-            <Field>
-              <FieldLabel htmlFor="role">権限</FieldLabel>
-              <NativeSelect id="role" name="role" defaultValue={v.role}>
-                {(Object.entries(ROLES) as [Role, string][]).map(([key, label]) => (
-                  <option key={key} value={key}>
-                    {label}
-                  </option>
-                ))}
-              </NativeSelect>
-            </Field>
+            <div className="grid gap-5 sm:grid-cols-2">
+              <Field>
+                <FieldLabel htmlFor="role">ロール</FieldLabel>
+                <NativeSelect id="role" name="role" defaultValue={v.role}>
+                  {(Object.entries(ROLES) as [Role, string][]).map(([key, label]) => (
+                    <option key={key} value={key}>
+                      {label}
+                    </option>
+                  ))}
+                </NativeSelect>
+                <FieldDescription>一般: ページの閲覧・編集 ／ 管理者: ユーザー管理と Wiki の設定も可能</FieldDescription>
+              </Field>
+              <Field>
+                <FieldLabel htmlFor="status">ステータス</FieldLabel>
+                <NativeSelect id="status" name="status" defaultValue={v.status}>
+                  {(Object.entries(STATUSES) as [Status, string][]).map(([key, label]) => (
+                    <option key={key} value={key}>
+                      {label}
+                    </option>
+                  ))}
+                </NativeSelect>
+                <FieldDescription>無効にすると、ログインできなくなります（ログイン中の端末からもログアウトします）</FieldDescription>
+              </Field>
+            </div>
             <div className="grid gap-5 sm:grid-cols-2">
               <Field>
                 <FieldLabel htmlFor="password">{userId === null ? "初期パスワード" : "新しいパスワード（変更する場合のみ）"}</FieldLabel>

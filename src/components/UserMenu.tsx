@@ -14,7 +14,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
-export function UserMenu({ name, username, roleName, isAdmin }: { name: string; username: string; roleName: string; isAdmin: boolean }) {
+export function UserMenu({ name, email, roleName, isAdmin }: { name: string; email: string; roleName: string; isAdmin: boolean }) {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -28,7 +28,7 @@ export function UserMenu({ name, username, roleName, isAdmin }: { name: string; 
         <DropdownMenuLabel className="grid gap-0.5">
           <span>{name}</span>
           <span className="text-xs text-muted-foreground">
-            @{username}・{roleName}
+            {email}・{roleName}
           </span>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />

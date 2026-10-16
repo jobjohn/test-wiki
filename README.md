@@ -8,16 +8,16 @@ Next.js 製のシンプルで実用的な Wiki です。Docker があればコ�
 docker compose up -d --build
 ```
 
-ブラウザで <http://localhost:3000> を開き、初期ユーザーでログインしてください。
+ブラウザで <http://localhost:3000> を開き、初期管理者のメールアドレスとパスワードでログインしてください。
 
-| ユーザー名 | 初期パスワード |
+| メールアドレス | 初期パスワード |
 | --- | --- |
-| `wikiadmin` | `wikiadmin`（環境変数 `WIKI_ADMIN_PASSWORD` で変更可） |
+| `admin@example.com`（環境変数 `WIKI_ADMIN_EMAIL` で変更可） | `wikiadmin`（環境変数 `WIKI_ADMIN_PASSWORD` で変更可） |
 
 初回ログイン時に **初期設定画面** が表示され、次の項目を設定します（あとから「Wiki の設定」で変更できます）。
 
 1. Wiki の名前と説明（どんな Wiki か）
-2. 管理者パスワードの変更
+2. 管理者のメールアドレスの確認とパスワードの変更
 
 停止する場合:
 
@@ -51,7 +51,10 @@ docker compose down
 
 ### ユーザーとセキュリティ
 
-- ユーザー管理（管理者）。権限は **管理者 / 編集者 / 閲覧者**
+- **ログイン**: メールアドレスとパスワードで行います。複数のユーザーを登録できます
+- **ロール**: **一般**（ページの閲覧・作成・編集）と **管理者**（加えてユーザー管理と Wiki の設定）
+- **ステータス**: **有効 / 無効**。無効にしたユーザーはログインできず、ログイン中の端末からもログアウトされます（ユーザーは削除せずに残せます）
+- 有効な管理者が 1 人もいなくなる変更（最後の管理者の降格・無効化・削除）はできません
 - **二段階認証（MFA）**: 認証アプリ（Google Authenticator など）のパスコードによるログイン。各ユーザーが任意で設定でき、管理者は全員に必須化することも可能。スマートフォン紛失時用のバックアップコード付き
 - 「ログインなしで閲覧を許可」設定（閲覧のみ公開、編集はログイン必須）
 - ログイン試行回数の制限、パスワード変更時に他の端末のログインを無効化
@@ -66,7 +69,8 @@ Wiki の名前・説明・表示モード・アクセス設定は、管理者で
 | 変数 | 既定値 | 説明 |
 | --- | --- | --- |
 | `WIKI_PORT` | `3000` | 公開するポート |
-| `WIKI_ADMIN_PASSWORD` | `wikiadmin` | 初期ユーザー `wikiadmin` の初期パスワード（最初の起動前に設定） |
+| `WIKI_ADMIN_EMAIL` | `admin@example.com` | 初期管理者のメールアドレス（最初の起動前に設定。初期設定画面でも変更できます） |
+| `WIKI_ADMIN_PASSWORD` | `wikiadmin` | 初期管理者の初期パスワード（最初の起動前に設定） |
 | `WIKI_HOME_PAGE` | `ホーム` | ホーム画面に表示するページのタイトル |
 | `TZ` | `Asia/Tokyo` | タイムゾーン |
 | `FORCE_SSL` | （なし） | `true` にすると Cookie に Secure を付けます（リバースプロキシで HTTPS 化する場合） |
@@ -78,14 +82,17 @@ Wiki の名前・説明・表示モード・アクセス設定は、管理者で
 
 ### ログインできなくなった場合
 
-管理者のパスワードを忘れた場合や、二段階認証の端末を紛失した場合は、次のコマンドでリセットできます（次回ログイン時にパスワードの変更を求められます）。
+管理者のパスワードを忘れた場合や、二段階認証の端末を紛失した場合は、次のコマンドでリセットできます（次回ログイン時にパスワードの変更を求められます）。管理者が全員無効になってしまった場合は `--activate` で有効に戻せます。
 
 ```bash
 # ランダムなパスワードを発行
-docker compose exec wiki node scripts/reset-password.mjs wikiadmin
+docker compose exec wiki node scripts/reset-password.mjs admin@example.com
 
 # パスワードを指定し、二段階認証も解除する
-docker compose exec wiki node scripts/reset-password.mjs wikiadmin 新しいパスワード --reset-mfa
+docker compose exec wiki node scripts/reset-password.mjs admin@example.com 新しいパスワード --reset-mfa
+
+# 無効になっているユーザーを有効に戻す
+docker compose exec wiki node scripts/reset-password.mjs admin@example.com 新しいパスワード --activate
 ```
 
 ## バックアップ

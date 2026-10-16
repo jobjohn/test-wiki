@@ -1,24 +1,25 @@
 import { createHash } from "node:crypto";
 import { all, get, run, transaction } from "./db";
-import { defaultAdminPassword } from "./env";
+import { defaultAdminEmail, defaultAdminPassword } from "./env";
 import { ValidationError } from "./errors";
 import { hashPassword, verifyDummyPassword, verifyPassword } from "./password";
 import { decrypt, encrypt } from "./secret";
 import { keyOf, now, squish } from "./text";
 import { generateSecret, verifyTotp } from "./totp";
 
-import { ROLES, type Role } from "./roles";
+import { ROLES, STATUSES, type Role, type Status } from "./roles";
 
-export { ROLES, type Role };
+export { ROLES, STATUSES, type Role, type Status };
 export const BACKUP_CODE_COUNT = 10;
-export const DEFAULT_ADMIN_USERNAME = "wikiadmin";
+const EMAIL_FORMAT = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export interface User {
   id: number;
-  username: string;
+  email: string;
   displayName: string | null;
   name: string;
   role: Role;
+  status: Status;
   mustChangePassword: boolean;
   mfaEnabled: boolean;
   mfaEnabledAt: string | null;
@@ -28,10 +29,11 @@ export interface User {
 
 interface UserRow {
   id: number;
-  username: string;
+  email: string;
   display_name: string | null;
   password_hash: string;
   role: Role;
+  status: Status;
   otp_secret: string | null;
   otp_enabled_at: string | null;
   otp_backup_codes: string;
@@ -44,10 +46,11 @@ function mapUser(row: UserRow): User {
   const codes = JSON.parse(row.otp_backup_codes) as string[];
   return {
     id: row.id,
-    username: row.username,
+    email: row.email,
     displayName: row.display_name,
-    name: row.display_name || row.username,
+    name: row.display_name || row.email.split("@")[0],
     role: row.role,
+    status: row.status,
     mustChangePassword: !!row.must_change_password,
     mfaEnabled: !!row.otp_enabled_at && !!row.otp_secret,
     mfaEnabledAt: row.otp_enabled_at,
@@ -63,23 +66,26 @@ export function getUser(id: number): User | undefined {
   return row && mapUser(row);
 }
 
-export function findUserByUsername(username: string): User | undefined {
-  const row = get<UserRow>("SELECT * FROM users WHERE username_key = ?", keyOf(username));
+export function findUserByEmail(email: string): User | undefined {
+  const row = get<UserRow>("SELECT * FROM users WHERE email_key = ?", keyOf(email));
   return row && mapUser(row);
 }
 
 export function listUsers(): User[] {
-  return all<UserRow>("SELECT * FROM users ORDER BY username_key").map(mapUser);
+  return all<UserRow>("SELECT * FROM users ORDER BY status = 'disabled', email_key").map(mapUser);
 }
 
-export const canEdit = (user: Pick<User, "role"> | null | undefined) => user?.role === "admin" || user?.role === "editor";
-export const isAdmin = (user: Pick<User, "role"> | null | undefined) => user?.role === "admin";
+const isActive = (user: Pick<User, "status"> | null | undefined) => user?.status === "active";
+/** ページの作成・編集ができるか（有効な一般ユーザーと管理者） */
+export const canEdit = (user: Pick<User, "role" | "status"> | null | undefined) => isActive(user);
+/** ユーザー管理・Wiki の設定ができるか（有効な管理者） */
+export const isAdmin = (user: Pick<User, "role" | "status"> | null | undefined) => isActive(user) && user?.role === "admin";
 
-/** ユーザーが 1 人もいなければ初期管理者 wikiadmin を作成する */
+/** ユーザーが 1 人もいなければ初期管理者を作成する */
 export function ensureDefaultAdmin() {
   if (get<{ n: number }>("SELECT COUNT(*) AS n FROM users")!.n > 0) return;
   createUser({
-    username: DEFAULT_ADMIN_USERNAME,
+    email: defaultAdminEmail(),
     displayName: "Wiki 管理者",
     role: "admin",
     password: defaultAdminPassword(),
@@ -95,25 +101,28 @@ export function validatePassword(password: string, confirmation?: string): strin
   return errors;
 }
 
-function validateProfile(input: { username?: string; displayName?: string | null; role?: string }, userId?: number): string[] {
+function validateProfile(input: { email?: string; displayName?: string | null; role?: string; status?: string }, userId?: number): string[] {
   const errors: string[] = [];
-  if (input.username !== undefined) {
-    if (!/^[a-zA-Z0-9_.-]{3,32}$/.test(input.username.trim())) {
-      errors.push("ユーザー名は半角英数字と _ . - で 3〜32 文字にしてください");
+  if (input.email !== undefined) {
+    const email = input.email.trim();
+    if (!EMAIL_FORMAT.test(email) || email.length > 254) {
+      errors.push("メールアドレスの形式が正しくありません");
     } else {
-      const taken = get<{ id: number }>("SELECT id FROM users WHERE username_key = ?", keyOf(input.username));
-      if (taken && taken.id !== userId) errors.push("ユーザー名は既に使われています");
+      const taken = get<{ id: number }>("SELECT id FROM users WHERE email_key = ?", keyOf(email));
+      if (taken && taken.id !== userId) errors.push("このメールアドレスは既に使われています");
     }
   }
   if (input.displayName && squish(input.displayName).length > 50) errors.push("表示名は 50 文字以内にしてください");
-  if (input.role !== undefined && !(input.role in ROLES)) errors.push("権限が不正です");
+  if (input.role !== undefined && !(input.role in ROLES)) errors.push("ロールが不正です");
+  if (input.status !== undefined && !(input.status in STATUSES)) errors.push("ステータスが不正です");
   return errors;
 }
 
 export interface NewUser {
-  username: string;
+  email: string;
   displayName?: string;
   role: Role;
+  status?: Status;
   password: string;
   passwordConfirmation?: string;
   mustChangePassword?: boolean;
@@ -125,27 +134,30 @@ export function createUser(input: NewUser): number {
 
   const timestamp = now();
   return run(
-    `INSERT INTO users (username, username_key, display_name, password_hash, role, must_change_password, created_at, updated_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-    input.username.trim(),
-    keyOf(input.username),
+    `INSERT INTO users (email, email_key, display_name, password_hash, role, status, must_change_password, created_at, updated_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    input.email.trim(),
+    keyOf(input.email),
     input.displayName ? squish(input.displayName) : null,
     hashPassword(input.password),
     input.role,
+    input.status ?? "active",
     input.mustChangePassword ? 1 : 0,
     timestamp,
     timestamp,
   ).lastInsertRowid;
 }
 
+/** 自分以外の、有効な管理者の数 */
 function adminCountExcluding(id: number): number {
-  return get<{ n: number }>("SELECT COUNT(*) AS n FROM users WHERE role = 'admin' AND id != ?", id)!.n;
+  return get<{ n: number }>("SELECT COUNT(*) AS n FROM users WHERE role = 'admin' AND status = 'active' AND id != ?", id)!.n;
 }
 
 export interface UserUpdate {
-  username: string;
+  email: string;
   displayName?: string;
   role: Role;
+  status: Status;
   password?: string;
   passwordConfirmation?: string;
   mustChangePassword?: boolean;
@@ -156,22 +168,27 @@ export function updateUser(id: number, input: UserUpdate) {
   if (!existing) throw new ValidationError("ユーザーが見つかりません");
   const errors = validateProfile(input, id);
   if (input.password) errors.push(...validatePassword(input.password, input.passwordConfirmation));
-  if (existing.role === "admin" && input.role !== "admin" && adminCountExcluding(id) === 0) {
-    errors.push("権限を変更できません（管理者が 1 人もいなくなります）");
+  const wasActiveAdmin = existing.role === "admin" && existing.status === "active";
+  const staysActiveAdmin = input.role === "admin" && input.status === "active";
+  if (wasActiveAdmin && !staysActiveAdmin && adminCountExcluding(id) === 0) {
+    errors.push("ロールまたはステータスを変更できません（有効な管理者が 1 人もいなくなります）");
   }
   if (errors.length) throw new ValidationError(errors);
 
   transaction(() => {
     run(
-      `UPDATE users SET username = ?, username_key = ?, display_name = ?, role = ?, must_change_password = ?, updated_at = ? WHERE id = ?`,
-      input.username.trim(),
-      keyOf(input.username),
+      `UPDATE users SET email = ?, email_key = ?, display_name = ?, role = ?, status = ?, must_change_password = ?, updated_at = ? WHERE id = ?`,
+      input.email.trim(),
+      keyOf(input.email),
       input.displayName ? squish(input.displayName) : null,
       input.role,
+      input.status,
       input.mustChangePassword ? 1 : 0,
       now(),
       id,
     );
+    // 無効にしたら、ログイン中の端末からもログアウトさせる
+    if (input.status === "disabled") run("DELETE FROM sessions WHERE user_id = ?", id);
     if (input.password) {
       run("UPDATE users SET password_hash = ? WHERE id = ?", hashPassword(input.password), id);
       run("DELETE FROM sessions WHERE user_id = ?", id);
@@ -179,24 +196,42 @@ export function updateUser(id: number, input: UserUpdate) {
   });
 }
 
-export function updateDisplayName(id: number, displayName: string) {
-  const errors = validateProfile({ displayName });
+/** 本人によるプロフィール（メールアドレス・表示名）の変更 */
+export function updateProfile(id: number, input: { email: string; displayName: string }) {
+  const errors = validateProfile(input, id);
   if (errors.length) throw new ValidationError(errors);
-  run("UPDATE users SET display_name = ?, updated_at = ? WHERE id = ?", displayName ? squish(displayName) : null, now(), id);
+  run(
+    "UPDATE users SET email = ?, email_key = ?, display_name = ?, updated_at = ? WHERE id = ?",
+    input.email.trim(),
+    keyOf(input.email),
+    input.displayName ? squish(input.displayName) : null,
+    now(),
+    id,
+  );
 }
 
 export function deleteUser(id: number) {
   const existing = rowById(id);
   if (!existing) return;
-  if (existing.role === "admin" && adminCountExcluding(id) === 0) throw new ValidationError("最後の管理者は削除できません");
+  if (existing.role === "admin" && existing.status === "active" && adminCountExcluding(id) === 0) {
+    throw new ValidationError("最後の有効な管理者は削除できません");
+  }
   run("DELETE FROM users WHERE id = ?", id);
 }
 
-/** ユーザー名とパスワードを照合する（存在しないユーザーでも処理時間を揃える） */
-export function authenticate(username: string, password: string): User | undefined {
-  const row = get<UserRow>("SELECT * FROM users WHERE username_key = ?", keyOf(username));
-  if (!row) return verifyDummyPassword(password) || undefined;
-  return verifyPassword(password, row.password_hash) ? mapUser(row) : undefined;
+/**
+ * メールアドレスとパスワードを照合する（存在しないユーザーでも処理時間を揃える）。
+ * 無効なユーザーは、パスワードが正しくてもログインさせない。
+ */
+export function authenticate(email: string, password: string): { user: User } | { error: "invalid" | "disabled" } {
+  const row = get<UserRow>("SELECT * FROM users WHERE email_key = ?", keyOf(email));
+  if (!row) {
+    verifyDummyPassword(password);
+    return { error: "invalid" };
+  }
+  if (!verifyPassword(password, row.password_hash)) return { error: "invalid" };
+  if (row.status !== "active") return { error: "disabled" };
+  return { user: mapUser(row) };
 }
 
 export function checkPassword(id: number, password: string): boolean {
@@ -207,12 +242,7 @@ export function checkPassword(id: number, password: string): boolean {
 /** パスワードを変更し、変更した端末以外のログインを無効化する */
 export function changePassword(id: number, newPassword: string, keepSessionId?: string) {
   transaction(() => {
-    run(
-      "UPDATE users SET password_hash = ?, must_change_password = 0, updated_at = ? WHERE id = ?",
-      hashPassword(newPassword),
-      now(),
-      id,
-    );
+    run("UPDATE users SET password_hash = ?, must_change_password = 0, updated_at = ? WHERE id = ?", hashPassword(newPassword), now(), id);
     run("DELETE FROM sessions WHERE user_id = ? AND id != ?", id, keepSessionId ?? "");
   });
 }
@@ -299,5 +329,12 @@ export function verifyMfaCode(id: number, input: string): boolean {
   const digest = digestCode(code);
   const codes = JSON.parse(row.otp_backup_codes) as string[];
   if (!codes.includes(digest)) return false;
-  return run("UPDATE users SET otp_backup_codes = ? WHERE id = ? AND otp_backup_codes = ?", JSON.stringify(codes.filter((c) => c !== digest)), id, row.otp_backup_codes).changes === 1;
+  return (
+    run(
+      "UPDATE users SET otp_backup_codes = ? WHERE id = ? AND otp_backup_codes = ?",
+      JSON.stringify(codes.filter((c) => c !== digest)),
+      id,
+      row.otp_backup_codes,
+    ).changes === 1
+  );
 }

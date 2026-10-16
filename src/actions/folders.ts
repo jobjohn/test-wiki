@@ -9,7 +9,7 @@ import { type FormState, int, optionalId, str, values } from "@/lib/form";
 import { createFolder, dissolveFolder, getFolder, updateFolder } from "@/lib/folders";
 
 export async function saveFolderAction(_prev: FormState, data: FormData): Promise<FormState> {
-  const guard = await guardAction("editor");
+  const guard = await guardAction("edit");
   if ("error" in guard) return { errors: [guard.error] };
 
   const id = optionalId(data, "id");
@@ -32,7 +32,7 @@ export async function saveFolderAction(_prev: FormState, data: FormData): Promis
 
 /** フォルダを削除し、中身は 1 つ上の階層へ移す */
 export async function deleteFolderAction(id: number) {
-  const guard = await guardAction("editor");
+  const guard = await guardAction("edit");
   const folder = getFolder(id);
   if ("error" in guard || !folder) {
     await setFlash("alert", "error" in guard ? guard.error : "フォルダが見つかりません。");
