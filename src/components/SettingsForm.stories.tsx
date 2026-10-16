@@ -12,7 +12,7 @@ const meta = {
       wikiName: "開発チーム Wiki",
       description: "開発チームの **手順書・設計資料** をまとめる Wiki です。",
       theme: "standard",
-      colors: { primaryColor: "#2563eb", secondaryColor: "#ffffff", accentColor: "#16a34a" },
+      colors: { primaryColor: "#008236", secondaryColor: "#ffffff", accentColor: "#474739" },
       colorMode: "system",
     },
   },

@@ -54,7 +54,7 @@ describe("設定", () => {
   it("初期値はベース白・メイン青・差し色緑のスタンダード", () => {
     getDb();
     const s = getSettings();
-    expect([s.secondaryColor, s.primaryColor, s.accentColor]).toEqual(["#ffffff", "#2563eb", "#16a34a"]);
+    expect([s.secondaryColor, s.primaryColor, s.accentColor]).toEqual(["#ffffff", "#008236", "#474739"]);
     expect(currentThemeKey(s)).toBe("standard");
     expect(s.setupCompletedAt).toBeNull();
   });

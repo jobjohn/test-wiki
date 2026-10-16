@@ -5,7 +5,7 @@ const initial = {
   wikiName: "Wiki",
   description: "",
   theme: "standard" as const,
-  colors: { primaryColor: "#2563eb", secondaryColor: "#ffffff", accentColor: "#16a34a" },
+  colors: { primaryColor: "#008236", secondaryColor: "#ffffff", accentColor: "#474739" },
   colorMode: "system" as const,
 };
 

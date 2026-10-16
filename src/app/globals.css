@@ -1,6 +1,77 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 
+/* shadcn/ui の部品が使う状態バリアント（shadcn/tailwind.css と同じ定義） */
+@custom-variant data-open {
+  &:where([data-state="open"]),
+  &:where([data-open]:not([data-open="false"])) {
+    @slot;
+  }
+}
+
+@custom-variant data-closed {
+  &:where([data-state="closed"]),
+  &:where([data-closed]:not([data-closed="false"])) {
+    @slot;
+  }
+}
+
+@custom-variant data-checked {
+  &:where([data-state="checked"]),
+  &:where([data-checked]:not([data-checked="false"])) {
+    @slot;
+  }
+}
+
+@custom-variant data-unchecked {
+  &:where([data-state="unchecked"]),
+  &:where([data-unchecked]:not([data-unchecked="false"])) {
+    @slot;
+  }
+}
+
+@custom-variant data-selected {
+  &:where([data-selected="true"]) {
+    @slot;
+  }
+}
+
+@custom-variant data-disabled {
+  &:where([data-disabled="true"]),
+  &:where([data-disabled]:not([data-disabled="false"])) {
+    @slot;
+  }
+}
+
+@custom-variant data-active {
+  &:where([data-state="active"]),
+  &:where([data-active]:not([data-active="false"])) {
+    @slot;
+  }
+}
+
+@custom-variant data-horizontal {
+  &:where([data-orientation="horizontal"]) {
+    @slot;
+  }
+}
+
+@custom-variant data-vertical {
+  &:where([data-orientation="vertical"]) {
+    @slot;
+  }
+}
+
+@utility no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+
 /*
  * shadcn/ui のテーマ（CSS 変数方式）。
  *
@@ -53,48 +124,53 @@
 
   --animate-caret-blink: caret-blink 1.25s ease-out infinite;
 
-  --radius-sm: calc(var(--radius) - 4px);
-  --radius-md: calc(var(--radius) - 2px);
+  /* shadcn/ui の角丸の段階（プリセット: 角丸 medium = 0.625rem） */
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
   --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) + 4px);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+  --radius-4xl: calc(var(--radius) * 2.6);
 }
 
 :root {
-  --radius: 0.5rem;
+  --radius: 0.625rem;
 
   /* 3 色の既定値（スタンダード）。実際の値はサーバーが上書きする */
-  --primary: #2563eb;
+  --primary: #008236;
   --primary-foreground: #ffffff;
   --base: #ffffff;
-  --base-foreground: #111827;
-  --highlight: #16a34a;
+  --base-foreground: #0c0c09;
+  --highlight: #474739;
   --highlight-foreground: #ffffff;
 
-  --background: #ffffff;
-  --foreground: #1f2937;
+  /* 面と文字は shadcn/ui のベースカラー「olive」（プリセット b6tOvLBvU） */
+  --background: oklch(1 0 0);
+  --foreground: oklch(0.153 0.006 107.1);
   --card: var(--background);
   --card-foreground: var(--foreground);
   --popover: var(--background);
   --popover-foreground: var(--foreground);
-  --secondary: color-mix(in srgb, var(--primary) 6%, var(--background));
-  --secondary-foreground: var(--foreground);
-  --muted: color-mix(in srgb, var(--foreground) 5%, var(--background));
-  --muted-foreground: color-mix(in srgb, var(--foreground) 68%, var(--background));
-  --accent: color-mix(in srgb, var(--primary) 10%, var(--background));
-  --accent-foreground: var(--foreground);
-  --destructive: #dc2626;
-  --border: color-mix(in srgb, var(--foreground) 14%, var(--background));
-  --input: color-mix(in srgb, var(--foreground) 24%, var(--background));
-  --ring: var(--primary);
+  --secondary: oklch(0.966 0.005 106.5);
+  --secondary-foreground: oklch(0.228 0.013 107.4);
+  --muted: oklch(0.966 0.005 106.5);
+  --muted-foreground: oklch(0.58 0.031 107.3);
+  --accent: oklch(0.966 0.005 106.5);
+  --accent-foreground: oklch(0.228 0.013 107.4);
+  --destructive: oklch(0.577 0.245 27.325);
+  --border: oklch(0.93 0.007 106.5);
+  --input: oklch(0.93 0.007 106.5);
+  --ring: oklch(0.737 0.021 106.9);
 
-  --sidebar: color-mix(in srgb, var(--primary) 3%, color-mix(in srgb, var(--foreground) 3%, var(--background)));
+  --sidebar: oklch(0.988 0.003 106.5);
   --sidebar-foreground: var(--foreground);
   --sidebar-primary: var(--primary);
   --sidebar-primary-foreground: var(--primary-foreground);
   --sidebar-accent: var(--accent);
   --sidebar-accent-foreground: var(--foreground);
   --sidebar-border: var(--border);
-  --sidebar-ring: var(--primary);
+  --sidebar-ring: var(--ring);
 
   --header: var(--base);
   --header-foreground: var(--base-foreground);
@@ -115,17 +191,23 @@
 /* ダークモード（設定が「ダーク」、または「システムに合わせる」で OS がダークのとき） */
 :root[data-theme="dark"] {
   color-scheme: dark;
-  --background: #0f1115;
-  --foreground: #e5e7eb;
-  --card: #171a21;
-  --popover: #171a21;
-  --muted-foreground: #9ca3af;
-  --destructive: #f87171;
-  --border: #2a2f3a;
-  --input: #3a404c;
-  --sidebar: #10151c;
-  --header: color-mix(in srgb, var(--base) 6%, #161a22);
-  --header-foreground: #e5e7eb;
+  --background: oklch(0.153 0.006 107.1);
+  --foreground: oklch(0.988 0.003 106.5);
+  --card: oklch(0.228 0.013 107.4);
+  --popover: oklch(0.228 0.013 107.4);
+  --secondary: oklch(0.286 0.016 107.4);
+  --secondary-foreground: oklch(0.988 0.003 106.5);
+  --muted: oklch(0.286 0.016 107.4);
+  --muted-foreground: oklch(0.737 0.021 106.9);
+  --accent: oklch(0.286 0.016 107.4);
+  --accent-foreground: oklch(0.988 0.003 106.5);
+  --destructive: oklch(0.704 0.191 22.216);
+  --border: oklch(1 0 0 / 10%);
+  --input: oklch(1 0 0 / 15%);
+  --ring: oklch(0.58 0.031 107.3);
+  --sidebar: oklch(0.228 0.013 107.4);
+  --header: color-mix(in srgb, var(--base) 6%, oklch(0.2 0.01 107.3));
+  --header-foreground: oklch(0.988 0.003 106.5);
   --link: color-mix(in srgb, var(--primary) 60%, #ffffff);
   --highlight-text: color-mix(in srgb, var(--highlight) 70%, #ffffff);
   --success: #4ade80;

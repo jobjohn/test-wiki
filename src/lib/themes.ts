@@ -16,7 +16,7 @@ export interface ThemeColors {
  *   accent:    差し色（タグ・強調・フォルダアイコン）
  */
 export const THEMES = {
-  standard: { name: "スタンダード", primary: "#2563eb", secondary: "#ffffff", accent: "#16a34a" },
+  standard: { name: "スタンダード", primary: "#008236", secondary: "#ffffff", accent: "#474739" },
   ocean: { name: "オーシャン", primary: "#2563eb", secondary: "#0f172a", accent: "#f59e0b" },
   forest: { name: "フォレスト", primary: "#15803d", secondary: "#14281d", accent: "#eab308" },
   sunset: { name: "サンセット", primary: "#ea580c", secondary: "#2b1d16", accent: "#0ea5e9" },
