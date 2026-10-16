@@ -35,6 +35,16 @@ const config: StorybookConfig = {
           return MOCKS.get(resolved.id) ?? null;
         },
       },
+      {
+        // Next.js 16.4 以降の useRouter は LayoutRouterContext.parentRenderTree.data を読む。
+        // Storybook のモックにはまだ含まれていないため、不足分を補う
+        name: "wiki-storybook-next-router-patch",
+        enforce: "pre",
+        transform(code: string, id: string) {
+          if (!id.includes("@storybook/nextjs-vite") || !code.includes("parentTree: tree,")) return null;
+          return code.replace("parentTree: tree,", "parentTree: tree, parentRenderTree: { data: { bfcacheId: 0 } },");
+        },
+      },
     ];
     // Radix UI の "use client" 指示子について、バンドル時に大量に出る無害な警告を消す
     viteConfig.build = {
