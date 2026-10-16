@@ -112,6 +112,7 @@
   --color-highlight: var(--highlight);
   --color-highlight-foreground: var(--highlight-foreground);
   --color-highlight-text: var(--highlight-text);
+  --color-link: var(--link);
   --color-success: var(--success);
 
   --animate-caret-blink: caret-blink 1.25s ease-out infinite;
@@ -162,7 +163,7 @@
   --sidebar-border: oklch(0.93 0.007 106.5);
   --sidebar-ring: oklch(0.737 0.021 106.9);
 
-  --link: color-mix(in srgb, var(--primary) 88%, var(--foreground));
+  --link: var(--primary);
   --highlight-text: color-mix(in srgb, var(--highlight) 55%, var(--foreground));
   --success: #15803d;
 
@@ -203,7 +204,8 @@
   --sidebar-accent-foreground: oklch(0.988 0.003 106.5);
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.58 0.031 107.3);
-  --link: color-mix(in srgb, var(--primary) 60%, #ffffff);
+  /* リンクの文字は、暗い背景でも読めるよう明るい緑（テーマ green のダーク用の明るい色） */
+  --link: oklch(0.723 0.219 149.579);
   --highlight-text: color-mix(in srgb, var(--highlight) 70%, #ffffff);
   --success: #4ade80;
   --hl-comment: #8b949e;
@@ -243,7 +245,8 @@
     --sidebar-accent-foreground: oklch(0.988 0.003 106.5);
     --sidebar-border: oklch(1 0 0 / 10%);
     --sidebar-ring: oklch(0.58 0.031 107.3);
-    --link: color-mix(in srgb, var(--primary) 60%, #ffffff);
+    /* リンクの文字は、暗い背景でも読めるよう明るい緑（テーマ green のダーク用の明るい色） */
+  --link: oklch(0.723 0.219 149.579);
     --highlight-text: color-mix(in srgb, var(--highlight) 70%, #ffffff);
     --success: #4ade80;
     --hl-comment: #8b949e;
