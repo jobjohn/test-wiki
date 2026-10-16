@@ -1,7 +1,9 @@
+import { Fragment } from "react";
 import { Clock, FileText } from "lucide-react";
 import Link from "next/link";
 import { formatDateTime } from "@/lib/format";
 import { type Page, tagsForPages } from "@/lib/pages";
+import { Item, ItemContent, ItemDescription, ItemGroup, ItemMedia, ItemSeparator, ItemTitle } from "@/components/ui/item";
 import { Tags } from "./Tags";
 
 /** 検索語の周辺テキストを抜き出して、該当箇所を強調表示する */
@@ -34,27 +36,34 @@ function Snippet({ body, query, radius = 60 }: { body: string; query: string; ra
 export function PageList({ pages, query }: { pages: Page[]; query?: string }) {
   const tags = tagsForPages(pages.map((p) => p.id));
   return (
-    <ul className="divide-y">
-      {pages.map((page) => (
-        <li key={page.id} className="grid gap-1 py-3 first:pt-0 last:pb-0">
-          <div className="flex flex-wrap items-center gap-2">
-            <FileText className="size-4 text-muted-foreground" aria-hidden />
-            <Link href={`/pages/${page.id}`} className="font-semibold text-link hover:underline">
-              {page.title}
-            </Link>
-            <Tags tags={tags.get(page.id) ?? []} />
-          </div>
-          {query && (
-            <p className="text-sm text-muted-foreground">
-              <Snippet body={page.body} query={query} />
-            </p>
-          )}
-          <span className="flex items-center gap-1 text-xs text-muted-foreground">
-            <Clock className="size-3" aria-hidden />
-            {formatDateTime(page.updatedAt)}
-          </span>
-        </li>
+    <ItemGroup>
+      {pages.map((page, i) => (
+        <Fragment key={page.id}>
+          {i > 0 && <ItemSeparator />}
+          <Item size="sm" className="px-0">
+            <ItemMedia variant="icon" className="text-muted-foreground">
+              <FileText aria-hidden />
+            </ItemMedia>
+            <ItemContent>
+              <ItemTitle className="flex-wrap">
+                <Link href={`/pages/${page.id}`} className="font-semibold text-link hover:underline">
+                  {page.title}
+                </Link>
+                <Tags tags={tags.get(page.id) ?? []} />
+              </ItemTitle>
+              {query && (
+                <ItemDescription className="line-clamp-none">
+                  <Snippet body={page.body} query={query} />
+                </ItemDescription>
+              )}
+              <ItemDescription className="flex items-center gap-1 text-xs">
+                <Clock className="size-3" aria-hidden />
+                {formatDateTime(page.updatedAt)}
+              </ItemDescription>
+            </ItemContent>
+          </Item>
+        </Fragment>
       ))}
-    </ul>
+    </ItemGroup>
   );
 }

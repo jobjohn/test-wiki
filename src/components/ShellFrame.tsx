@@ -1,14 +1,14 @@
 "use client";
 
-import { BookOpen, LogIn, Menu, Plus, Search } from "lucide-react";
+import { BookOpen, LogIn, Plus, Search } from "lucide-react";
 import Form from "next/form";
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
-import { type ReactNode, Suspense, useEffect, useRef, useState } from "react";
+import { type CSSProperties, type ReactNode, Suspense, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import { InputGroup, InputGroupAddon, InputGroupInput } from "@/components/ui/input-group";
+import { Kbd } from "@/components/ui/kbd";
+import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import type { Flash } from "@/lib/flash";
 import { FlashBanner } from "./FlashBanner";
@@ -43,18 +43,25 @@ function SearchBox() {
   }, []);
 
   return (
-    <Form action="/search" role="search" className="relative ml-auto w-full max-w-md flex-1">
-      <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 opacity-70" aria-hidden />
-      <Input
-        ref={inputRef}
-        type="search"
-        name="q"
-        key={pathname === "/search" ? params.get("q") : "q"}
-        defaultValue={pathname === "/search" ? (params.get("q") ?? "") : ""}
-        placeholder="検索（/ キー）"
-        aria-label="Wiki を検索"
-        className="h-9 rounded-full border-header-foreground/20 bg-header-foreground/10 pl-9 text-header-foreground placeholder:text-header-foreground/60"
-      />
+    <Form action="/search" role="search" className="ml-auto w-full max-w-md flex-1">
+      <InputGroup className="h-9 border-header-foreground/20 bg-header-foreground/10 text-header-foreground">
+        <InputGroupAddon>
+          <Search className="text-header-foreground/70" aria-hidden />
+        </InputGroupAddon>
+        <InputGroupInput
+          ref={inputRef}
+          type="search"
+          name="q"
+          key={pathname === "/search" ? params.get("q") : "q"}
+          defaultValue={pathname === "/search" ? (params.get("q") ?? "") : ""}
+          placeholder="検索"
+          aria-label="Wiki を検索"
+          className="text-header-foreground placeholder:text-header-foreground/60"
+        />
+        <InputGroupAddon align="inline-end" className="max-sm:hidden">
+          <Kbd>/</Kbd>
+        </InputGroupAddon>
+      </InputGroup>
       <input type="hidden" name="go" value="1" />
     </Form>
   );
@@ -73,32 +80,11 @@ export function ShellFrame({
   flash: Flash | null;
   children: ReactNode;
 }) {
-  const [menuOpen, setMenuOpen] = useState(false);
-  const pathname = usePathname();
-  useEffect(() => setMenuOpen(false), [pathname]);
-
   return (
     <TooltipProvider>
-      <div className="min-h-svh">
-        <header className="sticky top-0 z-30 flex h-14 items-center gap-2 border-b bg-header px-3 text-header-foreground md:gap-3 md:px-4">
-          <Sheet open={menuOpen} onOpenChange={setMenuOpen}>
-            <SheetTrigger asChild>
-              <Button variant="ghost" size="icon" className="hover:bg-header-foreground/10 hover:text-header-foreground md:hidden" aria-label="メニュー">
-                <Menu aria-hidden />
-              </Button>
-            </SheetTrigger>
-            <SheetContent side="left" className="w-72 gap-0 bg-sidebar p-0 sm:max-w-72">
-              <SheetHeader className="sr-only">
-                <SheetTitle>メニュー</SheetTitle>
-                <SheetDescription>ページとフォルダの一覧</SheetDescription>
-              </SheetHeader>
-              <ScrollArea className="h-full">
-                <div className="p-3 pt-12">
-                  <Sidebar tree={tree} canEdit={!!user?.canEdit} />
-                </div>
-              </ScrollArea>
-            </SheetContent>
-          </Sheet>
+      <SidebarProvider className="flex-col" style={{ "--header-height": "3.5rem" } as CSSProperties}>
+        <header className="sticky top-0 z-30 flex h-(--header-height) items-center gap-2 border-b bg-header px-3 text-header-foreground md:gap-3 md:px-4">
+          <SidebarTrigger className="size-9 hover:bg-header-foreground/10 hover:text-header-foreground" />
 
           <Link href="/" className="flex min-w-0 items-center gap-2.5 font-bold">
             <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground shadow-[inset_0_-3px_0_var(--highlight)]">
@@ -131,20 +117,14 @@ export function ShellFrame({
           )}
         </header>
 
-        <div className="flex">
-          <aside className="sticky top-14 hidden h-[calc(100svh-3.5rem)] w-64 shrink-0 border-r bg-sidebar md:block">
-            <ScrollArea className="h-full">
-              <div className="p-3 pb-10">
-                <Sidebar tree={tree} canEdit={!!user?.canEdit} />
-              </div>
-            </ScrollArea>
-          </aside>
-          <main className="min-w-0 flex-1 px-4 pt-6 pb-16 md:px-10 md:pt-8">
+        <div className="flex flex-1">
+          <Sidebar tree={tree} canEdit={!!user?.canEdit} className="top-(--header-height) h-[calc(100svh-var(--header-height))]!" />
+          <SidebarInset className="min-w-0 px-4 pt-6 pb-16 md:px-10 md:pt-8">
             <FlashBanner flash={flash} />
             <div className="mx-auto w-full max-w-5xl">{children}</div>
-          </main>
+          </SidebarInset>
         </div>
-      </div>
+      </SidebarProvider>
     </TooltipProvider>
   );
 }

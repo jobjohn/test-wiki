@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import { useRef, useState } from "react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
+import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty";
+import { Spinner } from "@/components/ui/spinner";
 import { cn } from "@/lib/utils";
 
 const MAX_MB = 20;
@@ -34,8 +36,8 @@ export function UploadForm() {
   };
 
   return (
-    <div
-      className={cn("mb-6 grid justify-items-center gap-3 rounded-lg border-2 border-dashed p-6 text-center text-sm text-muted-foreground transition-colors", dragOver && "border-primary bg-accent text-foreground")}
+    <Empty
+      className={cn("mb-6 border border-dashed transition-colors", dragOver && "border-primary bg-accent")}
       onDragOver={(e) => {
         e.preventDefault();
         setDragOver(true);
@@ -47,27 +49,35 @@ export function UploadForm() {
         void upload([...e.dataTransfer.files]);
       }}
     >
-      <p>ここにファイルをドラッグ＆ドロップするか、ボタンから選択してください（最大 {MAX_MB}MB）。</p>
-      <Button type="button" disabled={busy} onClick={() => inputRef.current?.click()}>
-        <Upload aria-hidden />
-        {busy ? "アップロード中..." : "ファイルを選択"}
-      </Button>
-      <input
-        ref={inputRef}
-        type="file"
-        multiple
-        hidden
-        onChange={(e) => {
-          const files = [...(e.target.files ?? [])];
-          e.target.value = "";
-          void upload(files);
-        }}
-      />
-      {error && (
-        <Alert variant="destructive" className="text-left">
-          <AlertDescription className="text-destructive">{error}</AlertDescription>
-        </Alert>
-      )}
-    </div>
+      <EmptyHeader>
+        <EmptyMedia variant="icon">
+          <Upload aria-hidden />
+        </EmptyMedia>
+        <EmptyTitle>ファイルをアップロード</EmptyTitle>
+        <EmptyDescription>ここにファイルをドラッグ＆ドロップするか、ボタンから選択してください（最大 {MAX_MB}MB）。</EmptyDescription>
+      </EmptyHeader>
+      <EmptyContent>
+        <Button type="button" disabled={busy} onClick={() => inputRef.current?.click()}>
+          {busy ? <Spinner aria-hidden /> : <Upload aria-hidden />}
+          {busy ? "アップロード中..." : "ファイルを選択"}
+        </Button>
+        <input
+          ref={inputRef}
+          type="file"
+          multiple
+          hidden
+          onChange={(e) => {
+            const files = [...(e.target.files ?? [])];
+            e.target.value = "";
+            void upload(files);
+          }}
+        />
+        {error && (
+          <Alert variant="destructive" className="text-left">
+            <AlertDescription className="text-destructive">{error}</AlertDescription>
+          </Alert>
+        )}
+      </EmptyContent>
+    </Empty>
   );
 }

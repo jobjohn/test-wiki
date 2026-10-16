@@ -19,24 +19,27 @@ import { Button, buttonVariants } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { BackupCodes } from "./BackupCodes";
-import { Field } from "./Field";
+import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { FormErrors } from "./FormErrors";
 import { SubmitButton } from "./SubmitButton";
 
 export function ProfileForm({ displayName }: { displayName: string }) {
   const [state, action] = useActionState(updateProfileAction, {});
   return (
-    <form action={action} className="grid gap-3">
-      <FormErrors errors={state.errors} />
-      <Field label="表示名" htmlFor="displayName">
-        <div className="flex gap-2">
-          <Input id="displayName" name="displayName" defaultValue={state.values?.displayName ?? displayName} maxLength={50} />
-          <SubmitButton variant="outline" pendingText="保存中...">
-            <Save aria-hidden />
-            保存
-          </SubmitButton>
-        </div>
-      </Field>
+    <form action={action}>
+      <FieldGroup>
+        <FormErrors errors={state.errors} />
+        <Field>
+          <FieldLabel htmlFor="displayName">表示名</FieldLabel>
+          <div className="flex gap-2">
+            <Input id="displayName" name="displayName" defaultValue={state.values?.displayName ?? displayName} maxLength={50} />
+            <SubmitButton variant="outline" pendingText="保存中...">
+              <Save aria-hidden />
+              保存
+            </SubmitButton>
+          </div>
+        </Field>
+      </FieldGroup>
     </form>
   );
 }
@@ -46,28 +49,33 @@ export function PasswordForm({ cancelable }: { cancelable: boolean }) {
   return (
     <Card className="max-w-lg">
       <CardContent>
-        <form action={action} className="grid gap-5">
-          <FormErrors errors={state.errors} />
-          <Field label="現在のパスワード" htmlFor="currentPassword">
-            <Input type="password" id="currentPassword" name="currentPassword" autoComplete="current-password" required autoFocus />
-          </Field>
-          <Field label="新しいパスワード（8 文字以上）" htmlFor="password">
-            <Input type="password" id="password" name="password" autoComplete="new-password" minLength={8} required />
-          </Field>
-          <Field label="新しいパスワード（確認）" htmlFor="passwordConfirmation">
-            <Input type="password" id="passwordConfirmation" name="passwordConfirmation" autoComplete="new-password" minLength={8} required />
-          </Field>
-          <div className="flex gap-2">
-            <SubmitButton pendingText="変更中...">
-              <Save aria-hidden />
-              変更する
-            </SubmitButton>
-            {cancelable && (
-              <Button variant="outline" asChild>
-                <Link href="/account">キャンセル</Link>
-              </Button>
-            )}
-          </div>
+        <form action={action}>
+          <FieldGroup>
+            <FormErrors errors={state.errors} />
+            <Field>
+              <FieldLabel htmlFor="currentPassword">現在のパスワード</FieldLabel>
+              <Input type="password" id="currentPassword" name="currentPassword" autoComplete="current-password" required autoFocus />
+            </Field>
+            <Field>
+              <FieldLabel htmlFor="password">新しいパスワード（8 文字以上）</FieldLabel>
+              <Input type="password" id="password" name="password" autoComplete="new-password" minLength={8} required />
+            </Field>
+            <Field>
+              <FieldLabel htmlFor="passwordConfirmation">新しいパスワード（確認）</FieldLabel>
+              <Input type="password" id="passwordConfirmation" name="passwordConfirmation" autoComplete="new-password" minLength={8} required />
+            </Field>
+            <div className="flex gap-2">
+              <SubmitButton pendingText="変更中...">
+                <Save aria-hidden />
+                変更する
+              </SubmitButton>
+              {cancelable && (
+                <Button variant="outline" asChild>
+                  <Link href="/account">キャンセル</Link>
+                </Button>
+              )}
+            </div>
+          </FieldGroup>
         </form>
       </CardContent>
     </Card>

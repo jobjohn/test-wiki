@@ -1,9 +1,9 @@
 "use client";
 
-import { Loader2 } from "lucide-react";
 import type { ComponentProps } from "react";
 import { useFormStatus } from "react-dom";
 import { Button } from "@/components/ui/button";
+import { Spinner } from "@/components/ui/spinner";
 import { useActionFormPending } from "./ActionForm";
 
 /** 送信中は無効化してスピナーを出し、二重送信を防ぐ */
@@ -14,7 +14,7 @@ export function SubmitButton({ children, pendingText, disabled, ...props }: Comp
     <Button type="submit" disabled={pending || disabled} aria-busy={pending} {...props}>
       {pending ? (
         <>
-          <Loader2 className="animate-spin" aria-hidden />
+          <Spinner aria-hidden />
           {pendingText ?? children}
         </>
       ) : (

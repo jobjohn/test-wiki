@@ -1,4 +1,6 @@
-import { ArrowLeft, ArrowRight, Clock, FileText, History, RotateCcw, User } from "lucide-react";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { Table, TableBody, TableCell, TableRow } from "@/components/ui/table";
+import { ArrowLeft, ArrowRight, Clock, FileText, History, RotateCcw, User, ChevronRight } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -92,51 +94,67 @@ export default async function RevisionPage({ params }: { params: Promise<{ id: s
         )}
       </div>
 
-      <details open className="group">
-        <summary className="cursor-pointer py-1 font-semibold">
-          前の版からの差分
-          <span className="ml-2 font-mono text-sm font-normal">
-            <span className="text-success">+{diff.additions}</span> <span className="text-destructive">-{diff.deletions}</span>
-          </span>
-        </summary>
-        {diff.changed ? (
-          <Card className="mt-2 overflow-hidden py-0">
-            <table className="w-full border-collapse font-mono text-[13px]">
-              <tbody>
-                {hunks(diff.lines).map((hunk, i) =>
-                  hunk === null ? (
-                    <tr key={i} className="bg-muted text-center text-muted-foreground">
-                      <td colSpan={3}>⋯</td>
-                    </tr>
-                  ) : (
-                    hunk.map((line, j) => (
-                      <tr key={`${i}-${j}`} className={ROW[line.action]}>
-                        <td className="w-px border-r px-2 text-right text-muted-foreground select-none">{line.oldNumber}</td>
-                        <td className="w-px border-r px-2 text-right text-muted-foreground select-none">{line.newNumber}</td>
-                        <td className="px-2 break-all whitespace-pre-wrap">
-                          <span className={cn("inline-block w-4 select-none", line.action === "=" && "text-muted-foreground")}>{line.action === "=" ? " " : line.action}</span>
-                          {line.text}
-                        </td>
-                      </tr>
-                    ))
-                  ),
-                )}
-              </tbody>
-            </table>
-          </Card>
-        ) : (
-          <p className="mt-2 text-muted-foreground">本文の変更はありません。</p>
-        )}
-      </details>
+      <Collapsible defaultOpen className="group/diff">
+        <CollapsibleTrigger asChild>
+          <Button variant="ghost" className="-ml-3">
+            <ChevronRight className="transition-transform group-data-[state=open]/diff:rotate-90" aria-hidden />
+            前の版からの差分
+            <span className="font-mono text-sm font-normal">
+              <span className="text-success">+{diff.additions}</span> <span className="text-destructive">-{diff.deletions}</span>
+            </span>
+          </Button>
+        </CollapsibleTrigger>
+        <CollapsibleContent>
+          {diff.changed ? (
+            <Card className="mt-2 overflow-hidden py-0">
+              <Table className="font-mono text-[13px]">
+                <TableBody>
+                  {hunks(diff.lines).map((hunk, i) =>
+                    hunk === null ? (
+                      <TableRow key={i} className="bg-muted text-center text-muted-foreground hover:bg-muted">
+                        <TableCell colSpan={3} className="py-0.5">
+                          ⋯
+                        </TableCell>
+                      </TableRow>
+                    ) : (
+                      hunk.map((line, j) => (
+                        <TableRow key={`${i}-${j}`} className={cn("border-0", ROW[line.action])}>
+                          <TableCell className="w-px border-r px-2 py-0 text-right text-muted-foreground select-none">{line.oldNumber}</TableCell>
+                          <TableCell className="w-px border-r px-2 py-0 text-right text-muted-foreground select-none">{line.newNumber}</TableCell>
+                          <TableCell className="px-2 py-0 break-all whitespace-pre-wrap">
+                            <span className={cn("inline-block w-4 select-none", line.action === "=" && "text-muted-foreground")}>
+                              {line.action === "=" ? " " : line.action}
+                            </span>
+                            {line.text}
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    ),
+                  )}
+                </TableBody>
+              </Table>
+            </Card>
+          ) : (
+            <p className="mt-2 text-muted-foreground">本文の変更はありません。</p>
+          )}
+        </CollapsibleContent>
+      </Collapsible>
 
-      <details>
-        <summary className="cursor-pointer py-1 font-semibold">この版の内容</summary>
-        <Card className="mt-2">
-          <CardContent>
-            <Markdown source={revision.body} />
-          </CardContent>
-        </Card>
-      </details>
+      <Collapsible className="group/body">
+        <CollapsibleTrigger asChild>
+          <Button variant="ghost" className="-ml-3">
+            <ChevronRight className="transition-transform group-data-[state=open]/body:rotate-90" aria-hidden />
+            この版の内容
+          </Button>
+        </CollapsibleTrigger>
+        <CollapsibleContent>
+          <Card className="mt-2">
+            <CardContent>
+              <Markdown source={revision.body} />
+            </CardContent>
+          </Card>
+        </CollapsibleContent>
+      </Collapsible>
     </div>
   );
 }

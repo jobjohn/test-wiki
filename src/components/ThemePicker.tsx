@@ -2,7 +2,8 @@
 
 import { Monitor, Moon, Palette, Sun } from "lucide-react";
 import { useEffect, useState } from "react";
-import { Label } from "@/components/ui/label";
+import { Field, FieldContent, FieldDescription, FieldLabel, FieldLegend, FieldSet, FieldTitle } from "@/components/ui/field";
+import { Input } from "@/components/ui/input";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { cn } from "@/lib/utils";
 import { COLOR_MODES, contrastColor, THEME_VARIABLES, THEMES, type ColorMode, type ThemeKey } from "@/lib/themes";
@@ -17,9 +18,6 @@ const COLOR_FIELDS: { key: ColorKey; name: string; label: string }[] = [
   { key: "primaryColor", name: "primaryColor", label: "メインカラー" },
   { key: "accentColor", name: "accentColor", label: "差し色" },
 ];
-
-const optionClass =
-  "relative flex cursor-pointer flex-col items-center gap-2 rounded-lg border p-3 pt-6 text-sm transition-colors hover:bg-accent has-[[data-state=checked]]:border-primary has-[[data-state=checked]]:bg-accent has-[:focus-visible]:ring-[3px] has-[:focus-visible]:ring-ring/50";
 
 /**
  * カラーテーマ（ベース・メイン・差し色の 3 色）の選択。選ぶとすぐこの画面に反映して確認できる
@@ -77,69 +75,87 @@ export function ThemePicker({
       <input type="hidden" name="theme" value={theme} />
       <input type="hidden" name="colorMode" value={mode} />
 
-      <div className="grid gap-3">
-        <Label id="theme-label">カラーテーマ</Label>
-        <p className="text-sm text-muted-foreground">
+      <FieldSet>
+        <FieldLegend variant="label">カラーテーマ</FieldLegend>
+        <FieldDescription>
           ベースカラー（ヘッダー・画面の基調）・メインカラー（ボタン・リンク）・差し色（タグ・強調）の 3 色で全体の配色が決まります。
-        </p>
-        <RadioGroup value={theme} onValueChange={choose} aria-labelledby="theme-label" className="grid-cols-2 gap-3 sm:grid-cols-4">
-          {(Object.entries(THEMES) as [ThemeKey, (typeof THEMES)[ThemeKey]][]).map(([key, preset]) => (
-            <Label key={key} className={optionClass}>
-              <RadioGroupItem value={key} className="absolute top-2 left-2" aria-label={preset.name} />
-              <span className="flex">
-                {[preset.secondary, preset.primary, preset.accent].map((color, i) => (
-                  <span key={i} className={cn("size-6 rounded-full border-2 border-background ring-1 ring-border", i > 0 && "-ml-1.5")} style={{ background: color }} />
-                ))}
-              </span>
-              <span>{preset.name}</span>
-            </Label>
+        </FieldDescription>
+        <RadioGroup value={theme} onValueChange={choose} aria-label="カラーテーマ" className="grid-cols-2 sm:grid-cols-4">
+          {[
+            ...(Object.entries(THEMES) as [ThemeKey, (typeof THEMES)[ThemeKey]][]).map(([key, preset]) => ({
+              key,
+              name: preset.name,
+              swatches: [preset.secondary, preset.primary, preset.accent],
+            })),
+            { key: "custom", name: "カスタム", swatches: null },
+          ].map(({ key, name, swatches }) => (
+            <FieldLabel key={key} htmlFor={`theme-${key}`}>
+              <Field orientation="horizontal">
+                <FieldContent className="items-center gap-2">
+                  {swatches ? (
+                    <span className="flex">
+                      {swatches.map((color, i) => (
+                        <span
+                          key={i}
+                          className={cn("size-6 rounded-full border-2 border-background ring-1 ring-border", i > 0 && "-ml-1.5")}
+                          style={{ background: color }}
+                        />
+                      ))}
+                    </span>
+                  ) : (
+                    <Palette className="size-6 text-muted-foreground" aria-hidden />
+                  )}
+                  <FieldTitle>{name}</FieldTitle>
+                </FieldContent>
+                <RadioGroupItem value={key} id={`theme-${key}`} aria-label={name} />
+              </Field>
+            </FieldLabel>
           ))}
-          <Label className={optionClass}>
-            <RadioGroupItem value="custom" className="absolute top-2 left-2" aria-label="カスタム" />
-            <Palette className="size-6 text-muted-foreground" aria-hidden />
-            <span>カスタム</span>
-          </Label>
         </RadioGroup>
 
         <div className="flex flex-wrap gap-4">
           {COLOR_FIELDS.map(({ key, name, label }) => (
-            <label key={key} className="flex cursor-pointer items-center gap-2 text-sm leading-tight">
-              <input
+            <Field key={key} orientation="horizontal" className="w-auto">
+              <Input
                 type="color"
+                id={name}
                 name={name}
                 value={colors[key]}
                 onChange={(e) => {
                   setTheme("custom");
                   setColors((prev) => ({ ...prev, [key]: e.target.value }));
                 }}
-                className="h-9 w-12 cursor-pointer rounded-md border border-input bg-transparent p-1"
+                className="h-9 w-12 cursor-pointer p-1"
               />
-              <span>
-                {label}
-                <br />
-                <code className="font-mono text-xs text-muted-foreground">{colors[key]}</code>
-              </span>
-            </label>
+              <FieldContent className="gap-0">
+                <FieldLabel htmlFor={name}>{label}</FieldLabel>
+                <FieldDescription className="font-mono text-xs">{colors[key]}</FieldDescription>
+              </FieldContent>
+            </Field>
           ))}
         </div>
-      </div>
+      </FieldSet>
 
       {showMode && (
-        <div className="grid gap-3">
-          <Label id="mode-label">表示モード</Label>
-          <RadioGroup value={mode} onValueChange={(v) => setMode(v as ColorMode)} aria-labelledby="mode-label" className="flex flex-wrap gap-2">
+        <FieldSet>
+          <FieldLegend variant="label">表示モード</FieldLegend>
+          <RadioGroup value={mode} onValueChange={(v) => setMode(v as ColorMode)} aria-label="表示モード" className="flex flex-wrap">
             {(Object.keys(COLOR_MODES) as ColorMode[]).map((key) => {
               const Icon = MODE_ICONS[key];
               return (
-                <Label key={key} className="cursor-pointer gap-2 rounded-md border px-3 py-2 hover:bg-accent has-[[data-state=checked]]:border-primary has-[[data-state=checked]]:bg-accent has-[:focus-visible]:ring-[3px] has-[:focus-visible]:ring-ring/50">
-                  <RadioGroupItem value={key} aria-label={COLOR_MODES[key]} />
-                  <Icon className="size-4" aria-hidden />
-                  {COLOR_MODES[key]}
-                </Label>
+                <FieldLabel key={key} htmlFor={`mode-${key}`} className="w-auto!">
+                  <Field orientation="horizontal">
+                    <RadioGroupItem value={key} id={`mode-${key}`} aria-label={COLOR_MODES[key]} />
+                    <FieldTitle>
+                      <Icon className="size-4" aria-hidden />
+                      {COLOR_MODES[key]}
+                    </FieldTitle>
+                  </Field>
+                </FieldLabel>
               );
             })}
           </RadioGroup>
-        </div>
+        </FieldSet>
       )}
     </div>
   );

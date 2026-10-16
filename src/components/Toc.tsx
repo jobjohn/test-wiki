@@ -3,6 +3,7 @@
 import { ListTree } from "lucide-react";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 
 interface Item {
@@ -23,20 +24,26 @@ export function Toc({ target }: { target: string }) {
 
   if (items.length < 3) return null;
   return (
-    <nav aria-label="目次" className="mb-4 rounded-lg border border-l-4 border-l-highlight bg-muted/50 p-3 text-sm md:float-right md:mb-4 md:ml-6 md:w-60">
-      <strong className="flex items-center gap-1.5">
-        <ListTree className="size-4" aria-hidden />
-        目次
-      </strong>
-      <ol className="mt-1.5 grid gap-0.5">
-        {items.map((item) => (
-          <li key={item.id} className={cn(item.level === 2 && "pl-2.5", item.level === 3 && "pl-5")}>
-            <a href={`#${encodeURIComponent(item.id)}`} className="text-link hover:underline">
-              {item.text}
-            </a>
-          </li>
-        ))}
-      </ol>
-    </nav>
+    <Card size="sm" className="mb-4 border-l-4 border-l-highlight md:float-right md:ml-6 md:w-60">
+      <nav aria-label="目次" className="contents">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-1.5 text-sm">
+            <ListTree className="size-4" aria-hidden />
+            目次
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <ol className="grid gap-0.5 text-sm">
+            {items.map((item) => (
+              <li key={item.id} className={cn(item.level === 2 && "pl-2.5", item.level === 3 && "pl-5")}>
+                <a href={`#${encodeURIComponent(item.id)}`} className="text-link hover:underline">
+                  {item.text}
+                </a>
+              </li>
+            ))}
+          </ol>
+        </CardContent>
+      </nav>
+    </Card>
   );
 }

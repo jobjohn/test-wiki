@@ -1,3 +1,5 @@
+import { Item, ItemContent, ItemDescription, ItemMedia, ItemTitle } from "@/components/ui/item";
+import { Empty, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty";
 import { FilePlus, FileText, Folder, FolderInput, FolderOpen, FolderPlus, Trash2 } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
@@ -21,8 +23,6 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const folder = /^\d+$/.test(id) && (await canViewContent()) ? getFolder(Number(id)) : undefined;
   return { title: folder?.name ?? "フォルダ" };
 }
-
-const itemClass = "grid grid-cols-[auto_1fr] gap-x-3 rounded-lg border p-3 transition-colors hover:border-primary hover:bg-accent";
 
 export default async function FolderPage({ params }: Props) {
   const { user } = await requireAccess();
@@ -81,33 +81,49 @@ export default async function FolderPage({ params }: Props) {
       </header>
 
       {children.length === 0 && pages.length === 0 ? (
-        <div className="grid justify-items-center gap-2 rounded-lg border-2 border-dashed p-10 text-muted-foreground">
-          <Folder className="size-10" aria-hidden />
-          <p>このフォルダは空です。</p>
-        </div>
+        <Empty className="border border-dashed">
+          <EmptyHeader>
+            <EmptyMedia variant="icon">
+              <Folder aria-hidden />
+            </EmptyMedia>
+            <EmptyTitle>このフォルダは空です</EmptyTitle>
+          </EmptyHeader>
+        </Empty>
       ) : (
         <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {children.map((child) => {
             const counts = folderCounts(child.id);
             return (
               <li key={`f${child.id}`}>
-                <Link href={`/folders/${child.id}`} className={itemClass}>
-                  <Folder className="row-span-2 mt-0.5 size-5 text-highlight-text" aria-hidden />
-                  <span className="truncate font-semibold">{child.name}</span>
-                  <span className="text-xs text-muted-foreground">
-                    {counts.folders} フォルダ・{counts.pages} ページ
-                  </span>
-                </Link>
+                <Item variant="outline" size="sm" asChild>
+                  <Link href={`/folders/${child.id}`}>
+                    <ItemMedia variant="icon" className="text-highlight-text">
+                      <Folder aria-hidden />
+                    </ItemMedia>
+                    <ItemContent className="min-w-0">
+                      <ItemTitle className="w-full truncate">{child.name}</ItemTitle>
+                      <ItemDescription className="text-xs">
+                        {counts.folders} フォルダ・{counts.pages} ページ
+                      </ItemDescription>
+                    </ItemContent>
+                  </Link>
+                </Item>
               </li>
             );
           })}
           {pages.map((page) => (
             <li key={`p${page.id}`}>
-              <Link href={`/pages/${page.id}`} className={itemClass}>
-                <FileText className="row-span-2 mt-0.5 size-5 text-primary" aria-hidden />
-                <span className="truncate font-semibold">{page.title}</span>
-                <span className="text-xs text-muted-foreground">{formatDateTime(page.updatedAt)}</span>
-              </Link>
+              <Item variant="outline" size="sm" asChild>
+                <Link href={`/pages/${page.id}`}>
+                  <ItemMedia variant="icon" className="text-primary">
+                    <FileText aria-hidden />
+                  </ItemMedia>
+                  <ItemContent className="min-w-0">
+                    <ItemTitle className="w-full truncate">{page.title}</ItemTitle>
+                    <ItemDescription className="text-xs">{formatDateTime(page.updatedAt)}</ItemDescription>
+                  </ItemContent>
+                </Link>
+              </Item>
             </li>
           ))}
         </ul>

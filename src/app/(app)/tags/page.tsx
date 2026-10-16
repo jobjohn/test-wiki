@@ -1,3 +1,4 @@
+import { Empty, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty";
 import { Tag, Tags as TagsIcon } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
@@ -26,7 +27,15 @@ export default async function TagsPage() {
           ))}
         </div>
       ) : (
-        <p className="text-muted-foreground">タグはまだありません。ページ編集画面でタグを付けられます。</p>
+        <Empty className="border border-dashed">
+          <EmptyHeader>
+            <EmptyMedia variant="icon">
+              <TagsIcon aria-hidden />
+            </EmptyMedia>
+            <EmptyTitle>タグはまだありません</EmptyTitle>
+            <EmptyDescription>ページ編集画面でタグを付けられます。</EmptyDescription>
+          </EmptyHeader>
+        </Empty>
       )}
     </div>
   );

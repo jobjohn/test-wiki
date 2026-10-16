@@ -1,3 +1,4 @@
+import { Empty, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty";
 import { Paperclip, Trash2 } from "lucide-react";
 import type { Metadata } from "next";
 import { deleteUploadAction } from "@/actions/uploads";
@@ -78,7 +79,14 @@ export default async function UploadsPage() {
           </CardContent>
         </Card>
       ) : (
-        <p className="text-muted-foreground">アップロードされたファイルはありません。</p>
+        <Empty className="border border-dashed">
+          <EmptyHeader>
+            <EmptyMedia variant="icon">
+              <Paperclip aria-hidden />
+            </EmptyMedia>
+            <EmptyTitle>アップロードされたファイルはありません</EmptyTitle>
+          </EmptyHeader>
+        </Empty>
       )}
     </div>
   );

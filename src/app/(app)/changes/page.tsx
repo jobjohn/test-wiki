@@ -1,3 +1,4 @@
+import { Empty, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty";
 import { History } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
@@ -61,7 +62,14 @@ export default async function ChangesPage({ searchParams }: { searchParams: Prom
           <Pagination basePath="/changes" page={pageNumber} hasNext={rows.length > PER_PAGE} />
         </>
       ) : (
-        <p className="text-muted-foreground">まだ更新はありません。</p>
+        <Empty className="border border-dashed">
+          <EmptyHeader>
+            <EmptyMedia variant="icon">
+              <History aria-hidden />
+            </EmptyMedia>
+            <EmptyTitle>まだ更新はありません</EmptyTitle>
+          </EmptyHeader>
+        </Empty>
       )}
     </div>
   );

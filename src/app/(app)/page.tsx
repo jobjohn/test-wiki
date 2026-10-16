@@ -20,29 +20,31 @@ export default async function HomePage() {
 
   return (
     <div className="grid gap-6">
-      <section className="flex items-start gap-4 rounded-xl border bg-header p-5 text-header-foreground shadow-sm md:p-6">
-        <span className="flex shrink-0 rounded-xl bg-highlight p-3 text-highlight-foreground">
-          <BookOpen className="size-7" aria-hidden />
-        </span>
-        <div className="min-w-0">
-          <h1 className="text-2xl font-bold tracking-tight">{settings.wikiName}</h1>
-          {settings.description ? (
-            <div className="mt-1 opacity-90 [&_.markdown-body_a]:text-inherit">
-              <Markdown source={settings.description} />
-            </div>
-          ) : (
-            isAdmin(user) && (
-              <p className="mt-1 text-sm opacity-80">
-                この Wiki の説明は
-                <Link href="/settings" className="underline">
-                  設定
-                </Link>
-                から追加できます。
-              </p>
-            )
-          )}
-        </div>
-      </section>
+      <Card className="bg-header text-header-foreground">
+        <CardContent className="flex items-start gap-4">
+          <span className="flex shrink-0 rounded-2xl bg-highlight p-3 text-highlight-foreground">
+            <BookOpen className="size-7" aria-hidden />
+          </span>
+          <div className="min-w-0">
+            <h1 className="text-2xl font-bold tracking-tight">{settings.wikiName}</h1>
+            {settings.description ? (
+              <div className="mt-1 opacity-90 [&_.markdown-body_a]:text-inherit">
+                <Markdown source={settings.description} />
+              </div>
+            ) : (
+              isAdmin(user) && (
+                <p className="mt-1 text-sm opacity-80">
+                  この Wiki の説明は
+                  <Link href="/settings" className="underline">
+                    設定
+                  </Link>
+                  から追加できます。
+                </p>
+              )
+            )}
+          </div>
+        </CardContent>
+      </Card>
 
       {home && (
         <Card>

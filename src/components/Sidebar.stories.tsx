@@ -1,4 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/nextjs-vite";
+import { SidebarProvider } from "@/components/ui/sidebar";
 import { Sidebar, type TreeData } from "./Sidebar";
 
 const tree: TreeData = {
@@ -19,8 +20,14 @@ const meta = {
   title: "Components/Sidebar",
   component: Sidebar,
   tags: ["autodocs"],
-  args: { tree, canEdit: true },
-  decorators: [(Story) => <div className="w-64 rounded-lg border bg-sidebar p-3"><Story /></div>],
+  args: { tree, canEdit: true, collapsible: "none", className: "h-auto rounded-2xl border" },
+  decorators: [
+    (Story) => (
+      <SidebarProvider className="min-h-0">
+        <Story />
+      </SidebarProvider>
+    ),
+  ],
 } satisfies Meta<typeof Sidebar>;
 export default meta;
 type Story = StoryObj<typeof meta>;
