@@ -45,7 +45,7 @@ docker compose down
 - UI は [shadcn/ui](https://ui.shadcn.com)（Tailwind CSS v4 + Radix UI）。ボタン・フォーム・ダイアログ・ドロップダウン・タブ・通知などの部品は `src/components/ui/` にあり、`components.json` も含まれているので、`npx shadcn@latest add <部品名>` で追加できます
 - アイコンは [Lucide](https://lucide.dev)（`lucide-react`）で統一
 - 画面では shadcn/ui の部品をそのまま使い、色・角丸・影などの見た目を上書きしません（画面側で指定するのは配置だけ）
-- 配色は shadcn/ui のプリセット `b6tOvLBvU`（スタイル luma・ベース olive・テーマ green）で固定です。差し色（`--highlight`）は Button・Badge の `highlight` バリアントで使います
+- 配色は shadcn/ui のプリセット `b6rtA2I08`（スタイル nova・角丸 none・ベース olive・テーマ green）で固定です。差し色（`--highlight`）は Button・Badge の `highlight` バリアントで使います
 - 表示モード: システムに合わせる / ライト / ダーク
 - スマートフォン対応
 
@@ -124,7 +124,7 @@ npm run build-storybook   # 静的なサイトとして storybook-static/ に出
 ## 構成
 
 - Next.js 16（App Router / Server Actions）/ React 19 / TypeScript
-- UI: shadcn/ui（luma スタイル）/ Tailwind CSS v4 / Radix UI / sonner（通知）
+- UI: shadcn/ui（nova スタイル・角丸なし）/ Tailwind CSS v4 / Radix UI / sonner（通知）
 - データベース: SQLite（Node.js 標準の `node:sqlite`。ネイティブ拡張なし）
 - 認証: セッション Cookie + scrypt、二段階認証: TOTP（RFC 6238）を自前実装、シークレットは AES-256-GCM で暗号化
 - Markdown: unified（remark / rehype）+ highlight.js、HTML は `rehype-sanitize` で制限

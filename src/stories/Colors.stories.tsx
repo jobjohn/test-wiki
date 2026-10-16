@@ -3,7 +3,7 @@ import type { Meta, StoryObj } from "@storybook/nextjs-vite";
 const GROUPS: { title: string; note: string; tokens: [name: string, foreground: string][] }[] = [
   {
     title: "メインカラーと差し色",
-    note: "shadcn/ui のプリセット b6tOvLBvU（テーマ green）に合わせた固定の色。差し色は Button・Badge の highlight で使う。",
+    note: "shadcn/ui のプリセット b6rtA2I08（テーマ green）に合わせた固定の色。差し色は Button・Badge の highlight で使う。",
     tokens: [
       ["primary", "primary-foreground"],
       ["highlight", "highlight-foreground"],

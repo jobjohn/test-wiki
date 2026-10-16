@@ -73,7 +73,7 @@
 
 
 /*
- * shadcn/ui のテーマ（CSS 変数方式）。プリセット b6tOvLBvU（スタイル luma・ベース olive・テーマ green）の値。
+ * shadcn/ui のテーマ（CSS 変数方式）。プリセット b6rtA2I08（スタイル nova・角丸 none・ベース olive・テーマ green）の値。
  *   --highlight / --highlight-foreground 差し色（Button・Badge・Alert の highlight / warning で使う）
  */
 
@@ -116,7 +116,7 @@
 
   --animate-caret-blink: caret-blink 1.25s ease-out infinite;
 
-  /* shadcn/ui の角丸の段階（プリセット: 角丸 medium = 0.625rem） */
+  /* shadcn/ui の角丸の段階（プリセット b6rtA2I08: 角丸 none = 0） */
   --radius-sm: calc(var(--radius) * 0.6);
   --radius-md: calc(var(--radius) * 0.8);
   --radius-lg: var(--radius);
@@ -127,7 +127,7 @@
 }
 
 :root {
-  --radius: 0.625rem;
+  --radius: 0;
 
   /* メインカラー（テーマ green）と差し色 */
   --primary: oklch(0.527 0.154 150.069);
@@ -135,7 +135,7 @@
   --highlight: oklch(0.394 0.023 107.4);
   --highlight-foreground: oklch(0.988 0.003 106.5);
 
-  /* 面と文字は shadcn/ui のベースカラー「olive」（プリセット b6tOvLBvU） */
+  /* 面と文字は shadcn/ui のベースカラー「olive」（プリセット b6rtA2I08） */
   --background: oklch(1 0 0);
   --foreground: oklch(0.153 0.006 107.1);
   --card: var(--background);
