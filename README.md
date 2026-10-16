@@ -136,3 +136,7 @@ npm run build-storybook   # 静的なサイトとして storybook-static/ に出
 - Markdown: unified（remark / rehype）+ highlight.js、HTML は `rehype-sanitize` で制限
 - ファイル保存: ローカルディスク（`/data/files`）
 - アイコン: [lucide-react](https://lucide.dev)
+
+## ライセンス
+
+[MIT License](LICENSE)
