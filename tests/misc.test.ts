@@ -5,7 +5,7 @@ import { allowAttempt } from "@/lib/rate-limit";
 import { decrypt, encrypt } from "@/lib/secret";
 import { getDb } from "@/lib/db";
 import { ValidationError } from "@/lib/errors";
-import { contrastColor, cssVariables, currentThemeKey, getSettings, THEMES, updateSettings } from "@/lib/settings";
+import { getSettings, updateSettings } from "@/lib/settings";
 import { hashPassword, verifyPassword } from "@/lib/password";
 import { safeNext } from "@/lib/access";
 
@@ -51,40 +51,27 @@ describe("暗号・パスワード", () => {
 });
 
 describe("設定", () => {
-  it("初期値はベース白・メイン青・差し色緑のスタンダード", () => {
+  it("初期値は表示モード「システムに合わせる」で、初期設定は未完了", () => {
     getDb();
     const s = getSettings();
-    expect([s.secondaryColor, s.primaryColor, s.accentColor]).toEqual(["#ffffff", "#008236", "#474739"]);
-    expect(currentThemeKey(s)).toBe("standard");
+    expect(s.colorMode).toBe("system");
     expect(s.setupCompletedAt).toBeNull();
   });
 
-  it("プリセットを適用し、色を変えるとカスタムになる", () => {
-    updateSettings({ wikiName: "テスト Wiki", description: "説明", theme: "forest" });
-    expect(currentThemeKey(getSettings())).toBe("forest");
-    updateSettings({ wikiName: "テスト Wiki", description: "", theme: "custom", primaryColor: "#123456" });
-    expect(currentThemeKey(getSettings())).toBe("custom");
-    expect(getSettings().primaryColor).toBe("#123456");
-    expect(getSettings().description).toBeNull();
+  it("名前・説明・表示モードを保存する", () => {
+    updateSettings({ wikiName: "テスト Wiki", description: "", colorMode: "dark" });
+    const s = getSettings();
+    expect([s.wikiName, s.description, s.colorMode]).toEqual(["テスト Wiki", null, "dark"]);
   });
 
   it("入力を検証する", () => {
     expect(() => updateSettings({ wikiName: "", description: "" })).toThrow(ValidationError);
-    expect(() => updateSettings({ wikiName: "x", description: "", primaryColor: "red" })).toThrow(/メインカラー/);
     expect(() => updateSettings({ wikiName: "x", description: "", colorMode: "neon" })).toThrow(/表示モード/);
   });
 
   it("初期設定の完了を記録する", () => {
     updateSettings({ wikiName: "x", description: "" }, { completeSetup: true });
     expect(getSettings().setupCompletedAt).not.toBeNull();
-  });
-
-  it("背景色に応じて読める文字色（白/黒）を選ぶ", () => {
-    expect(contrastColor("#ffffff")).toBe("#111827");
-    expect(contrastColor("#0f172a")).toBe("#ffffff");
-    expect(contrastColor("#2563eb")).toBe("#ffffff");
-    expect(cssVariables({ primaryColor: "#2563eb", secondaryColor: "#ffffff", accentColor: "#16a34a" })).toContain("--base-foreground: #111827;");
-    expect(Object.keys(THEMES)[0]).toBe("standard");
   });
 });
 

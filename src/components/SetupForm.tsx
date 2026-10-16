@@ -7,19 +7,14 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
-import type { ColorMode, ThemeKey } from "@/lib/themes";
 import { ActionForm } from "./ActionForm";
 import { Field, FieldDescription, FieldGroup, FieldLabel, FieldLegend, FieldSeparator, FieldSet } from "@/components/ui/field";
 import { FormErrors } from "./FormErrors";
 import { SubmitButton } from "./SubmitButton";
-import { ThemePicker } from "./ThemePicker";
 
 export interface SettingsFormValues {
   wikiName: string;
   description: string;
-  theme: ThemeKey | "custom";
-  colors: { primaryColor: string; secondaryColor: string; accentColor: string };
-  colorMode: ColorMode;
 }
 
 function Step({ n, children }: { n: number; children: React.ReactNode }) {
@@ -67,17 +62,11 @@ export function SetupForm({ initial, mustChangePassword }: { initial: SettingsFo
               </Field>
             </FieldSet>
 
-            <FieldSeparator />
-            <FieldSet>
-              <Step n={2}>カラーテーマ</Step>
-              <ThemePicker initialTheme={initial.theme} initialColors={initial.colors} initialMode={initial.colorMode} />
-            </FieldSet>
-
             {mustChangePassword && (
               <>
                 <FieldSeparator />
                 <FieldSet>
-                  <Step n={3}>管理者パスワードの変更</Step>
+                  <Step n={2}>管理者パスワードの変更</Step>
                   <FieldDescription>初期ユーザーのパスワードを変更してください（8 文字以上）。</FieldDescription>
                   <div className="grid gap-4 sm:grid-cols-2">
                     <Field>

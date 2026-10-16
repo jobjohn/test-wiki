@@ -17,8 +17,7 @@ docker compose up -d --build
 初回ログイン時に **初期設定画面** が表示され、次の項目を設定します（あとから「Wiki の設定」で変更できます）。
 
 1. Wiki の名前と説明（どんな Wiki か）
-2. カラーテーマ
-3. 管理者パスワードの変更
+2. 管理者パスワードの変更
 
 停止する場合:
 
@@ -45,8 +44,8 @@ docker compose down
 
 - UI は [shadcn/ui](https://ui.shadcn.com)（Tailwind CSS v4 + Radix UI）。ボタン・フォーム・ダイアログ・ドロップダウン・タブ・通知などの部品は `src/components/ui/` にあり、`components.json` も含まれているので、`npx shadcn@latest add <部品名>` で追加できます
 - アイコンは [Lucide](https://lucide.dev)（`lucide-react`）で統一
-- 画面では shadcn/ui の部品をそのまま使い、色・角丸・影などの見た目を上書きしません（画面側で指定するのは配置だけ）。3 色は shadcn/ui のテーマ変数に割り当てています: メインカラー → `--primary`、ベースカラー → `--sidebar` 系、差し色 → `--highlight`（Button・Badge の `highlight` バリアントで使用）
-- **3 色（ベースカラー・メインカラー・差し色）** で全体の配色が決まるカラーテーマ。標準は shadcn/ui のプリセット `b6tOvLBvU`（スタイル luma・ベース olive・テーマ green）に合わせた、ベース白・メイン緑・差し色オリーブ。7 種類のプリセットのほか、色を自由に選べるカスタムテーマに対応（設定画面でリアルタイムにプレビュー）
+- 画面では shadcn/ui の部品をそのまま使い、色・角丸・影などの見た目を上書きしません（画面側で指定するのは配置だけ）
+- 配色は shadcn/ui のプリセット `b6tOvLBvU`（スタイル luma・ベース olive・テーマ green）で固定です。差し色（`--highlight`）は Button・Badge の `highlight` バリアントで使います
 - 表示モード: システムに合わせる / ライト / ダーク
 - スマートフォン対応
 
@@ -60,7 +59,7 @@ docker compose down
 
 ## 設定
 
-Wiki の名前・説明・カラーテーマ・アクセス設定は、管理者でログインして画面右上のメニュー →「Wiki の設定」から変更します。
+Wiki の名前・説明・表示モード・アクセス設定は、管理者でログインして画面右上のメニュー →「Wiki の設定」から変更します。
 
 起動時の設定は `.env.example` を `.env` にコピーして編集します。
 
@@ -111,7 +110,7 @@ npm run storybook  # 部品の一覧（http://localhost:6006）
 
 ### Storybook（部品の一覧）
 
-画面で使っている部品を、状態ごとに確認できます。ツールバーで、カラーテーマ（7 種）とライト／ダークを切り替えられます。
+画面で使っている部品を、状態ごとに確認できます。ツールバーで、ライト／ダークを切り替えられます。
 
 ```bash
 npm run storybook         # 開発用サーバー http://localhost:6006
@@ -125,7 +124,7 @@ npm run build-storybook   # 静的なサイトとして storybook-static/ に出
 ## 構成
 
 - Next.js 16（App Router / Server Actions）/ React 19 / TypeScript
-- UI: shadcn/ui（new-york スタイル）/ Tailwind CSS v4 / Radix UI / sonner（通知）。配色は shadcn/ui の CSS 変数（`--primary` など）に、管理者が選んだ 3 色を割り当てて導出しています
+- UI: shadcn/ui（luma スタイル）/ Tailwind CSS v4 / Radix UI / sonner（通知）
 - データベース: SQLite（Node.js 標準の `node:sqlite`。ネイティブ拡張なし）
 - 認証: セッション Cookie + scrypt、二段階認証: TOTP（RFC 6238）を自前実装、シークレットは AES-256-GCM で暗号化
 - Markdown: unified（remark / rehype）+ highlight.js、HTML は `rehype-sanitize` で制限

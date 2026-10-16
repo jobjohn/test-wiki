@@ -107,4 +107,10 @@ export const MIGRATIONS: string[] = [
     created_at TEXT NOT NULL
   );
   `,
+  // カラーテーマ機能の廃止（配色は固定）
+  `
+  ALTER TABLE settings DROP COLUMN primary_color;
+  ALTER TABLE settings DROP COLUMN secondary_color;
+  ALTER TABLE settings DROP COLUMN accent_color;
+  `,
 ];

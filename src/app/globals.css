@@ -73,13 +73,8 @@
 
 
 /*
- * shadcn/ui のテーマ（CSS 変数方式）。
- *
- * 管理者が選ぶ 3 色は、サーバーが <style id="theme-variables"> で次の変数として注入する。
- *   --primary / --primary-foreground     メインカラー（ボタン・リンク・選択中）
- *   --base / --base-foreground           ベースカラー（shadcn/ui の --sidebar 系に割り当てる）
- *   --highlight / --highlight-foreground 差し色（タグ・強調・フォルダアイコン）
- * ここでは、それ以外の shadcn/ui の変数（背景・枠線・淡い面など）を 3 色とライト/ダークから導出する。
+ * shadcn/ui のテーマ（CSS 変数方式）。プリセット b6tOvLBvU（スタイル luma・ベース olive・テーマ green）の値。
+ *   --highlight / --highlight-foreground 差し色（Button・Badge・Alert の highlight / warning で使う）
  */
 
 @theme inline {
@@ -134,13 +129,11 @@
 :root {
   --radius: 0.625rem;
 
-  /* 3 色の既定値（スタンダード）。実際の値はサーバーが上書きする */
-  --primary: #008236;
-  --primary-foreground: #ffffff;
-  --base: #ffffff;
-  --base-foreground: #0c0c09;
-  --highlight: #474739;
-  --highlight-foreground: #ffffff;
+  /* メインカラー（テーマ green）と差し色 */
+  --primary: oklch(0.527 0.154 150.069);
+  --primary-foreground: oklch(0.982 0.018 155.826);
+  --highlight: oklch(0.394 0.023 107.4);
+  --highlight-foreground: oklch(0.988 0.003 106.5);
 
   /* 面と文字は shadcn/ui のベースカラー「olive」（プリセット b6tOvLBvU） */
   --background: oklch(1 0 0);
@@ -160,15 +153,14 @@
   --input: oklch(0.93 0.007 106.5);
   --ring: oklch(0.737 0.021 106.9);
 
-  /* ベースカラーは shadcn/ui のサイドバーの変数に割り当てる */
-  --sidebar: var(--base);
-  --sidebar-foreground: var(--base-foreground);
-  --sidebar-primary: var(--primary);
-  --sidebar-primary-foreground: var(--primary-foreground);
-  --sidebar-accent: color-mix(in srgb, var(--base-foreground) 8%, var(--base));
-  --sidebar-accent-foreground: var(--base-foreground);
-  --sidebar-border: color-mix(in srgb, var(--base-foreground) 12%, var(--base));
-  --sidebar-ring: var(--ring);
+  --sidebar: oklch(0.988 0.003 106.5);
+  --sidebar-foreground: oklch(0.153 0.006 107.1);
+  --sidebar-primary: oklch(0.627 0.194 149.214);
+  --sidebar-primary-foreground: oklch(0.982 0.018 155.826);
+  --sidebar-accent: oklch(0.966 0.005 106.5);
+  --sidebar-accent-foreground: oklch(0.228 0.013 107.4);
+  --sidebar-border: oklch(0.93 0.007 106.5);
+  --sidebar-ring: oklch(0.737 0.021 106.9);
 
   --link: color-mix(in srgb, var(--primary) 88%, var(--foreground));
   --highlight-text: color-mix(in srgb, var(--highlight) 55%, var(--foreground));
@@ -201,11 +193,16 @@
   --border: oklch(1 0 0 / 10%);
   --input: oklch(1 0 0 / 15%);
   --ring: oklch(0.58 0.031 107.3);
-  --sidebar: color-mix(in srgb, var(--base) 8%, oklch(0.228 0.013 107.4));
+  --primary: oklch(0.448 0.119 151.328);
+  --highlight: oklch(0.93 0.007 106.5);
+  --highlight-foreground: oklch(0.228 0.013 107.4);
+  --sidebar: oklch(0.228 0.013 107.4);
   --sidebar-foreground: oklch(0.988 0.003 106.5);
-  --sidebar-accent: oklch(1 0 0 / 8%);
+  --sidebar-primary: oklch(0.723 0.219 149.579);
+  --sidebar-accent: oklch(0.286 0.016 107.4);
   --sidebar-accent-foreground: oklch(0.988 0.003 106.5);
   --sidebar-border: oklch(1 0 0 / 10%);
+  --sidebar-ring: oklch(0.58 0.031 107.3);
   --link: color-mix(in srgb, var(--primary) 60%, #ffffff);
   --highlight-text: color-mix(in srgb, var(--highlight) 70%, #ffffff);
   --success: #4ade80;
@@ -236,11 +233,16 @@
     --border: oklch(1 0 0 / 10%);
     --input: oklch(1 0 0 / 15%);
     --ring: oklch(0.58 0.031 107.3);
-    --sidebar: color-mix(in srgb, var(--base) 8%, oklch(0.228 0.013 107.4));
+    --primary: oklch(0.448 0.119 151.328);
+    --highlight: oklch(0.93 0.007 106.5);
+    --highlight-foreground: oklch(0.228 0.013 107.4);
+    --sidebar: oklch(0.228 0.013 107.4);
     --sidebar-foreground: oklch(0.988 0.003 106.5);
-    --sidebar-accent: oklch(1 0 0 / 8%);
+    --sidebar-primary: oklch(0.723 0.219 149.579);
+    --sidebar-accent: oklch(0.286 0.016 107.4);
     --sidebar-accent-foreground: oklch(0.988 0.003 106.5);
     --sidebar-border: oklch(1 0 0 / 10%);
+    --sidebar-ring: oklch(0.58 0.031 107.3);
     --link: color-mix(in srgb, var(--primary) 60%, #ffffff);
     --highlight-text: color-mix(in srgb, var(--highlight) 70%, #ffffff);
     --success: #4ade80;

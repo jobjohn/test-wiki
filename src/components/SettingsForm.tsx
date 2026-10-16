@@ -21,8 +21,9 @@ import {
 } from "@/components/ui/field";
 import { FormErrors } from "./FormErrors";
 import type { SettingsFormValues } from "./SetupForm";
+import type { ColorMode } from "@/lib/color-mode";
 import { SubmitButton } from "./SubmitButton";
-import { ThemePicker } from "./ThemePicker";
+import { ColorModePicker } from "./ColorModePicker";
 
 function Section({ icon: Icon, title, children }: { icon: typeof BookOpen; title: string; children: React.ReactNode }) {
   return (
@@ -62,7 +63,15 @@ function SwitchRow({
   );
 }
 
-export function SettingsForm({ initial, publicRead, requireMfa }: { initial: SettingsFormValues; publicRead: boolean; requireMfa: boolean }) {
+export function SettingsForm({
+  initial,
+  publicRead,
+  requireMfa,
+}: {
+  initial: SettingsFormValues & { colorMode: ColorMode };
+  publicRead: boolean;
+  requireMfa: boolean;
+}) {
   const [state, action] = useActionState(saveSettingsAction, {});
   const v = state.values;
   return (
@@ -86,7 +95,7 @@ export function SettingsForm({ initial, publicRead, requireMfa }: { initial: Set
 
             <FieldSeparator />
             <Section icon={Palette} title="見た目">
-              <ThemePicker initialTheme={initial.theme} initialColors={initial.colors} initialMode={initial.colorMode} showMode />
+              <ColorModePicker initialMode={initial.colorMode} />
             </Section>
 
             <FieldSeparator />

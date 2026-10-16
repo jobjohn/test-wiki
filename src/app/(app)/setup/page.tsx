@@ -4,7 +4,6 @@ import { redirect } from "next/navigation";
 import { PageTitle } from "@/components/PageTitle";
 import { SetupForm } from "@/components/SetupForm";
 import { requireAccess } from "@/lib/access";
-import { currentThemeKey } from "@/lib/settings";
 
 export const metadata: Metadata = { title: "初期設定" };
 
@@ -21,9 +20,6 @@ export default async function SetupPage() {
         initial={{
           wikiName: settings.wikiName,
           description: settings.description ?? "",
-          theme: currentThemeKey(settings),
-          colors: { primaryColor: settings.primaryColor, secondaryColor: settings.secondaryColor, accentColor: settings.accentColor },
-          colorMode: settings.colorMode,
         }}
       />
     </div>

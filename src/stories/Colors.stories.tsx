@@ -2,11 +2,10 @@ import type { Meta, StoryObj } from "@storybook/nextjs-vite";
 
 const GROUPS: { title: string; note: string; tokens: [name: string, foreground: string][] }[] = [
   {
-    title: "管理者が選ぶ 3 色",
-    note: "設定画面で選んだ値が入る。ここを変えると、下のすべての色が連動して変わる。",
+    title: "メインカラーと差し色",
+    note: "shadcn/ui のプリセット b6tOvLBvU（テーマ green）に合わせた固定の色。差し色は Button・Badge の highlight で使う。",
     tokens: [
       ["primary", "primary-foreground"],
-      ["base", "base-foreground"],
       ["highlight", "highlight-foreground"],
     ],
   },
@@ -21,7 +20,6 @@ const GROUPS: { title: string; note: string; tokens: [name: string, foreground: 
       ["secondary", "secondary-foreground"],
       ["accent", "accent-foreground"],
       ["sidebar", "sidebar-foreground"],
-      ["header", "header-foreground"],
     ],
   },
   {
@@ -57,7 +55,7 @@ function Colors() {
   return (
     <div className="grid gap-8">
       <p className="max-w-2xl text-sm text-muted-foreground">
-        ツールバーの「カラーテーマ」「ライト／ダーク」を切り替えて、すべてのテーマで文字が読めること、色の役割が保たれていることを確認する。
+        ツールバーの「ライト／ダーク」を切り替えて、どちらでも文字が読めること、色の役割が保たれていることを確認する。
       </p>
       {GROUPS.map((group) => (
         <section key={group.title} className="grid gap-3">

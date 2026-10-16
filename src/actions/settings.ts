@@ -12,16 +12,12 @@ import { currentSessionId } from "@/lib/session";
 import { updateSettings, type SettingsInput } from "@/lib/settings";
 import { changePassword, validatePassword } from "@/lib/users";
 
-const FIELDS = ["wikiName", "description", "theme", "primaryColor", "secondaryColor", "accentColor", "colorMode"];
+const FIELDS = ["wikiName", "description", "colorMode"];
 
 function settingsInput(data: FormData): SettingsInput {
   return {
     wikiName: str(data, "wikiName"),
     description: str(data, "description"),
-    theme: str(data, "theme"),
-    primaryColor: str(data, "primaryColor"),
-    secondaryColor: str(data, "secondaryColor"),
-    accentColor: str(data, "accentColor"),
     colorMode: str(data, "colorMode") || undefined,
   };
 }
@@ -42,7 +38,7 @@ export async function saveSettingsAction(_prev: FormState, data: FormData): Prom
   redirect("/settings");
 }
 
-/** 初回ログイン時の初期設定（Wiki の名前・説明・テーマ・管理者パスワード） */
+/** 初回ログイン時の初期設定（Wiki の名前・説明・管理者パスワード） */
 export async function completeSetupAction(_prev: FormState, data: FormData): Promise<FormState> {
   const guard = await guardAction("admin", { gate: false });
   if ("error" in guard) return { errors: [guard.error] };
