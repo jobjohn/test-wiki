@@ -3,15 +3,15 @@
 # - build:     本番ビルド（next build）
 # - storybook: Storybook のビルド
 # - e2e:       Playwright（Chromium）による E2E スモークテスト
-# - docker:    Docker イメージのビルドと起動確認（master への push、または Docker 関連ファイルを変えた PR のみ）
+# - docker:    Docker イメージのビルドと起動確認（main への push、または Docker 関連ファイルを変えた PR のみ）
 # secrets は使わず、権限は読み取りのみ。ブランチ保護では check と build を必須にすると安全です。
 name: CI
 
 on:
   pull_request:
-    branches: [master]
+    branches: [main]
   push:
-    branches: [master]
+    branches: [main]
 
 permissions:
   contents: read
@@ -131,7 +131,7 @@ jobs:
       - name: ソースの取得
         uses: actions/checkout@v4
       # 外部アクションを増やさないよう git diff で判定する。
-      # PR では、取得されるマージ結果と master の差分（= その PR の変更）を見る。
+      # PR では、取得されるマージ結果と main の差分（= その PR の変更）を見る。
       - name: Docker 関連ファイルの変更を確認
         id: changes
         env:
