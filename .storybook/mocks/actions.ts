@@ -23,3 +23,8 @@ export const deleteUploadAction = noopAction;
 export const saveUserAction = noop;
 export const deleteUserAction = noopAction;
 export const resetUserMfaAction = noopAction;
+export const saveBookmarkAction = noop;
+export const deleteBookmarkAction = noopAction;
+/** URL の情報の取得。example.com 以外は取得に失敗した扱いにする */
+export const fetchUrlMetadataAction = async (url: string) =>
+  /^https?:\/\/(www\.)?example\.com/.test(url) ? { title: "Example Domain" } : { error: "タイトルを取得できませんでした。手動で入力してください。" };

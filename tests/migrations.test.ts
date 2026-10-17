@@ -27,4 +27,23 @@ describe("マイグレーション", () => {
       db.prepare("INSERT INTO users (email, email_key, password_hash, created_at, updated_at) VALUES ('X', 'taro@example.com', 'x', 't', 't')").run(),
     ).toThrow(/UNIQUE/);
   });
+
+  it("既存のデータベースにリンク集のテーブルを追加し、同じ URL・同じタグの重複を防ぐ", () => {
+    const db = new DatabaseSync(":memory:");
+    db.exec("PRAGMA foreign_keys = ON");
+    for (const sql of MIGRATIONS.slice(0, 3)) db.exec(sql);
+    db.prepare("INSERT INTO tags (name, name_key) VALUES ('開発', '開発')").run();
+    for (const sql of MIGRATIONS.slice(3)) db.exec(sql);
+
+    const insert = db.prepare(
+      "INSERT INTO bookmarks (title, title_key, url, normalized_url, created_at, updated_at) VALUES ('A', 'a', 'https://a.example/', 'https://a.example', 't', 't')",
+    );
+    const id = Number(insert.run().lastInsertRowid);
+    expect(() => insert.run()).toThrow(/UNIQUE/);
+    db.prepare("INSERT INTO bookmark_taggings (bookmark_id, tag_id) VALUES (?, 1)").run(id);
+    expect(() => db.prepare("INSERT INTO bookmark_taggings (bookmark_id, tag_id) VALUES (?, 1)").run(id)).toThrow(/UNIQUE|PRIMARY/);
+    // リンクを消すと、タグ付けも消える
+    db.prepare("DELETE FROM bookmarks WHERE id = ?").run(id);
+    expect(db.prepare("SELECT COUNT(*) AS n FROM bookmark_taggings").get()).toEqual(expect.objectContaining({ n: 0 }));
+  });
 });

@@ -16,6 +16,7 @@ import { SubmitButton } from "./SubmitButton";
 /**
  * 確認ダイアログ（AlertDialog）を出してから、サーバーアクションを実行する（削除・復元など）。
  * trigger には、ダイアログを開くボタンを渡す。
+ * メニューの項目から開く場合などは、trigger を省いて open / onOpenChange で開閉する。
  */
 export function ConfirmAction({
   action,
@@ -24,17 +25,21 @@ export function ConfirmAction({
   description,
   confirmLabel,
   destructive = false,
+  open,
+  onOpenChange,
 }: {
   action: (formData: FormData) => void | Promise<void>;
-  trigger: ReactNode;
+  trigger?: ReactNode;
   title: string;
   description: string;
   confirmLabel: string;
   destructive?: boolean;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }) {
   return (
-    <AlertDialog>
-      <AlertDialogTrigger asChild>{trigger}</AlertDialogTrigger>
+    <AlertDialog open={open} onOpenChange={onOpenChange}>
+      {trigger && <AlertDialogTrigger asChild>{trigger}</AlertDialogTrigger>}
       <AlertDialogContent>
         <AlertDialogHeader>
           <AlertDialogTitle>{title}</AlertDialogTitle>

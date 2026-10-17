@@ -135,14 +135,23 @@ export const findTagByName = (name: string): Tag | undefined => get<Tag>("SELECT
 export const pagesForTag = (tagId: number): Page[] =>
   all<PageRow>("SELECT p.* FROM pages p JOIN taggings tg ON tg.page_id = p.id WHERE tg.tag_id = ? ORDER BY p.title_key", tagId).map(mapPage);
 
+/** どこからも使われていないタグを消す（Wiki ページとリンク集で共有している） */
+export function deleteUnusedTags() {
+  run("DELETE FROM tags WHERE id NOT IN (SELECT tag_id FROM taggings UNION SELECT tag_id FROM bookmark_taggings)");
+}
+
+/** タグ名からタグ ID を得る（なければ作る） */
+export function ensureTag(name: string): number {
+  run("INSERT INTO tags (name, name_key) VALUES (?, ?) ON CONFLICT(name_key) DO NOTHING", name, keyOf(name));
+  return get<{ id: number }>("SELECT id FROM tags WHERE name_key = ?", keyOf(name))!.id;
+}
+
 function replaceTags(pageId: number, names: string[]) {
   run("DELETE FROM taggings WHERE page_id = ?", pageId);
   for (const name of names) {
-    run("INSERT INTO tags (name, name_key) VALUES (?, ?) ON CONFLICT(name_key) DO NOTHING", name, keyOf(name));
-    const tag = get<{ id: number }>("SELECT id FROM tags WHERE name_key = ?", keyOf(name))!;
-    run("INSERT OR IGNORE INTO taggings (page_id, tag_id) VALUES (?, ?)", pageId, tag.id);
+    run("INSERT OR IGNORE INTO taggings (page_id, tag_id) VALUES (?, ?)", pageId, ensureTag(name));
   }
-  run("DELETE FROM tags WHERE id NOT IN (SELECT tag_id FROM taggings)");
+  deleteUnusedTags();
 }
 
 // ---- 作成・更新・削除 ----
@@ -235,7 +244,7 @@ export function updatePage(id: number, data: PageInput, lockVersion: number) {
 
 export function deletePage(id: number) {
   run("DELETE FROM pages WHERE id = ?", id);
-  run("DELETE FROM tags WHERE id NOT IN (SELECT tag_id FROM taggings)");
+  deleteUnusedTags();
 }
 
 // ---- 履歴 ----

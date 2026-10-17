@@ -4,6 +4,8 @@ export interface FormState {
   /** 二段階認証を有効にしたときに 1 回だけ表示するバックアップコード */
   backupCodes?: string[];
   values?: Record<string, string>;
+  /** 保存に成功したときに画面へ出すメッセージ（ダイアログ内のフォームなど、画面を移動しない場合） */
+  notice?: string;
   /** 編集の競合が起きたときの情報 */
   conflict?: { yourBody: string; latest: { title: string; body: string; tags: string; folderId: string; position: string; lockVersion: number } };
 }
