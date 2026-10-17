@@ -1,8 +1,10 @@
 "use client";
 
-import { BookOpen, Palette, Save, ShieldCheck } from "lucide-react";
+import { BookOpen, Palette, Plug, Save, ScrollText, ShieldCheck } from "lucide-react";
+import Link from "next/link";
 import { useActionState } from "react";
 import { saveSettingsAction } from "@/actions/settings";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
@@ -116,6 +118,10 @@ export function SettingsForm({
                 description="オンにすると、二段階認証を設定していないユーザーはログイン後に設定画面へ案内されます。"
                 defaultChecked={requireMfa}
               />
+            </Section>
+
+            <FieldSeparator />
+            <Section icon={Plug} title="MCP">
               <SwitchRow
                 id="mcpWriteEnabled"
                 name="mcpWriteEnabled"
@@ -123,6 +129,15 @@ export function SettingsForm({
                 description="オンにすると、「読み取り・書き込み」のアクセストークンを持つ AI クライアントが、ページやリンクの作成・更新をできるようになります。オフの間は、発行済みの書き込みトークンも読み取りしか使えません。"
                 defaultChecked={mcpWriteEnabled}
               />
+              <Field>
+                <Button variant="outline" className="w-fit" asChild>
+                  <Link href="/settings/audit">
+                    <ScrollText aria-hidden />
+                    書き込みの記録を見る
+                  </Link>
+                </Button>
+                <FieldDescription>MCP からの書き込みの記録を確認できます（1 年間保持）。アクセストークンの発行は各自の「アカウント」で行います。</FieldDescription>
+              </Field>
             </Section>
 
             <div>

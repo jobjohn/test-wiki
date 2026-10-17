@@ -26,7 +26,7 @@ export default async function AuditPage({ searchParams }: { searchParams: Promis
   return (
     <div className="grid gap-4">
       <div>
-        <SimpleBreadcrumb items={[{ href: "/settings", label: "Wiki の設定" }]} />
+        <SimpleBreadcrumb items={[{ href: "/settings", label: "一般設定" }]} />
         <PageTitle icon={ScrollText}>MCP の書き込みの記録</PageTitle>
         <p className="mt-1 text-sm text-muted-foreground">MCP 経由の書き込みの記録です。{WRITE_LOG_RETENTION_DAYS} 日（1 年）より古いものは自動で削除されます。</p>
       </div>

@@ -13,7 +13,7 @@ import { requireAccess } from "@/lib/access";
 import { formatDateTime } from "@/lib/format";
 import { listUsers, ROLES, STATUSES } from "@/lib/users";
 
-export const metadata: Metadata = { title: "ユーザー管理" };
+export const metadata: Metadata = { title: "管理者設定" };
 
 const ROLE_VARIANT = { admin: "highlight", general: "secondary" } as const;
 
@@ -24,7 +24,10 @@ export default async function UsersPage() {
   return (
     <div className="grid gap-5">
       <header className="flex flex-wrap items-center justify-between gap-3">
-        <PageTitle icon={Users}>ユーザー管理</PageTitle>
+        <div>
+          <PageTitle icon={Users}>管理者設定</PageTitle>
+          <p className="mt-1 text-sm text-muted-foreground">ユーザーの追加・ロール（権限）の変更・無効化ができます。</p>
+        </div>
         <Button asChild>
           <Link href="/users/new">
             <UserPlus aria-hidden />
@@ -118,7 +121,7 @@ export default async function UsersPage() {
               <strong>一般</strong>: ページ・フォルダの閲覧、作成と編集、ファイルのアップロード
             </li>
             <li>
-              <strong>管理者</strong>: 一般の操作に加えて、ユーザー管理と Wiki の設定
+              <strong>管理者</strong>: 一般の操作に加えて、管理者設定（ユーザー管理）と一般設定
             </li>
             <li>
               <strong>無効</strong>: ログインできません（ユーザーと変更履歴は残ります）

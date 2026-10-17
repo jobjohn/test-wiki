@@ -53,7 +53,7 @@ export function UserForm({
                     </option>
                   ))}
                 </NativeSelect>
-                <FieldDescription>一般: ページの閲覧・編集 ／ 管理者: ユーザー管理と Wiki の設定も可能</FieldDescription>
+                <FieldDescription>一般: ページの閲覧・編集 ／ 管理者: 管理者設定（ユーザー管理）と一般設定も可能</FieldDescription>
               </Field>
               <Field>
                 <FieldLabel htmlFor="status">ステータス</FieldLabel>
