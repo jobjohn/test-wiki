@@ -3,7 +3,7 @@ import { StreamableHTTPClientTransport } from "@modelcontextprotocol/sdk/client/
 import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 import { createApiToken } from "@/lib/api-tokens";
 import { listWriteLogs } from "@/lib/api-write-logs";
-import { createBookmark, getBookmark } from "@/lib/bookmarks";
+import { createBookmark, getBookmark, listBookmarkRevisions } from "@/lib/bookmarks";
 import { all, get, getDb } from "@/lib/db";
 import { handleMcpRequest } from "@/lib/mcp/handler";
 import { resetAttempts } from "@/lib/rate-limit";
@@ -240,6 +240,16 @@ describe("add_bookmark / update_bookmark", () => {
     const { id, url } = result.structuredContent as { id: number; url: string };
     expect(url).toBe("https://example.com/auto");
     expect(getBookmark(id)).toMatchObject({ title: "取得したタイトル", createdBy: userId, faviconUrl: "data:image/png;base64,iVBORw0KGgo=" });
+  });
+
+  it("add_bookmark / update_bookmark の版は source が mcp になる", async () => {
+    const added = await call(writeToken, "add_bookmark", { url: "https://example.com/rev", title: "版テスト" });
+    const { id } = added.structuredContent as { id: number };
+    await call(writeToken, "update_bookmark", { id, title: "版テスト2" });
+    expect(listBookmarkRevisions(id).map((r) => [r.number, r.source, r.userId, r.title])).toEqual([
+      [2, "mcp", userId, "版テスト2"],
+      [1, "mcp", userId, "版テスト"],
+    ]);
   });
 
   it("取得できず title もないとエラー。title があれば取得に失敗しても登録できる", async () => {

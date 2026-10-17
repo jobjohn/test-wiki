@@ -200,4 +200,27 @@ export const MIGRATIONS: string[] = [
   CREATE INDEX index_api_write_logs_on_created_at ON api_write_logs(created_at);
   CREATE INDEX index_api_write_logs_on_user_id ON api_write_logs(user_id);
   `,
+  // リンクの変更履歴（元に戻せるようにする）。既存のリンクは、今の内容を第 1 版にする
+  `
+  CREATE TABLE bookmark_revisions (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    bookmark_id INTEGER NOT NULL REFERENCES bookmarks(id) ON DELETE CASCADE,
+    number INTEGER NOT NULL,
+    title TEXT NOT NULL,
+    url TEXT NOT NULL,
+    description_md TEXT NOT NULL DEFAULT '',
+    tags TEXT NOT NULL DEFAULT '',
+    user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+    source TEXT,
+    summary TEXT,
+    created_at TEXT NOT NULL
+  );
+  CREATE UNIQUE INDEX index_bookmark_revisions_on_bookmark_and_number ON bookmark_revisions(bookmark_id, number);
+
+  INSERT INTO bookmark_revisions (bookmark_id, number, title, url, description_md, tags, user_id, source, summary, created_at)
+  SELECT b.id, 1, b.title, b.url, b.description_md,
+    COALESCE((SELECT group_concat(t.name, ',' ORDER BY t.name_key) FROM bookmark_taggings bt JOIN tags t ON t.id = bt.tag_id WHERE bt.bookmark_id = b.id), ''),
+    b.updated_by, NULL, NULL, b.updated_at
+  FROM bookmarks b;
+  `,
 ];

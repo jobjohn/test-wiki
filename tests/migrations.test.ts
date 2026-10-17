@@ -94,4 +94,24 @@ describe("マイグレーション", () => {
     db.prepare("DELETE FROM users WHERE id = 1").run();
     expect(db.prepare("SELECT user_id FROM api_write_logs").get()).toEqual(expect.objectContaining({ user_id: null }));
   });
+
+  it("既存のリンクがあるデータベースにリンクの変更履歴を追加すると、今の内容が第 1 版になる", () => {
+    const db = new DatabaseSync(":memory:");
+    db.exec("PRAGMA foreign_keys = ON");
+    const index = MIGRATIONS.findIndex((sql) => sql.includes("CREATE TABLE bookmark_revisions"));
+    expect(index).toBeGreaterThan(MIGRATIONS.findIndex((sql) => sql.includes("CREATE TABLE api_write_logs")));
+    for (const sql of MIGRATIONS.slice(0, index)) db.exec(sql);
+    db.prepare("INSERT INTO users (email, email_key, password_hash, created_at, updated_at) VALUES ('a@example.com', 'a@example.com', 'x', 't', 't')").run();
+    db.prepare(
+      "INSERT INTO bookmarks (title, title_key, url, normalized_url, description_md, created_by, updated_by, created_at, updated_at) VALUES ('B', 'b', 'https://e.com/', 'e.com', '説明', 1, 1, 'c', 'u')",
+    ).run();
+    db.prepare("INSERT INTO tags (name, name_key) VALUES ('t1', 't1'), ('t2', 't2')").run();
+    db.prepare("INSERT INTO bookmark_taggings (bookmark_id, tag_id) VALUES (1, 1), (1, 2)").run();
+
+    db.exec(MIGRATIONS[index]);
+
+    expect(db.prepare("SELECT number, title, url, description_md, tags, user_id, source, summary, created_at FROM bookmark_revisions").all()).toEqual([
+      expect.objectContaining({ number: 1, title: "B", url: "https://e.com/", description_md: "説明", tags: "t1,t2", user_id: 1, source: null, created_at: "u" }),
+    ]);
+  });
 });

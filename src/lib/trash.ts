@@ -34,6 +34,8 @@ interface BookmarkPayload {
     updated_at: string;
   };
   tags: string[];
+  /** 変更履歴。履歴ができる前の退避データには無い */
+  revisions?: { number: number; title: string; url: string; description_md: string; tags: string; user_id: number | null; source: string | null; summary: string | null; created_at: string }[];
 }
 
 interface UploadPayload {
@@ -104,6 +106,10 @@ export function trashBookmark(id: number, userId: number | null) {
         updated_at: row.updated_at,
       },
       tags,
+      revisions: all<NonNullable<BookmarkPayload["revisions"]>[number]>(
+        "SELECT number, title, url, description_md, tags, user_id, source, summary, created_at FROM bookmark_revisions WHERE bookmark_id = ? ORDER BY number",
+        id,
+      ).map((r) => ({ ...r })),
     };
     insertTrash("bookmark", id, row.title, payload, userId);
     run("DELETE FROM bookmarks WHERE id = ?", id);
@@ -243,7 +249,7 @@ function restorePage(id: number, { page, revisions, tags }: PagePayload) {
   for (const name of tags) run("INSERT OR IGNORE INTO taggings (page_id, tag_id) VALUES (?, ?)", id, ensureTag(name));
 }
 
-function restoreBookmark(id: number, { bookmark: b, tags }: BookmarkPayload) {
+function restoreBookmark(id: number, { bookmark: b, tags, revisions }: BookmarkPayload) {
   // 正規化の規則が将来変わっても衝突を見逃さないよう、保存済みの URL から計算し直した値も調べる
   const parsed = parseHttpUrl(b.url);
   const keys = [...new Set([b.normalized_url, ...(parsed ? [normalizeUrl(parsed)] : [])])];
@@ -267,6 +273,26 @@ function restoreBookmark(id: number, { bookmark: b, tags }: BookmarkPayload) {
     b.updated_at,
   );
   for (const name of tags) run("INSERT OR IGNORE INTO bookmark_taggings (bookmark_id, tag_id) VALUES (?, ?)", id, ensureTag(name));
+  // 古い形式の退避データ（履歴なし）は、現在の内容を第 1 版にする
+  const history = revisions?.length
+    ? revisions
+    : [{ number: 1, title: b.title, url: b.url, description_md: b.description_md, tags: tags.join(","), user_id: b.updated_by, source: null, summary: null, created_at: b.updated_at }];
+  for (const r of history) {
+    run(
+      `INSERT INTO bookmark_revisions (bookmark_id, number, title, url, description_md, tags, user_id, source, summary, created_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      id,
+      r.number,
+      r.title,
+      r.url,
+      r.description_md,
+      r.tags,
+      userExists(r.user_id),
+      r.source,
+      r.summary,
+      r.created_at,
+    );
+  }
 }
 
 function restoreUpload(id: number, { upload: u }: UploadPayload) {

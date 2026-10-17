@@ -147,6 +147,10 @@ export interface BookmarkInput {
   /** 自動取得したファビコン（data: URI）。空なら保存しない */
   faviconUrl: string;
   userId: number | null;
+  /** 書き込み元。MCP 経由なら "mcp"（画面からは省略 = NULL） */
+  source?: "mcp";
+  /** 版の要約。省略すると、作成は「作成」、更新は空 */
+  summary?: string;
 }
 
 function validate(input: BookmarkInput, id?: number) {
@@ -177,6 +181,53 @@ function replaceBookmarkTags(bookmarkId: number, names: string[]) {
   deleteUnusedTags();
 }
 
+/** 今のタグ名（カンマ区切り。名前順）。版の保存と比較に使う */
+const currentTagNames = (bookmarkId: number): string =>
+  all<{ name: string }>(
+    "SELECT t.name FROM bookmark_taggings bt JOIN tags t ON t.id = bt.tag_id WHERE bt.bookmark_id = ? ORDER BY t.name_key",
+    bookmarkId,
+  )
+    .map((t) => t.name)
+    .join(",");
+
+/** タグの集合として同じか（順序・大文字小文字の違いは無視する） */
+const tagSetKey = (tags: string): string =>
+  tags
+    .split(",")
+    .filter(Boolean)
+    .map(keyOf)
+    .sort()
+    .join(",");
+const sameTags = (a: string, b: string): boolean => tagSetKey(a) === tagSetKey(b);
+
+/**
+ * リンクの今の内容を新しい版として保存する。直前の版と内容（タイトル・URL・説明・タグ）が同じなら何もしない
+ * （作成時や、古いデータで版がまだ無いときは必ず保存する）。呼び出し元のトランザクション内で使う。
+ */
+function recordBookmarkRevision(bookmarkId: number, input: Pick<BookmarkInput, "userId" | "source">, summary: string | null) {
+  const current = get<{ title: string; url: string; description_md: string }>("SELECT title, url, description_md FROM bookmarks WHERE id = ?", bookmarkId)!;
+  const tags = currentTagNames(bookmarkId);
+  const latest = get<{ number: number; title: string; url: string; description_md: string; tags: string }>(
+    "SELECT number, title, url, description_md, tags FROM bookmark_revisions WHERE bookmark_id = ? ORDER BY number DESC LIMIT 1",
+    bookmarkId,
+  );
+  if (latest && latest.title === current.title && latest.url === current.url && latest.description_md === current.description_md && sameTags(latest.tags, tags)) return;
+  run(
+    `INSERT INTO bookmark_revisions (bookmark_id, number, title, url, description_md, tags, user_id, source, summary, created_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    bookmarkId,
+    (latest?.number ?? 0) + 1,
+    current.title,
+    current.url,
+    current.description_md,
+    tags,
+    input.userId,
+    input.source ?? null,
+    summary || null,
+    now(),
+  );
+}
+
 export function createBookmark(input: BookmarkInput): number {
   const data = validate(input);
   return transaction(() => {
@@ -196,6 +247,7 @@ export function createBookmark(input: BookmarkInput): number {
       timestamp,
     ).lastInsertRowid;
     replaceBookmarkTags(id, data.tags);
+    recordBookmarkRevision(id, input, input.summary ?? "作成");
     return id;
   });
 }
@@ -218,6 +270,7 @@ export function updateBookmark(id: number, input: BookmarkInput) {
       id,
     );
     replaceBookmarkTags(id, data.tags);
+    recordBookmarkRevision(id, input, input.summary ?? null);
   });
 }
 
@@ -228,4 +281,89 @@ export function deleteBookmark(id: number) {
     run("DELETE FROM bookmarks WHERE id = ?", id);
     deleteUnusedTags();
   });
+}
+
+// ---- 変更履歴 ----
+
+export interface BookmarkRevision {
+  id: number;
+  bookmarkId: number;
+  number: number;
+  title: string;
+  url: string;
+  descriptionMd: string;
+  tags: string[];
+  userId: number | null;
+  userName: string | null;
+  source: string | null;
+  summary: string | null;
+  createdAt: string;
+}
+
+interface BookmarkRevisionRow {
+  id: number;
+  bookmark_id: number;
+  number: number;
+  title: string;
+  url: string;
+  description_md: string;
+  tags: string;
+  user_id: number | null;
+  user_name: string | null;
+  source: string | null;
+  summary: string | null;
+  created_at: string;
+}
+
+const REVISION_SELECT = `SELECT r.*, COALESCE(u.display_name, u.email) AS user_name FROM bookmark_revisions r LEFT JOIN users u ON u.id = r.user_id`;
+
+// 画面の部品へ渡せるよう、node:sqlite の行は普通のオブジェクトに詰め替える
+const mapRevision = (row: BookmarkRevisionRow): BookmarkRevision => ({
+  id: row.id,
+  bookmarkId: row.bookmark_id,
+  number: row.number,
+  title: row.title,
+  url: row.url,
+  descriptionMd: row.description_md,
+  tags: row.tags.split(",").filter(Boolean),
+  userId: row.user_id,
+  userName: row.user_name,
+  source: row.source,
+  summary: row.summary,
+  createdAt: row.created_at,
+});
+
+/** 新しい版から順に返す */
+export const listBookmarkRevisions = (bookmarkId: number): BookmarkRevision[] =>
+  all<BookmarkRevisionRow>(`${REVISION_SELECT} WHERE r.bookmark_id = ? ORDER BY r.number DESC`, bookmarkId).map(mapRevision);
+
+export const getBookmarkRevision = (bookmarkId: number, number: number): BookmarkRevision | undefined => {
+  const row = get<BookmarkRevisionRow>(`${REVISION_SELECT} WHERE r.bookmark_id = ? AND r.number = ?`, bookmarkId, number);
+  return row && mapRevision(row);
+};
+
+/** 過去の版の内容に戻す（新しい版として保存される）。URL が他のリンクと重複するときは ValidationError。変更があれば true、既に同じ内容なら false */
+export function restoreBookmarkRevision(bookmarkId: number, number: number, userId: number | null): boolean {
+  const bookmark = getBookmark(bookmarkId);
+  const revision = getBookmarkRevision(bookmarkId, number);
+  if (!bookmark || !revision) throw new NotFoundError("revision not found");
+  // 今の内容と同じなら何もしない（版も更新日時・更新者も変えない）
+  if (
+    revision.url === bookmark.url &&
+    revision.title === bookmark.title &&
+    revision.descriptionMd === bookmark.descriptionMd &&
+    sameTags(revision.tags.join(","), bookmark.tags.map((t) => t.name).join(","))
+  )
+    return false;
+  updateBookmark(bookmarkId, {
+    url: revision.url,
+    title: revision.title,
+    descriptionMd: revision.descriptionMd,
+    tags: revision.tags.join(","),
+    // URL が変わるなら、今のサイトのファビコンは合わないので外す
+    faviconUrl: revision.url === bookmark.url ? (bookmark.faviconUrl ?? "") : "",
+    userId,
+    summary: `第${revision.number}版に復元`,
+  });
+  return true;
 }

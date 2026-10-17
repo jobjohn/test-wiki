@@ -1,7 +1,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
-import { createBookmark, findBookmarkByUrl, getBookmark } from "@/lib/bookmarks";
+import { createBookmark, findBookmarkByUrl, getBookmark, listBookmarkRevisions, updateBookmark } from "@/lib/bookmarks";
 import { all, get, run } from "@/lib/db";
 import { dataDir } from "@/lib/env";
 import { NotFoundError, ValidationError } from "@/lib/errors";
@@ -203,6 +203,29 @@ describe("リンクのゴミ箱", () => {
     const names = (b: NonNullable<ReturnType<typeof getBookmark>>) => ({ ...b, tags: b.tags.map((t) => t.name) });
     expect(names(getBookmark(id)!)).toEqual(names(before));
     expect(getBookmark(id)).toMatchObject({ createdBy: author, updatedBy: author, descriptionMd: "説明です", tags: [expect.objectContaining({ name: "リンクタグ" })] });
+  });
+
+  it("変更履歴も退避・復元する（版番号・source・要約・タグが戻る）", () => {
+    const id = createBookmark(bookmarkInput({ url: "https://trash-hist.example.com/", title: "履歴1", tags: "x" }));
+    updateBookmark(id, bookmarkInput({ url: "https://trash-hist.example.com/", title: "履歴2", tags: "x,y", source: "mcp" }));
+    const before = listBookmarkRevisions(id);
+    expect(before).toHaveLength(2);
+    trashBookmark(id, null);
+    expect(get("SELECT 1 FROM bookmark_revisions WHERE bookmark_id = ?", id)).toBeUndefined();
+    restoreTrashItem(trashIdOf("bookmark", id));
+    expect(listBookmarkRevisions(id).map(({ id: _id, ...r }) => r)).toEqual(before.map(({ id: _id, ...r }) => r));
+    expect(listBookmarkRevisions(id)[0]).toMatchObject({ number: 2, source: "mcp", tags: ["x", "y"] });
+  });
+
+  it("履歴ができる前の退避データは、現在の内容を第 1 版にして復元する", () => {
+    const id = createBookmark(bookmarkInput({ url: "https://trash-legacy.example.com/", title: "古い形式", descriptionMd: "本文", tags: "旧" }));
+    trashBookmark(id, null);
+    const row = get<{ payload: string }>("SELECT payload FROM trash_items WHERE kind = 'bookmark' AND item_id = ?", id)!;
+    const payload = JSON.parse(row.payload);
+    delete payload.revisions;
+    run("UPDATE trash_items SET payload = ? WHERE kind = 'bookmark' AND item_id = ?", JSON.stringify(payload), id);
+    restoreTrashItem(trashIdOf("bookmark", id));
+    expect(listBookmarkRevisions(id)).toEqual([expect.objectContaining({ number: 1, title: "古い形式", descriptionMd: "本文", tags: ["旧"], source: null })]);
   });
 
   it("登録者のユーザーが削除済みなら NULL で復元する", () => {

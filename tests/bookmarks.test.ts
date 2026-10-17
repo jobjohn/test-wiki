@@ -7,7 +7,9 @@ import {
   findBookmarkByUrl,
   getBookmark,
   listBookmarks,
+  listBookmarkRevisions,
   listBookmarkTags,
+  restoreBookmarkRevision,
   updateBookmark,
 } from "@/lib/bookmarks";
 import { NotFoundError, ValidationError } from "@/lib/errors";
@@ -212,5 +214,69 @@ describe("Wiki ページとのタグの共有", () => {
     expect(findTagByName("ページ側")).toBeDefined();
     deletePage(pageId);
     expect(findTagByName("ページ側")).toBeUndefined();
+  });
+});
+
+describe("リンクの変更履歴", () => {
+  it("作成で第 1 版（要約「作成」）ができ、内容が変わったときだけ版が増える", () => {
+    const id = createBookmark(input({ url: "https://rev.example.com/a", title: "履歴", descriptionMd: "説明" }));
+    expect(listBookmarkRevisions(id).map((r) => [r.number, r.title, r.summary, r.source])).toEqual([[1, "履歴", "作成", null]]);
+    updateBookmark(id, input({ url: "https://rev.example.com/a", title: "履歴", descriptionMd: "説明" }));
+    expect(listBookmarkRevisions(id)).toHaveLength(1);
+    updateBookmark(id, input({ url: "https://rev.example.com/a", title: "履歴2", descriptionMd: "説明" }));
+    expect(listBookmarkRevisions(id).map((r) => r.number)).toEqual([2, 1]);
+  });
+
+  it("タグだけの変更も版になる", () => {
+    const id = createBookmark(input({ url: "https://rev.example.com/tags", tags: "a" }));
+    updateBookmark(id, input({ url: "https://rev.example.com/tags", tags: "a, b" }));
+    expect(listBookmarkRevisions(id).map((r) => r.tags)).toEqual([["a", "b"], ["a"]]);
+  });
+
+  it("タグの順序だけが違う更新は版にしない", () => {
+    const id = createBookmark(input({ url: "https://rev.example.com/order", tags: "a, b" }));
+    updateBookmark(id, input({ url: "https://rev.example.com/order", tags: "b, a" }));
+    expect(listBookmarkRevisions(id)).toHaveLength(1);
+  });
+
+  it("今と同じ内容の版への復元は何も変えない（false を返す）", () => {
+    const id = createBookmark(input({ url: "https://rev.example.com/same", title: "同じ" }));
+    const before = getBookmark(id)!;
+    expect(restoreBookmarkRevision(id, 1, null)).toBe(false);
+    expect(getBookmark(id)).toMatchObject({ updatedAt: before.updatedAt, updatedBy: before.updatedBy });
+    expect(listBookmarkRevisions(id)).toHaveLength(1);
+  });
+
+  it("source と更新者を記録する", () => {
+    const user = createUser({ email: "rev-user@example.com", displayName: "履歴の人", role: "general", password: "password123" });
+    const id = createBookmark(input({ url: "https://rev.example.com/src", userId: user, source: "mcp" }));
+    updateBookmark(id, input({ url: "https://rev.example.com/src", title: "画面から", userId: user }));
+    expect(listBookmarkRevisions(id).map((r) => [r.source, r.userName])).toEqual([[null, "履歴の人"], ["mcp", "履歴の人"]]);
+  });
+
+  it("復元すると内容が戻り、新しい版（要約「第N版に復元」）として記録される", () => {
+    const id = createBookmark(input({ url: "https://rev.example.com/r1", title: "元", descriptionMd: "元の説明", tags: "x" }));
+    updateBookmark(id, input({ url: "https://rev.example.com/r2", title: "後", descriptionMd: "後の説明", tags: "y" }));
+    restoreBookmarkRevision(id, 1, null);
+    expect(getBookmark(id)).toMatchObject({ url: "https://rev.example.com/r1", title: "元", descriptionMd: "元の説明" });
+    expect(getBookmark(id)!.tags.map((t) => t.name)).toEqual(["x"]);
+    const revisions = listBookmarkRevisions(id);
+    expect(revisions.map((r) => r.number)).toEqual([3, 2, 1]);
+    expect(revisions[0]).toMatchObject({ title: "元", summary: "第1版に復元" });
+    expect(() => restoreBookmarkRevision(id, 99, null)).toThrow(NotFoundError);
+  });
+
+  it("復元しようとする版の URL が他のリンクと重複するなら拒否する", () => {
+    const id = createBookmark(input({ url: "https://rev.example.com/d1", title: "A" }));
+    updateBookmark(id, input({ url: "https://rev.example.com/d2", title: "A" }));
+    createBookmark(input({ url: "https://rev.example.com/d1", title: "B" }));
+    expect(() => restoreBookmarkRevision(id, 1, null)).toThrow(ValidationError);
+    expect(listBookmarkRevisions(id)).toHaveLength(2);
+  });
+
+  it("リンクを削除すると履歴も消える", () => {
+    const id = createBookmark(input({ url: "https://rev.example.com/del" }));
+    deleteBookmark(id);
+    expect(listBookmarkRevisions(id)).toEqual([]);
   });
 });
