@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1
 #
-# docker compose up -d --build で起動し、http://localhost:3000 にアクセスしてください。
+# docker compose up -d --build で起動し、http://localhost:8473 にアクセスしてください。
 
 # node:sqlite（フラグなしで使える）のため Node.js 22.13 以上を使う
 ARG NODE_VERSION=22
