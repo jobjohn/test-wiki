@@ -152,4 +152,19 @@ export const MIGRATIONS: string[] = [
   );
   CREATE INDEX index_bookmark_taggings_on_tag_id ON bookmark_taggings(tag_id);
   `,
+  // MCP などの外部ツール用アクセストークン（平文は保存せず、SHA-256 のハッシュだけ持つ）
+  `
+  CREATE TABLE api_tokens (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    name TEXT NOT NULL,
+    token_hash TEXT NOT NULL UNIQUE,
+    token_prefix TEXT NOT NULL,
+    scope TEXT NOT NULL DEFAULT 'read',
+    expires_at TEXT,
+    last_used_at TEXT,
+    created_at TEXT NOT NULL
+  );
+  CREATE INDEX index_api_tokens_on_user_id ON api_tokens(user_id);
+  `,
 ];

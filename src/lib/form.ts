@@ -3,6 +3,8 @@ export interface FormState {
   errors?: string[];
   /** 二段階認証を有効にしたときに 1 回だけ表示するバックアップコード */
   backupCodes?: string[];
+  /** アクセストークンを発行したときに 1 回だけ表示する平文 */
+  token?: { name: string; value: string };
   values?: Record<string, string>;
   /** 保存に成功したときに画面へ出すメッセージ（ダイアログ内のフォームなど、画面を移動しない場合） */
   notice?: string;
