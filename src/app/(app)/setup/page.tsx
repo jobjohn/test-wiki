@@ -14,7 +14,7 @@ export default async function SetupPage() {
   return (
     <div className="grid max-w-3xl gap-4">
       <PageTitle icon={SettingsIcon}>初期設定</PageTitle>
-      <p className="text-muted-foreground">Wiki の使い始めに必要な設定です。ここで設定した内容は、あとから「Wiki の設定」でいつでも変更できます。</p>
+      <p className="text-muted-foreground">Wiki の使い始めに必要な設定です。ここで設定した内容は、あとから「一般設定」でいつでも変更できます。</p>
       <SetupForm
         mustChangePassword={!!user?.mustChangePassword}
         adminEmail={user?.email ?? ""}
