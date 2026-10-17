@@ -4,7 +4,7 @@ services:
     image: nextjs-wiki
     restart: unless-stopped
     ports:
-      - "${WIKI_PORT:-3000}:3000"
+      - "${WIKI_PORT:-8473}:3000"
     environment:
       # 初期管理者のメールアドレスとパスワード（必須）。.env に書いてください（.env.example を参照）。
       # データベースが空のとき（初回起動時）に、この内容で管理者を作成します。
