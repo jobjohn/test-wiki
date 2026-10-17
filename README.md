@@ -129,12 +129,13 @@ printf 'WIKI_ADMIN_EMAIL=you@example.com\nWIKI_ADMIN_PASSWORD=change-me-please\n
 npm run dev        # http://localhost:3000（データは ./storage に保存）
 npm test           # テスト
 npm run typecheck  # 型チェック
+npm run build && npm run test:e2e  # E2E スモークテスト（Playwright。初回は npx playwright install chromium）
 npm run storybook  # 部品の一覧（http://localhost:6006）
 ```
 
 ### CI
 
-GitHub Actions（`.github/workflows/ci.yml`）が、master 向けの PR と master への push で、型チェック・テスト（`check`）、本番ビルド（`build`）、Storybook のビルド（`storybook`）を自動で実行します。Docker イメージの起動確認（`docker`）は、master への push と、Dockerfile などを変えた PR のときだけ動きます。
+GitHub Actions（`.github/workflows/ci.yml`）が、master 向けの PR と master への push で、型チェック・テスト（`check`）、本番ビルド（`build`）、Storybook のビルド（`storybook`）、ブラウザでの E2E スモークテスト（`e2e`）を自動で実行します。Docker イメージの起動確認（`docker`）は、master への push と、Dockerfile などを変えた PR のときだけ動きます。
 GitHub のブランチ保護で `check` と `build` を必須にすると安全です。
 
 ### Storybook（部品の一覧）

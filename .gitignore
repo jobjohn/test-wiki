@@ -11,3 +11,7 @@ next-env.d.ts
 !.env.example
 /storybook-static
 storybook-shots
+/test-results
+/playwright-report
+/blob-report
+/playwright/.cache
