@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronRight, FilePlus, FileText, Folder, FolderOpen, FolderPlus, History, House, Paperclip, Tags } from "lucide-react";
+import { Bookmark, ChevronRight, FilePlus, FileText, Folder, FolderOpen, FolderPlus, History, House, Paperclip, Tags } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useMemo, useState, type ComponentProps } from "react";
@@ -31,6 +31,7 @@ const NAV = [
   { href: "/changes", label: "最近の更新", icon: History, match: (p: string) => p.startsWith("/changes") },
   { href: "/tags", label: "タグ", icon: Tags, match: (p: string) => p.startsWith("/tags") },
   { href: "/uploads", label: "ファイル", icon: Paperclip, match: (p: string) => p.startsWith("/uploads") },
+  { href: "/bookmarks", label: "リンク集", icon: Bookmark, match: (p: string) => p.startsWith("/bookmarks") },
 ];
 
 /** サイドバー（ナビゲーションと、フォルダ・ページのツリー）。スマートフォンではシートとして開く */

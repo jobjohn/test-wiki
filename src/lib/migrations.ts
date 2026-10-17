@@ -125,4 +125,31 @@ export const MIGRATIONS: string[] = [
   DROP INDEX index_users_on_username_key;
   CREATE UNIQUE INDEX index_users_on_email_key ON users(email_key);
   `,
+  // 共有リンク集（タグは Wiki ページと同じ tags を使う）
+  `
+  CREATE TABLE bookmarks (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    title TEXT NOT NULL,
+    title_key TEXT NOT NULL,
+    url TEXT NOT NULL,
+    normalized_url TEXT NOT NULL,
+    description_md TEXT NOT NULL DEFAULT '',
+    favicon_url TEXT,
+    created_by INTEGER REFERENCES users(id) ON DELETE SET NULL,
+    updated_by INTEGER REFERENCES users(id) ON DELETE SET NULL,
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL
+  );
+  CREATE UNIQUE INDEX index_bookmarks_on_normalized_url ON bookmarks(normalized_url);
+  CREATE INDEX index_bookmarks_on_created_at ON bookmarks(created_at);
+  CREATE INDEX index_bookmarks_on_updated_at ON bookmarks(updated_at);
+  CREATE INDEX index_bookmarks_on_title_key ON bookmarks(title_key);
+
+  CREATE TABLE bookmark_taggings (
+    bookmark_id INTEGER NOT NULL REFERENCES bookmarks(id) ON DELETE CASCADE,
+    tag_id INTEGER NOT NULL REFERENCES tags(id) ON DELETE CASCADE,
+    PRIMARY KEY (bookmark_id, tag_id)
+  );
+  CREATE INDEX index_bookmark_taggings_on_tag_id ON bookmark_taggings(tag_id);
+  `,
 ];
