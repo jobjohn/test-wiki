@@ -67,10 +67,12 @@ export function SettingsForm({
   initial,
   publicRead,
   requireMfa,
+  mcpWriteEnabled,
 }: {
   initial: SettingsFormValues & { colorMode: ColorMode };
   publicRead: boolean;
   requireMfa: boolean;
+  mcpWriteEnabled: boolean;
 }) {
   const [state, action] = useActionState(saveSettingsAction, {});
   const v = state.values;
@@ -113,6 +115,13 @@ export function SettingsForm({
                 label="全ユーザーに二段階認証を必須にする"
                 description="オンにすると、二段階認証を設定していないユーザーはログイン後に設定画面へ案内されます。"
                 defaultChecked={requireMfa}
+              />
+              <SwitchRow
+                id="mcpWriteEnabled"
+                name="mcpWriteEnabled"
+                label="MCP からの書き込みを許可"
+                description="オンにすると、「読み取り・書き込み」のアクセストークンを持つ AI クライアントが、ページやリンクの作成・更新をできるようになります。オフの間は、発行済みの書き込みトークンも読み取りしか使えません。"
+                defaultChecked={mcpWriteEnabled}
               />
             </Section>
 

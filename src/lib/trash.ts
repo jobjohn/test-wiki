@@ -17,7 +17,7 @@ export type { TrashKind };
 
 interface PagePayload {
   page: { title: string; body: string; folder_id: number | null; position: number; lock_version: number; created_at: string; updated_at: string };
-  revisions: { number: number; title: string; body: string; summary: string | null; user_id: number | null; created_at: string }[];
+  revisions: { number: number; title: string; body: string; summary: string | null; source?: string | null; user_id: number | null; created_at: string }[];
   tags: string[];
 }
 
@@ -61,9 +61,9 @@ export function trashPage(id: number, userId: number | null) {
     const page = get<PagePayload["page"] & { id: number }>("SELECT * FROM pages WHERE id = ?", id);
     if (!page) throw new NotFoundError("page not found");
     const revisions = all<PagePayload["revisions"][number]>(
-      "SELECT number, title, body, summary, user_id, created_at FROM revisions WHERE page_id = ? ORDER BY number",
+      "SELECT number, title, body, summary, source, user_id, created_at FROM revisions WHERE page_id = ? ORDER BY number",
       id,
-    ).map((r) => ({ number: r.number, title: r.title, body: r.body, summary: r.summary, user_id: r.user_id, created_at: r.created_at }));
+    ).map((r) => ({ number: r.number, title: r.title, body: r.body, summary: r.summary, source: r.source, user_id: r.user_id, created_at: r.created_at }));
     const payload: PagePayload = {
       page: {
         title: page.title,
@@ -227,13 +227,15 @@ function restorePage(id: number, { page, revisions, tags }: PagePayload) {
   );
   for (const r of revisions) {
     run(
-      "INSERT INTO revisions (page_id, user_id, number, title, body, summary, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)",
+      "INSERT INTO revisions (page_id, user_id, number, title, body, summary, source, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
       id,
       userExists(r.user_id),
       r.number,
       r.title,
       r.body,
       r.summary,
+      // 書き込み元を持たない古い退避データは画面からの版として戻す
+      r.source ?? null,
       r.created_at,
     );
   }

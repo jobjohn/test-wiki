@@ -8,6 +8,7 @@ const meta = {
   args: {
     publicRead: false,
     requireMfa: false,
+    mcpWriteEnabled: false,
     initial: {
       wikiName: "開発チーム Wiki",
       description: "開発チームの **手順書・設計資料** をまとめる Wiki です。",
@@ -26,4 +27,5 @@ export default meta;
 type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {};
+export const McpWriteEnabled: Story = { args: { mcpWriteEnabled: true } };
 export const PublicAndMfaRequired: Story = { args: { publicRead: true, requireMfa: true } };

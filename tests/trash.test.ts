@@ -80,6 +80,32 @@ describe("ページのゴミ箱", () => {
     expect(() => run("INSERT INTO trash_items (kind, item_id, title, payload, deleted_at) VALUES ('page', ?, 'x', '{}', 't')", id)).toThrow(/UNIQUE/);
   });
 
+  it("版の書き込み元（revisions.source）も退避・復元される", () => {
+    const id = createPage(input({ title: "MCP の版", body: "v1", source: "mcp", userId: null }));
+    updatePage(id, input({ title: "MCP の版", body: "v2" }), 0);
+    expect(listRevisions(id).map((r) => [r.number, r.source])).toEqual([
+      [2, null],
+      [1, "mcp"],
+    ]);
+    trashPage(id, null);
+    // 退避した payload に、各版の source が含まれている
+    const payload = JSON.parse(get<{ payload: string }>("SELECT payload FROM trash_items WHERE kind = 'page' AND item_id = ?", id)!.payload);
+    expect(payload.revisions.map((r: { source: string | null }) => r.source)).toEqual(["mcp", null]);
+    restoreTrashItem(trashIdOf("page", id));
+    expect(get<{ source: string | null }>("SELECT source FROM revisions WHERE page_id = ? AND number = 1", id)!.source).toBe("mcp");
+    expect(get<{ source: string | null }>("SELECT source FROM revisions WHERE page_id = ? AND number = 2", id)!.source).toBeNull();
+
+    // source を持たない古い形式の退避データ（payload から source を外したもの）も復元でき、画面からの版になる
+    const old = createPage(input({ title: "古い退避" }));
+    trashPage(old, null);
+    const row = get<{ id: number; payload: string }>("SELECT id, payload FROM trash_items WHERE kind = 'page' AND item_id = ?", old)!;
+    const legacy = JSON.parse(row.payload);
+    for (const r of legacy.revisions) delete r.source;
+    run("UPDATE trash_items SET payload = ? WHERE id = ?", JSON.stringify(legacy), row.id);
+    restoreTrashItem(row.id);
+    expect(listRevisions(old).map((r) => r.source)).toEqual([null]);
+  });
+
   it("復元すると id・版番号・履歴・タグ・フォルダ・lock_version が元どおりに戻る", () => {
     const user = createUser({ email: "trash-editor@example.com", displayName: "編集者", role: "general", password: "password123" });
     const folder = createFolder({ name: "復元フォルダ", parentId: null, position: 0 });

@@ -36,6 +36,7 @@ export default async function AccountPage() {
     name: t.name,
     prefix: t.prefix,
     scope: TOKEN_SCOPES[t.scope as TokenScope] ?? t.scope,
+    writeInactive: t.scope === "write" && !settings.mcpWriteEnabled,
     createdAt: formatDateTime(t.createdAt),
     lastUsedAt: t.lastUsedAt ? formatDateTime(t.lastUsedAt) : null,
     expiresAt: t.expiresAt ? formatDateTime(t.expiresAt) : null,
@@ -114,8 +115,8 @@ export default async function AccountPage() {
           <SectionTitle icon={Plug}>アクセストークン（MCP）</SectionTitle>
         </CardHeader>
         <CardContent className="grid gap-5">
-          <McpGuide origin={origin} />
-          <ApiTokenForm origin={origin} />
+          <McpGuide origin={origin} writeEnabled={settings.mcpWriteEnabled} />
+          <ApiTokenForm origin={origin} writeEnabled={settings.mcpWriteEnabled} />
           <ApiTokenList tokens={tokens} />
         </CardContent>
       </Card>

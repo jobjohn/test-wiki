@@ -21,6 +21,8 @@ export interface Tag {
   name: string;
 }
 
+export type RevisionSource = "mcp" | null;
+
 export interface Revision {
   id: number;
   pageId: number;
@@ -28,6 +30,8 @@ export interface Revision {
   title: string;
   body: string;
   summary: string | null;
+  /** 書き込み元。null は画面、"mcp" は MCP 経由 */
+  source: RevisionSource;
   createdAt: string;
   userId: number | null;
   userName: string | null;
@@ -164,6 +168,8 @@ export interface PageInput {
   tags: string;
   summary?: string;
   userId: number | null;
+  /** MCP 経由の書き込みなら "mcp"（履歴に残す）。画面からは指定しない */
+  source?: "mcp";
 }
 
 function validate(input: PageInput, id?: number) {
@@ -181,16 +187,17 @@ function validate(input: PageInput, id?: number) {
   return title;
 }
 
-function recordRevision(pageId: number, title: string, body: string, summary: string | undefined, userId: number | null) {
+function recordRevision(pageId: number, title: string, body: string, summary: string | undefined, userId: number | null, source: RevisionSource = null) {
   const next = (get<{ n: number | null }>("SELECT MAX(number) AS n FROM revisions WHERE page_id = ?", pageId)!.n ?? 0) + 1;
   run(
-    "INSERT INTO revisions (page_id, user_id, number, title, body, summary, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)",
+    "INSERT INTO revisions (page_id, user_id, number, title, body, summary, source, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
     pageId,
     userId,
     next,
     title,
     body,
     summary?.trim() ? summary.trim().slice(0, 200) : null,
+    source,
     now(),
   );
 }
@@ -210,7 +217,7 @@ export function createPage(data: PageInput): number {
       timestamp,
       timestamp,
     ).lastInsertRowid;
-    recordRevision(id, title, body, data.summary || "作成", data.userId);
+    recordRevision(id, title, body, data.summary || "作成", data.userId, data.source ?? null);
     replaceTags(id, parseTagList(data.tags));
     return id;
   });
@@ -237,7 +244,7 @@ export function updatePage(id: number, data: PageInput, lockVersion: number) {
       lockVersion,
     );
     if (result.changes === 0) throw new StaleError();
-    if (title !== current.title || body !== current.body) recordRevision(id, title, body, data.summary, data.userId);
+    if (title !== current.title || body !== current.body) recordRevision(id, title, body, data.summary, data.userId, data.source ?? null);
     replaceTags(id, parseTagList(data.tags));
   });
 }
@@ -256,6 +263,7 @@ interface RevisionRow {
   title: string;
   body: string;
   summary: string | null;
+  source: string | null;
   created_at: string;
   user_id: number | null;
   user_name: string | null;
@@ -270,6 +278,7 @@ const mapRevision = (row: RevisionRow): Revision => ({
   title: row.title,
   body: row.body,
   summary: row.summary,
+  source: row.source === "mcp" ? "mcp" : null,
   createdAt: row.created_at,
   userId: row.user_id,
   userName: row.user_name,

@@ -27,7 +27,7 @@ export async function saveSettingsAction(_prev: FormState, data: FormData): Prom
   const guard = await guardAction("admin");
   if ("error" in guard) return { errors: [guard.error] };
   try {
-    updateSettings({ ...settingsInput(data), publicRead: bool(data, "publicRead"), requireMfa: bool(data, "requireMfa") });
+    updateSettings({ ...settingsInput(data), publicRead: bool(data, "publicRead"), requireMfa: bool(data, "requireMfa"), mcpWriteEnabled: bool(data, "mcpWriteEnabled") });
   } catch (error) {
     if (error instanceof ValidationError) return { errors: error.messages, values: collect(data) };
     throw error;

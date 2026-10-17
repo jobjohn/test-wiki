@@ -35,7 +35,9 @@ async function readLimited(request: Request, limit: number): Promise<string | nu
 }
 
 /**
- * MCP（Streamable HTTP・ステートレス）の入口。Bearer トークンで認証し、ツールは読み取りだけ。
+ * MCP（Streamable HTTP・ステートレス）の入口。Bearer トークンで認証する。
+ * ツールは基本的に読み取りだけで、書き込みツールは「管理者が設定で許可」「write トークン」「編集できるユーザー」
+ * の 3 条件がそろったときだけ提供する（判定は createMcpServer / write-tools.ts）。
  * 「ログインなしで閲覧を許可」の設定には関係なく、トークンが必須。
  */
 export async function handleMcpRequest(request: Request): Promise<Response> {
@@ -65,7 +67,7 @@ export async function handleMcpRequest(request: Request): Promise<Response> {
   }
 
   // リクエストごとにサーバーとトランスポートを作る（セッションを持たない）。JSON で直接応答する
-  const server = createMcpServer(requestOrigin(request.headers, request.url));
+  const server = createMcpServer(requestOrigin(request.headers, request.url), verified);
   const transport = new WebStandardStreamableHTTPServerTransport({ sessionIdGenerator: undefined, enableJsonResponse: true });
   await server.connect(transport);
   try {
