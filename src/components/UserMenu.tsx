@@ -1,6 +1,6 @@
 "use client";
 
-import { LogOut, Settings, User as UserIcon, Users } from "lucide-react";
+import { LogOut, ScrollText, Settings, User as UserIcon, Users } from "lucide-react";
 import Link from "next/link";
 import { logoutAction } from "@/actions/auth";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -44,6 +44,12 @@ export function UserMenu({ name, email, roleName, isAdmin }: { name: string; ema
               <Link href="/settings">
                 <Settings aria-hidden />
                 Wiki の設定
+              </Link>
+            </DropdownMenuItem>
+            <DropdownMenuItem asChild>
+              <Link href="/settings/audit">
+                <ScrollText aria-hidden />
+                MCP の記録
               </Link>
             </DropdownMenuItem>
             <DropdownMenuItem asChild>

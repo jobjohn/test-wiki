@@ -1,4 +1,4 @@
-import { CalendarPlus, Clock, ExternalLink, Tag as TagIcon, User } from "lucide-react";
+import { CalendarPlus, Clock, ExternalLink, History, Tag as TagIcon, User } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -66,6 +66,12 @@ export default async function BookmarkView({ params }: Props) {
               <ExternalLink aria-hidden />
               {displayDomain(bookmark.url)} を開く
             </a>
+          </Button>
+          <Button variant="outline" asChild>
+            <Link href={`/bookmarks/${bookmark.id}/revisions`}>
+              <History aria-hidden />
+              変更履歴
+            </Link>
           </Button>
           {canEdit(user) && (
             <BookmarkActions

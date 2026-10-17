@@ -1,7 +1,9 @@
-import { Settings as SettingsIcon } from "lucide-react";
+import { ScrollText, Settings as SettingsIcon } from "lucide-react";
 import type { Metadata } from "next";
+import Link from "next/link";
 import { PageTitle } from "@/components/PageTitle";
 import { SettingsForm } from "@/components/SettingsForm";
+import { Button } from "@/components/ui/button";
 import { requireAccess } from "@/lib/access";
 
 export const metadata: Metadata = { title: "Wiki の設定" };
@@ -21,6 +23,15 @@ export default async function SettingsPage() {
           colorMode: settings.colorMode,
         }}
       />
+      <div>
+        <Button variant="outline" asChild>
+          <Link href="/settings/audit">
+            <ScrollText aria-hidden />
+            書き込みの記録を見る
+          </Link>
+        </Button>
+        <p className="mt-1 text-sm text-muted-foreground">MCP からの書き込みの記録を確認できます（1 年間保持）。</p>
+      </div>
     </div>
   );
 }

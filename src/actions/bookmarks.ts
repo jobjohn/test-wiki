@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { guardAction, safeNext } from "@/lib/access";
 import { parseHttpUrl } from "@/lib/bookmark-utils";
-import { createBookmark, findBookmarkByUrl, getBookmark, updateBookmark } from "@/lib/bookmarks";
+import { createBookmark, findBookmarkByUrl, getBookmark, restoreBookmarkRevision, updateBookmark } from "@/lib/bookmarks";
 import { NotFoundError, ValidationError } from "@/lib/errors";
 import { setFlash } from "@/lib/flash";
 import { type FormState, optionalId, str, values } from "@/lib/form";
@@ -64,6 +64,26 @@ export async function deleteBookmarkAction(id: number, returnTo: string) {
   }
   // 削除したリンクの詳細画面からは、一覧へ戻る
   redirect(back.startsWith(`/bookmarks/${id}`) ? "/bookmarks" : back);
+}
+
+/** リンクを過去の版の内容に戻して、変更履歴へ戻る */
+export async function restoreBookmarkRevisionAction(bookmarkId: number, number: number) {
+  const back = `/bookmarks/${bookmarkId}/revisions`;
+  const guard = await guardAction("edit");
+  if ("error" in guard) {
+    await setFlash("alert", guard.error);
+    redirect(back);
+  }
+  try {
+    const changed = restoreBookmarkRevision(bookmarkId, number, guard.user.id);
+    revalidatePath("/bookmarks", "layout");
+    await setFlash("notice", changed ? `第${number}版の内容に復元しました。` : `第${number}版は、すでに現在と同じ内容です。`);
+  } catch (error) {
+    if (error instanceof ValidationError) await setFlash("alert", `復元できませんでした: ${error.messages.join("、")}`);
+    else if (error instanceof NotFoundError) await setFlash("alert", "版が見つかりません。");
+    else throw error;
+  }
+  redirect(back);
 }
 
 export interface UrlMetadataResult {

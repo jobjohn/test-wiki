@@ -227,6 +227,7 @@ export function registerWriteTools(server: McpServer, auth: McpAuth | undefined,
         tags: tags === undefined ? "" : tagsToString(tags),
         faviconUrl: favicon,
         userId: user.id,
+        source: "mcp",
       });
       log("add_bookmark", "bookmark", id);
       const saved = getBookmark(id)!;
@@ -238,7 +239,7 @@ export function registerWriteTools(server: McpServer, auth: McpAuth | undefined,
     "update_bookmark",
     {
       title: "リンクを更新",
-      description: `共有リンク集のリンクを更新します。url・title・description・tags は、省略した項目が今の値のまま残ります。tags と description は送った内容で置き換わります。${WRITE_RULES}${UNTRUSTED_NOTICE}`,
+      description: `共有リンク集のリンクを更新します。url・title・description・tags は、省略した項目が今の値のまま残ります。tags と description は送った内容で置き換わります。更新前の内容は変更履歴に残り、画面から元に戻せます。${WRITE_RULES}${UNTRUSTED_NOTICE}`,
       inputSchema: {
         id: z.number().int().positive().describe("リンクの id"),
         url: z.string().min(1).max(BOOKMARK_URL_MAX_LENGTH).optional().describe("新しい URL"),
@@ -264,6 +265,7 @@ export function registerWriteTools(server: McpServer, auth: McpAuth | undefined,
         // URL が変わったら、元のサイトのファビコンは合わないので外す
         faviconUrl: urlChanged ? "" : (current.faviconUrl ?? ""),
         userId: user.id,
+        source: "mcp",
       });
       log("update_bookmark", "bookmark", id);
       const saved = getBookmark(id)!;
