@@ -8,6 +8,7 @@ import { ValidationError } from "@/lib/errors";
 import { getSettings, updateSettings } from "@/lib/settings";
 import { hashPassword, verifyPassword } from "@/lib/password";
 import { safeNext } from "@/lib/access";
+import { parseFlash } from "@/lib/flash";
 
 describe("差分", () => {
   it("追加・削除の行数と行番号を出す", () => {
@@ -90,9 +91,36 @@ describe("その他", () => {
     expect(safeNext("https://evil.example")).toBeNull();
     expect(safeNext("/\\evil")).toBeNull();
     expect(safeNext(null)).toBeNull();
+    for (const bad of ["/\t/evil.com", "/\n/evil.com", "/\r/evil.com", "/a\u0000b", "//evil.com", "/\\evil.com", "javascript:alert(1)", "https://evil.com", ""]) {
+      expect(safeNext(bad), JSON.stringify(bad)).toBeNull();
+    }
+    expect(safeNext("/pages/1?x=1#a")).toBe("/pages/1?x=1#a");
   });
 
   it("日時を設定のタイムゾーンで表示する", () => {
     expect(formatDateTime("2026-09-29T00:05:00.000Z")).toBe("2026/09/29 09:05");
+  });
+});
+
+describe("フラッシュ Cookie の検証", () => {
+  const encode = (value: unknown) => encodeURIComponent(JSON.stringify(value));
+  const base = { id: "i", type: "notice", message: "m" };
+
+  it("正しい値とサイト内のリンクを通す", () => {
+    expect(parseFlash(encode({ ...base, link: { href: "/pages/1?x=1#a", label: "開く" } }))).toEqual({ ...base, link: { href: "/pages/1?x=1#a", label: "開く" } });
+    expect(parseFlash(encode(base))).toEqual(base);
+  });
+
+  it("危険なリンクは取り除き、メッセージだけ残す", () => {
+    for (const href of ["/\t/evil.com", "/\n/evil.com", "//evil.com", "/\\evil.com", "javascript:alert(1)", "https://evil.com"]) {
+      expect(parseFlash(encode({ ...base, link: { href, label: "x" } })), href).toEqual(base);
+    }
+  });
+
+  it("type・id・message が正しくなければ無視する", () => {
+    expect(parseFlash(encode({ ...base, type: "other" }))).toBeNull();
+    expect(parseFlash(encode({ ...base, id: 1 }))).toBeNull();
+    expect(parseFlash(encode({ ...base, message: null }))).toBeNull();
+    expect(parseFlash("not json")).toBeNull();
   });
 });

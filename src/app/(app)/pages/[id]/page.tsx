@@ -83,14 +83,14 @@ export default async function PageView({ params }: Props) {
           {editable && (
             <ConfirmAction
               action={deletePageAction.bind(null, page.id)}
-              title="ページを削除しますか？"
-              description={`ページ「${page.title}」を削除します。変更履歴も一緒に削除され、元に戻せません。`}
-              confirmLabel="削除する"
+              title="ページをゴミ箱に移動しますか？"
+              description={`ページ「${page.title}」をゴミ箱に移動します。変更履歴も一緒に移り、30 日以内ならゴミ箱から元に戻せます。`}
+              confirmLabel="ゴミ箱に移動する"
               destructive
               trigger={
                 <Button variant="destructive">
                   <Trash2 aria-hidden />
-                  削除
+                  ゴミ箱に移動
                 </Button>
               }
             />

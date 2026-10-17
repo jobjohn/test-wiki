@@ -167,4 +167,18 @@ export const MIGRATIONS: string[] = [
   );
   CREATE INDEX index_api_tokens_on_user_id ON api_tokens(user_id);
   `,
+  // ゴミ箱（削除の取り消し）。削除した行と関連データを JSON にして退避し、元の行は実際に削除する
+  `
+  CREATE TABLE trash_items (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    kind TEXT NOT NULL,
+    item_id INTEGER NOT NULL,
+    title TEXT NOT NULL,
+    payload TEXT NOT NULL,
+    deleted_by INTEGER REFERENCES users(id) ON DELETE SET NULL,
+    deleted_at TEXT NOT NULL
+  );
+  CREATE UNIQUE INDEX index_trash_items_on_kind_and_item_id ON trash_items(kind, item_id);
+  CREATE INDEX index_trash_items_on_deleted_at ON trash_items(deleted_at);
+  `,
 ];

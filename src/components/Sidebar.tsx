@@ -1,6 +1,6 @@
 "use client";
 
-import { Bookmark, ChevronRight, FilePlus, FileText, Folder, FolderOpen, FolderPlus, History, House, Paperclip, Tags } from "lucide-react";
+import { Bookmark, ChevronRight, FilePlus, FileText, Folder, FolderOpen, FolderPlus, History, House, Paperclip, Tags, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useMemo, useState, type ComponentProps } from "react";
@@ -32,6 +32,8 @@ const NAV = [
   { href: "/tags", label: "タグ", icon: Tags, match: (p: string) => p.startsWith("/tags") },
   { href: "/uploads", label: "ファイル", icon: Paperclip, match: (p: string) => p.startsWith("/uploads") },
   { href: "/bookmarks", label: "リンク集", icon: Bookmark, match: (p: string) => p.startsWith("/bookmarks") },
+  // ゴミ箱は編集できるユーザーだけに見せる
+  { href: "/trash", label: "ゴミ箱", icon: Trash2, match: (p: string) => p.startsWith("/trash"), editOnly: true },
 ];
 
 /** サイドバー（ナビゲーションと、フォルダ・ページのツリー）。スマートフォンではシートとして開く */
@@ -129,7 +131,7 @@ export function Sidebar({ tree, canEdit, ...props }: { tree: TreeData | null; ca
         <SidebarGroup>
           <SidebarGroupContent>
             <SidebarMenu>
-              {NAV.map(({ href, label, icon: Icon, match }) => (
+              {NAV.filter((item) => canEdit || !("editOnly" in item)).map(({ href, label, icon: Icon, match }) => (
                 <SidebarMenuItem key={href}>
                   <SidebarMenuButton asChild isActive={match(pathname)}>
                     <Link href={href} aria-current={match(pathname) ? "page" : undefined}>

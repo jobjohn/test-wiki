@@ -81,4 +81,34 @@ test.describe.serial("スモークテスト", () => {
     await page.goto(`/pages/${pageId}`);
     await expectLoginPage(page);
   });
+
+  test("ページを削除するとゴミ箱に移り、復元すると元の URL に戻る", async () => {
+    await page.goto("/login");
+    await page.locator("#email").fill(EMAIL);
+    await page.locator("#password").fill(PASSWORD);
+    await page.getByRole("button", { name: "ログイン", exact: true }).click();
+    await expect(page.getByRole("heading", { level: 1, name: WIKI_NAME })).toBeVisible();
+
+    await page.goto(`/pages/${pageId}`);
+    await page.getByRole("button", { name: "ゴミ箱に移動" }).click();
+    await page.getByRole("alertdialog").getByRole("button", { name: "ゴミ箱に移動する" }).click();
+    await expect(page.getByText(`ページ「${TITLE}」をゴミ箱に移動しました`)).toBeVisible();
+
+    // 元の URL は開けなくなる
+    expect((await page.goto(`/pages/${pageId}`))?.status()).toBe(404);
+
+    await page.goto("/trash");
+    await expect(page.getByRole("heading", { level: 1, name: "ゴミ箱" })).toBeVisible();
+    const row = page.getByRole("row", { name: new RegExp(TITLE) });
+    await expect(row).toBeVisible();
+    await row.getByRole("button", { name: "復元" }).click();
+
+    await expect(page.getByText(`ページ「${TITLE}」を元に戻しました`)).toBeVisible();
+    await expect(page.getByRole("row", { name: new RegExp(TITLE) })).toHaveCount(0);
+
+    await page.goto(`/pages/${pageId}`);
+    await expect(page.getByRole("heading", { level: 1, name: TITLE })).toBeVisible();
+    await page.goto(`/pages/${pageId}/revisions`);
+    await expect(page.getByRole("link", { name: /^第\d+版$/ })).toHaveCount(2);
+  });
 });

@@ -30,3 +30,6 @@ export const fetchUrlMetadataAction = async (url: string) =>
   /^https?:\/\/(www\.)?example\.com/.test(url) ? { title: "Example Domain" } : { error: "タイトルを取得できませんでした。手動で入力してください。" };
 export const createApiTokenAction = noop;
 export const revokeApiTokenAction = noopAction;
+export const restoreTrashAction = noopAction;
+export const purgeTrashItemAction = noopAction;
+export const emptyTrashAction = noopAction;

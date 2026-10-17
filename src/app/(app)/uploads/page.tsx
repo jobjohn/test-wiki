@@ -62,12 +62,12 @@ export default async function UploadsPage() {
                       {editable && (
                         <ConfirmAction
                           action={deleteUploadAction.bind(null, upload.id)}
-                          title="ファイルを削除しますか？"
-                          description={`「${upload.filename}」を削除します。このファイルを使っているページでは、画像やリンクが表示されなくなります。`}
-                          confirmLabel="削除する"
+                          title="ファイルをゴミ箱に移動しますか？"
+                          description={`「${upload.filename}」をゴミ箱に移動します。このファイルを使っているページでは、画像やリンクが表示されなくなりますが、30 日以内ならゴミ箱から元に戻せます。`}
+                          confirmLabel="ゴミ箱に移動する"
                           destructive
                           trigger={
-                            <Button variant="destructive" size="icon-sm" aria-label={`${upload.filename} を削除`}>
+                            <Button variant="destructive" size="icon-sm" aria-label={`${upload.filename} をゴミ箱に移動`}>
                               <Trash2 aria-hidden />
                             </Button>
                           }
