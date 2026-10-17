@@ -9,7 +9,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSepara
 import { BookmarkDialog, type BookmarkFormValues } from "./BookmarkDialog";
 import { ConfirmAction } from "./ConfirmAction";
 
-/** リンクの「⋯」メニュー（詳細・編集・削除） */
+/** リンクの「⋯」メニュー（詳細・編集・ゴミ箱へ移動） */
 export function BookmarkActions({
   bookmark,
   tagSuggestions,
@@ -18,7 +18,7 @@ export function BookmarkActions({
 }: {
   bookmark: BookmarkFormValues & { id: number };
   tagSuggestions: string[];
-  /** 削除した後に戻る画面 */
+  /** ゴミ箱へ移した後に戻る画面 */
   returnTo: string;
   showDetail?: boolean;
 }) {
@@ -49,7 +49,7 @@ export function BookmarkActions({
           <DropdownMenuSeparator />
           <DropdownMenuItem variant="destructive" onSelect={() => setDeleteOpen(true)}>
             <Trash2 aria-hidden />
-            削除
+            ゴミ箱に移動
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
@@ -58,9 +58,9 @@ export function BookmarkActions({
         open={deleteOpen}
         onOpenChange={setDeleteOpen}
         action={deleteBookmarkAction.bind(null, bookmark.id, returnTo)}
-        title="リンクを削除"
-        description={`「${bookmark.title}」を削除しますか？この操作により共有リンク集から表示されなくなります。`}
-        confirmLabel="削除する"
+        title="リンクをゴミ箱に移動"
+        description={`「${bookmark.title}」をゴミ箱に移動します。共有リンク集から表示されなくなりますが、30 日以内ならゴミ箱から元に戻せます。`}
+        confirmLabel="ゴミ箱に移動する"
         destructive
       />
     </>

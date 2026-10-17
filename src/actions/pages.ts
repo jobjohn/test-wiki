@@ -6,7 +6,8 @@ import { guardAction } from "@/lib/access";
 import { NotFoundError, StaleError, ValidationError } from "@/lib/errors";
 import { setFlash } from "@/lib/flash";
 import { type FormState, int, optionalId, str, values } from "@/lib/form";
-import { createPage, deletePage, getPage, restoreRevision, tagList, updatePage } from "@/lib/pages";
+import { createPage, getPage, restoreRevision, tagList, updatePage } from "@/lib/pages";
+import { safePurge, TRASH_RETENTION_DAYS, trashPage } from "@/lib/trash";
 
 const FIELDS = ["title", "body", "folderId", "position", "tags", "summary"];
 
@@ -66,9 +67,16 @@ export async function deletePageAction(id: number) {
   }
   const page = getPage(id);
   if (page) {
-    deletePage(id);
-    revalidatePath("/", "layout");
-    await setFlash("notice", `ページ「${page.title}」を削除しました。`);
+    // 完全には消さず、ゴミ箱へ退避する（期限内なら元に戻せる）
+    try {
+      trashPage(id, guard.user.id);
+      safePurge();
+      revalidatePath("/", "layout");
+      await setFlash("notice", `ページ「${page.title}」をゴミ箱に移動しました（${TRASH_RETENTION_DAYS} 日後に完全に削除されます）。`);
+    } catch (error) {
+      if (!(error instanceof NotFoundError)) throw error;
+      await setFlash("alert", "ページが見つかりません（既に削除された可能性があります）。");
+    }
   }
   redirect(page?.folderId ? `/folders/${page.folderId}` : "/");
 }

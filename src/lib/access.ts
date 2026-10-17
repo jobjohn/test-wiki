@@ -8,7 +8,9 @@ export type Level = "read" | "edit" | "admin";
 
 /** ログイン後に戻る先として使える、サイト内のパスだけを通す */
 export function safeNext(value: string | null | undefined): string | null {
-  if (!value || !value.startsWith("/") || value.startsWith("//") || value.includes("\\")) return null;
+  // 制御文字（タブ・改行など）はブラウザが取り除くため、"/\t/evil.com" が "//evil.com" になる。含むものは通さない
+  if (!value || !value.startsWith("/") || value[1] === "/" || value[1] === "\\") return null;
+  if (/[\u0000-\u001f\u007f\\]/.test(value)) return null;
   return value;
 }
 

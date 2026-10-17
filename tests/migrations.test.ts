@@ -46,4 +46,26 @@ describe("マイグレーション", () => {
     db.prepare("DELETE FROM bookmarks WHERE id = ?").run(id);
     expect(db.prepare("SELECT COUNT(*) AS n FROM bookmark_taggings").get()).toEqual(expect.objectContaining({ n: 0 }));
   });
+
+  it("既存のデータベースにゴミ箱のテーブルを追加し、同じ項目の二重退避を防ぐ", () => {
+    const db = new DatabaseSync(":memory:");
+    db.exec("PRAGMA foreign_keys = ON");
+    const trashIndex = MIGRATIONS.findIndex((sql) => sql.includes("CREATE TABLE trash_items"));
+    expect(trashIndex).toBe(MIGRATIONS.length - 1);
+    for (const sql of MIGRATIONS.slice(0, trashIndex)) db.exec(sql);
+    db.prepare("INSERT INTO users (email, email_key, password_hash, created_at, updated_at) VALUES ('a@example.com', 'a@example.com', 'x', 't', 't')").run();
+    db.prepare("INSERT INTO pages (title, title_key, created_at, updated_at) VALUES ('P', 'p', 't', 't')").run();
+
+    db.exec(MIGRATIONS[trashIndex]);
+
+    // 既存のデータはそのまま
+    expect(db.prepare("SELECT COUNT(*) AS n FROM pages").get()).toEqual(expect.objectContaining({ n: 1 }));
+    const insert = db.prepare("INSERT INTO trash_items (kind, item_id, title, payload, deleted_by, deleted_at) VALUES (?, ?, 'T', '{}', 1, 't')");
+    insert.run("page", 5);
+    insert.run("bookmark", 5);
+    expect(() => insert.run("page", 5)).toThrow(/UNIQUE/);
+    // 削除した人のユーザーを消しても、ゴミ箱の項目は残る
+    db.prepare("DELETE FROM users WHERE id = 1").run();
+    expect(db.prepare("SELECT deleted_by FROM trash_items WHERE kind = 'page'").get()).toEqual(expect.objectContaining({ deleted_by: null }));
+  });
 });

@@ -4,11 +4,12 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { guardAction, safeNext } from "@/lib/access";
 import { parseHttpUrl } from "@/lib/bookmark-utils";
-import { createBookmark, deleteBookmark, findBookmarkByUrl, getBookmark, updateBookmark } from "@/lib/bookmarks";
+import { createBookmark, findBookmarkByUrl, getBookmark, updateBookmark } from "@/lib/bookmarks";
 import { NotFoundError, ValidationError } from "@/lib/errors";
 import { setFlash } from "@/lib/flash";
 import { type FormState, optionalId, str, values } from "@/lib/form";
 import { allowAttempt } from "@/lib/rate-limit";
+import { safePurge, TRASH_RETENTION_DAYS, trashBookmark } from "@/lib/trash";
 import { fetchUrlMetadata, UnsafeUrlError } from "@/lib/url-metadata";
 
 const FIELDS = ["url", "title", "tags", "descriptionMd", "faviconUrl"];
@@ -43,7 +44,7 @@ export async function saveBookmarkAction(_prev: FormState, data: FormData): Prom
   }
 }
 
-/** リンクを削除して、元の画面（一覧・詳細）へ戻る */
+/** リンクをゴミ箱へ移して、元の画面（一覧・詳細）へ戻る */
 export async function deleteBookmarkAction(id: number, returnTo: string) {
   const back = safeNext(returnTo)?.startsWith("/bookmarks") ? returnTo : "/bookmarks";
   const guard = await guardAction("edit");
@@ -53,9 +54,10 @@ export async function deleteBookmarkAction(id: number, returnTo: string) {
   }
   const bookmark = getBookmark(id);
   try {
-    deleteBookmark(id);
+    trashBookmark(id, guard.user.id);
+    safePurge();
     revalidatePath("/bookmarks", "layout");
-    await setFlash("notice", `リンク「${bookmark?.title ?? ""}」を削除しました。`);
+    await setFlash("notice", `リンク「${bookmark?.title ?? ""}」をゴミ箱に移動しました（${TRASH_RETENTION_DAYS} 日後に完全に削除されます）。`);
   } catch (error) {
     if (!(error instanceof NotFoundError)) throw error;
     await setFlash("alert", "リンクが見つかりません（既に削除された可能性があります）。");

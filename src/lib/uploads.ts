@@ -85,9 +85,16 @@ export async function storeUpload(file: File, userId: number | null): Promise<Up
   return getUpload(id)!;
 }
 
+/** 保存済みの実ファイルを消す（既になくてもよい） */
+export function removeUploadFile(storageKey: string) {
+  // 保存先の外を指すキーは扱わない（退避データが書き換えられていても、他のファイルを消さないため）
+  if (!storageKey || path.basename(storageKey) !== storageKey) return;
+  fs.rmSync(path.join(filesDir(), storageKey), { force: true });
+}
+
 export function deleteUpload(id: number) {
   const upload = getUpload(id);
   if (!upload) return;
   run("DELETE FROM uploads WHERE id = ?", id);
-  fs.rmSync(path.join(filesDir(), upload.storageKey), { force: true });
+  removeUploadFile(upload.storageKey);
 }
