@@ -1,13 +1,17 @@
-import { KeyRound, ShieldCheck, Smartphone, User as UserIcon } from "lucide-react";
+import { KeyRound, Plug, ShieldCheck, Smartphone, User as UserIcon } from "lucide-react";
 import type { Metadata } from "next";
+import { headers } from "next/headers";
 import Link from "next/link";
 import { MfaManage, ProfileForm } from "@/components/AccountForms";
+import { ApiTokenForm, ApiTokenList, McpGuide } from "@/components/ApiTokens";
 import { PageTitle } from "@/components/PageTitle";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { requireUser } from "@/lib/access";
+import { listApiTokens, TOKEN_SCOPES, type TokenScope } from "@/lib/api-tokens";
 import { formatDateTime } from "@/lib/format";
+import { requestOrigin } from "@/lib/origin";
 import { ROLES } from "@/lib/users";
 
 export const metadata: Metadata = { title: "アカウント" };
@@ -24,6 +28,19 @@ function SectionTitle({ icon: Icon, children }: { icon: typeof UserIcon; childre
 export default async function AccountPage() {
   // 必須の手続き（パスワード変更・MFA 設定）へ案内する前でも、自分の設定は確認できるようにする
   const { user, settings } = await requireUser({ gate: false });
+  const origin = requestOrigin(await headers());
+  const nowIso = new Date().toISOString();
+  // クライアントの部品へ渡すため、日付を整形した普通のオブジェクトにする
+  const tokens = listApiTokens(user.id).map((t) => ({
+    id: t.id,
+    name: t.name,
+    prefix: t.prefix,
+    scope: TOKEN_SCOPES[t.scope as TokenScope] ?? t.scope,
+    createdAt: formatDateTime(t.createdAt),
+    lastUsedAt: t.lastUsedAt ? formatDateTime(t.lastUsedAt) : null,
+    expiresAt: t.expiresAt ? formatDateTime(t.expiresAt) : null,
+    expired: !!t.expiresAt && t.expiresAt <= nowIso,
+  }));
 
   return (
     <div className="grid max-w-3xl gap-5">
@@ -89,6 +106,17 @@ export default async function AccountPage() {
               </Button>
             </>
           )}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <SectionTitle icon={Plug}>アクセストークン（MCP）</SectionTitle>
+        </CardHeader>
+        <CardContent className="grid gap-5">
+          <McpGuide origin={origin} />
+          <ApiTokenForm origin={origin} />
+          <ApiTokenList tokens={tokens} />
         </CardContent>
       </Card>
     </div>
