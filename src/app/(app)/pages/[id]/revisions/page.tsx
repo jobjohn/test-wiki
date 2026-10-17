@@ -52,7 +52,14 @@ export default async function RevisionsPage({ params }: { params: Promise<{ id: 
                     </Button>
                   </TableCell>
                   <TableCell className="whitespace-nowrap">{formatDateTime(revision.createdAt)}</TableCell>
-                  <TableCell>{revision.userName ?? "—"}</TableCell>
+                  <TableCell>
+                    {revision.userName ?? "—"}
+                    {revision.source === "mcp" && (
+                      <Badge variant="secondary" className="ml-2">
+                        MCP 経由
+                      </Badge>
+                    )}
+                  </TableCell>
                   <TableCell>{revision.title}</TableCell>
                   <TableCell>{revision.summary}</TableCell>
                   <TableCell className="text-right whitespace-nowrap">

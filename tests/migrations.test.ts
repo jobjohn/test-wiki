@@ -51,7 +51,7 @@ describe("マイグレーション", () => {
     const db = new DatabaseSync(":memory:");
     db.exec("PRAGMA foreign_keys = ON");
     const trashIndex = MIGRATIONS.findIndex((sql) => sql.includes("CREATE TABLE trash_items"));
-    expect(trashIndex).toBe(MIGRATIONS.length - 1);
+    expect(trashIndex).toBeGreaterThanOrEqual(0);
     for (const sql of MIGRATIONS.slice(0, trashIndex)) db.exec(sql);
     db.prepare("INSERT INTO users (email, email_key, password_hash, created_at, updated_at) VALUES ('a@example.com', 'a@example.com', 'x', 't', 't')").run();
     db.prepare("INSERT INTO pages (title, title_key, created_at, updated_at) VALUES ('P', 'p', 't', 't')").run();
@@ -67,5 +67,31 @@ describe("マイグレーション", () => {
     // 削除した人のユーザーを消しても、ゴミ箱の項目は残る
     db.prepare("DELETE FROM users WHERE id = 1").run();
     expect(db.prepare("SELECT deleted_by FROM trash_items WHERE kind = 'page'").get()).toEqual(expect.objectContaining({ deleted_by: null }));
+  });
+
+  it("既存のデータベースに MCP 書き込みの設定・版の書き込み元・監査ログを追加する（既存の行は壊さない）", () => {
+    const db = new DatabaseSync(":memory:");
+    db.exec("PRAGMA foreign_keys = ON");
+    const index = MIGRATIONS.findIndex((sql) => sql.includes("CREATE TABLE api_write_logs"));
+    expect(index).toBeGreaterThanOrEqual(0);
+    // ゴミ箱のマイグレーションより後ろにあること（この後にマイグレーションが増えても壊れない）
+    expect(index).toBeGreaterThan(MIGRATIONS.findIndex((sql) => sql.includes("CREATE TABLE trash_items")));
+    for (const sql of MIGRATIONS.slice(0, index)) db.exec(sql);
+    db.prepare("INSERT INTO settings (id) VALUES (1)").run();
+    db.prepare("INSERT INTO users (email, email_key, password_hash, created_at, updated_at) VALUES ('a@example.com', 'a@example.com', 'x', 't', 't')").run();
+    db.prepare("INSERT INTO pages (title, title_key, created_at, updated_at) VALUES ('P', 'p', 't', 't')").run();
+    db.prepare("INSERT INTO revisions (page_id, number, title, body, created_at) VALUES (1, 1, 'P', '', 't')").run();
+
+    db.exec(MIGRATIONS[index]);
+
+    // 既存の設定は書き込み無効、既存の版は画面からのもの
+    expect(db.prepare("SELECT mcp_write_enabled FROM settings WHERE id = 1").get()).toEqual(expect.objectContaining({ mcp_write_enabled: 0 }));
+    expect(db.prepare("SELECT source FROM revisions").get()).toEqual(expect.objectContaining({ source: null }));
+    // api_token_id は外部キーではないので、トークンがなくても記録できる。ユーザーを消してもログは残る
+    db.prepare(
+      "INSERT INTO api_write_logs (api_token_id, token_name, user_id, tool, target_kind, target_id, created_at) VALUES (99, 'T', 1, 'create_page', 'page', 1, 't')",
+    ).run();
+    db.prepare("DELETE FROM users WHERE id = 1").run();
+    expect(db.prepare("SELECT user_id FROM api_write_logs").get()).toEqual(expect.objectContaining({ user_id: null }));
   });
 });

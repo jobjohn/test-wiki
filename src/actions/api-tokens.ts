@@ -13,11 +13,15 @@ export async function createApiTokenAction(_prev: FormState, data: FormData): Pr
   const guard = await guardAction("read");
   if ("error" in guard) return { errors: [guard.error] };
   try {
-    const { token, summary } = createApiToken(guard.user.id, { name: str(data, "name"), expiry: str(data, "expiry") || undefined });
+    const { token, summary } = createApiToken(guard.user.id, {
+      name: str(data, "name"),
+      expiry: str(data, "expiry") || undefined,
+      scope: str(data, "scope") || undefined,
+    });
     revalidatePath("/account");
     return { token: { name: summary.name, value: token } };
   } catch (error) {
-    if (error instanceof ValidationError) return { errors: error.messages, values: { name: str(data, "name"), expiry: str(data, "expiry") } };
+    if (error instanceof ValidationError) return { errors: error.messages, values: { name: str(data, "name"), expiry: str(data, "expiry"), scope: str(data, "scope") } };
     throw error;
   }
 }

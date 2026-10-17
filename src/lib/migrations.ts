@@ -181,4 +181,23 @@ export const MIGRATIONS: string[] = [
   CREATE UNIQUE INDEX index_trash_items_on_kind_and_item_id ON trash_items(kind, item_id);
   CREATE INDEX index_trash_items_on_deleted_at ON trash_items(deleted_at);
   `,
+  // MCP からの書き込み（フェーズ 2）。設定・版の書き込み元・書き込みの監査ログ
+  // api_write_logs は、トークンを取り消した後も記録が残るよう api_token_id を外部キーにしない
+  `
+  ALTER TABLE settings ADD COLUMN mcp_write_enabled INTEGER NOT NULL DEFAULT 0;
+  ALTER TABLE revisions ADD COLUMN source TEXT;
+
+  CREATE TABLE api_write_logs (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    api_token_id INTEGER,
+    token_name TEXT NOT NULL,
+    user_id INTEGER REFERENCES users(id) ON DELETE SET NULL,
+    tool TEXT NOT NULL,
+    target_kind TEXT NOT NULL,
+    target_id INTEGER,
+    created_at TEXT NOT NULL
+  );
+  CREATE INDEX index_api_write_logs_on_created_at ON api_write_logs(created_at);
+  CREATE INDEX index_api_write_logs_on_user_id ON api_write_logs(user_id);
+  `,
 ];

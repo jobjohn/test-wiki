@@ -10,6 +10,7 @@ import { requireAccess } from "@/lib/access";
 import { formatDateTime } from "@/lib/format";
 import { first } from "@/lib/params";
 import { recentRevisions } from "@/lib/pages";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 
 export const metadata: Metadata = { title: "最近の更新" };
@@ -52,7 +53,14 @@ export default async function ChangesPage({ searchParams }: { searchParams: Prom
                           <Link href={`/pages/${revision.pageId}/revisions/${revision.number}`}>第{revision.number}版</Link>
                         </Button>
                       </TableCell>
-                      <TableCell>{revision.userName ?? "—"}</TableCell>
+                      <TableCell>
+                        {revision.userName ?? "—"}
+                        {revision.source === "mcp" && (
+                          <Badge variant="secondary" className="ml-2">
+                            MCP 経由
+                          </Badge>
+                        )}
+                      </TableCell>
                       <TableCell>{revision.summary}</TableCell>
                     </TableRow>
                   ))}

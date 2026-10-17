@@ -4,10 +4,12 @@ import { ValidationError } from "./errors";
 import { pendingRequirement } from "./access";
 import { getSettings } from "./settings";
 import { squish } from "./text";
-import { getUser, type User } from "./users";
+import { canEdit, getUser, type User } from "./users";
 import {
   type ApiTokenSummary,
   isTokenExpiry,
+  isTokenScope,
+  isWritableExpiry,
   TOKEN_EXPIRIES,
   TOKEN_LIMIT_PER_USER,
   TOKEN_NAME_MAX_LENGTH,
@@ -51,13 +53,21 @@ export const listApiTokens = (userId: number): ApiTokenSummary[] =>
 /**
  * トークンを発行する。平文はこの戻り値でしか得られない（DB にはハッシュだけを保存する）。
  */
-export function createApiToken(userId: number, input: { name: string; expiry?: string }, at = new Date()): { token: string; summary: ApiTokenSummary } {
+export function createApiToken(userId: number, input: { name: string; expiry?: string; scope?: string }, at = new Date()): { token: string; summary: ApiTokenSummary } {
   const name = squish(input.name);
   const expiry = input.expiry ?? "90";
   const errors: string[] = [];
   if (!name) errors.push("名前を入力してください");
   if (name.length > TOKEN_NAME_MAX_LENGTH) errors.push(`名前は ${TOKEN_NAME_MAX_LENGTH} 文字以内にしてください`);
   if (!isTokenExpiry(expiry)) errors.push("有効期限が不正です");
+  const scope = input.scope ?? "read";
+  if (!isTokenScope(scope)) errors.push("権限が不正です");
+  else if (scope === "write") {
+    if (!getSettings().mcpWriteEnabled) errors.push("MCP からの書き込みは許可されていません。管理者が設定で許可すると、書き込みトークンを発行できます");
+    const owner = getUser(userId);
+    if (!owner || !canEdit(owner)) errors.push("編集権限のないユーザーは書き込みトークンを発行できません");
+    if (isTokenExpiry(expiry) && !isWritableExpiry(expiry)) errors.push("書き込みトークンは無期限にできません。30 日・90 日・1 年から選んでください");
+  }
   if (errors.length) throw new ValidationError(errors);
 
   const days = TOKEN_EXPIRIES[expiry as TokenExpiry].days;
@@ -68,11 +78,12 @@ export function createApiToken(userId: number, input: { name: string; expiry?: s
       throw new ValidationError(`トークンは 1 人あたり ${TOKEN_LIMIT_PER_USER} 個までです。使っていないトークンを取り消してください`);
     }
     const id = run(
-      `INSERT INTO api_tokens (user_id, name, token_hash, token_prefix, scope, expires_at, created_at) VALUES (?, ?, ?, ?, 'read', ?, ?)`,
+      `INSERT INTO api_tokens (user_id, name, token_hash, token_prefix, scope, expires_at, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)`,
       userId,
       name,
       hashToken(token),
       token.slice(0, TOKEN_PREFIX.length + 4),
+      scope,
       days === null ? null : new Date(at.getTime() + days * 86_400_000).toISOString(),
       at.toISOString(),
     ).lastInsertRowid;
@@ -88,6 +99,7 @@ export function revokeApiToken(userId: number, tokenId: number): boolean {
 export interface VerifiedToken {
   user: User;
   tokenId: number;
+  tokenName: string;
   scope: string;
 }
 
@@ -109,7 +121,7 @@ export function verifyApiToken(token: string, at = new Date()): VerifiedToken | 
   if (!row.last_used_at || at.getTime() - new Date(row.last_used_at).getTime() >= TOUCH_INTERVAL_MS) {
     run("UPDATE api_tokens SET last_used_at = ? WHERE id = ?", at.toISOString(), row.id);
   }
-  return { user, tokenId: row.id, scope: row.scope };
+  return { user, tokenId: row.id, tokenName: row.name, scope: row.scope };
 }
 
 /** `Authorization` ヘッダーから Bearer トークンを取り出す */

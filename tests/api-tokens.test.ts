@@ -52,6 +52,41 @@ describe("アクセストークンの発行", () => {
     expect(() => createApiToken(userId, { name: "あ".repeat(50) })).not.toThrow();
   });
 
+  it("write scope は、設定が有効なときだけ発行でき、無期限にはできない", () => {
+    const userId = newUser();
+    updateSettings({ wikiName: "Wiki", description: "", mcpWriteEnabled: false });
+    expect(() => createApiToken(userId, { name: "w", scope: "write" })).toThrow(/許可されていません/);
+
+    updateSettings({ wikiName: "Wiki", description: "", mcpWriteEnabled: true });
+    const at = new Date("2026-01-01T00:00:00Z");
+    const { summary } = createApiToken(userId, { name: "w", scope: "write", expiry: "30" }, at);
+    expect(summary).toMatchObject({ scope: "write", expiresAt: "2026-01-31T00:00:00.000Z" });
+    expect(createApiToken(userId, { name: "w2", scope: "write" }, at).summary.expiresAt).toBe("2026-04-01T00:00:00.000Z");
+    expect(() => createApiToken(userId, { name: "w3", scope: "write", expiry: "never" })).toThrow(/無期限/);
+    // 読み取りは従来どおり無期限にできる
+    expect(createApiToken(userId, { name: "r", scope: "read", expiry: "never" }).summary.expiresAt).toBeNull();
+
+    // 設定を無効に戻しても、発行済みの write トークンは残り、scope も変わらない
+    updateSettings({ wikiName: "Wiki", description: "", mcpWriteEnabled: false });
+    expect(listApiTokens(userId).find((t) => t.id === summary.id)?.scope).toBe("write");
+  });
+
+  it("不正な scope は拒否する", () => {
+    const userId = newUser();
+    updateSettings({ wikiName: "Wiki", description: "", mcpWriteEnabled: true });
+    for (const scope of ["admin", "", "toString", "WRITE"]) {
+      expect(() => createApiToken(userId, { name: "x", scope })).toThrow(ValidationError);
+    }
+    updateSettings({ wikiName: "Wiki", description: "", mcpWriteEnabled: false });
+  });
+
+  it("無効なユーザーには write トークンを発行しない", () => {
+    const userId = createUser({ email: "token-disabled@example.com", role: "general", password: "password123", status: "disabled" });
+    updateSettings({ wikiName: "Wiki", description: "", mcpWriteEnabled: true });
+    expect(() => createApiToken(userId, { name: "x", scope: "write" })).toThrow(/編集権限/);
+    updateSettings({ wikiName: "Wiki", description: "", mcpWriteEnabled: false });
+  });
+
   it("1 ユーザーあたりの上限", () => {
     const userId = newUser();
     for (let i = 0; i < TOKEN_LIMIT_PER_USER; i++) createApiToken(userId, { name: `t${i}` });

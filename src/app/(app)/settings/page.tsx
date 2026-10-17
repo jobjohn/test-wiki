@@ -14,6 +14,7 @@ export default async function SettingsPage() {
       <SettingsForm
         publicRead={settings.publicRead}
         requireMfa={settings.requireMfa}
+        mcpWriteEnabled={settings.mcpWriteEnabled}
         initial={{
           wikiName: settings.wikiName,
           description: settings.description ?? "",

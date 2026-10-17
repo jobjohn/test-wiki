@@ -12,6 +12,8 @@ export interface Settings {
   colorMode: ColorMode;
   publicRead: boolean;
   requireMfa: boolean;
+  /** MCP からの書き込み（write トークンのツール）を許可するか */
+  mcpWriteEnabled: boolean;
   setupCompletedAt: string | null;
 }
 
@@ -21,6 +23,7 @@ interface SettingsRow {
   color_mode: ColorMode;
   public_read: number;
   require_mfa: number;
+  mcp_write_enabled: number;
   setup_completed_at: string | null;
 }
 
@@ -33,6 +36,7 @@ export function getSettings(): Settings {
     colorMode: row.color_mode,
     publicRead: !!row.public_read,
     requireMfa: !!row.require_mfa,
+    mcpWriteEnabled: !!row.mcp_write_enabled,
     setupCompletedAt: row.setup_completed_at,
   };
 }
@@ -43,6 +47,7 @@ export interface SettingsInput {
   colorMode?: string;
   publicRead?: boolean;
   requireMfa?: boolean;
+  mcpWriteEnabled?: boolean;
 }
 
 /** 入力を検証して保存する */
@@ -63,12 +68,13 @@ export function updateSettings(input: SettingsInput, options: { completeSetup?: 
   if (errors.length) throw new ValidationError(errors);
 
   run(
-    "UPDATE settings SET wiki_name = ?, description = ?, color_mode = ?, public_read = ?, require_mfa = ?, setup_completed_at = ? WHERE id = 1",
+    "UPDATE settings SET wiki_name = ?, description = ?, color_mode = ?, public_read = ?, require_mfa = ?, mcp_write_enabled = ?, setup_completed_at = ? WHERE id = 1",
     wikiName,
     description || null,
     colorMode,
     (input.publicRead ?? current.publicRead) ? 1 : 0,
     (input.requireMfa ?? current.requireMfa) ? 1 : 0,
+    (input.mcpWriteEnabled ?? current.mcpWriteEnabled) ? 1 : 0,
     options.completeSetup ? new Date().toISOString() : current.setupCompletedAt,
   );
   return getSettings();
