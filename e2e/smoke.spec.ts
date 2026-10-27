@@ -10,6 +10,8 @@ const KEYWORD = "スモークテスト用のキーワードxyz";
 let pageId = "";
 // ログイン状態を引き継ぐため、テスト間で同じブラウザのタブを使い回す
 let page: Page;
+// CSP で止められたスクリプト・スタイルなどがあれば記録する
+const cspViolations: string[] = [];
 
 async function expectLoginPage(page: Page) {
   await expect(page).toHaveURL(/\/login/);
@@ -19,6 +21,9 @@ async function expectLoginPage(page: Page) {
 test.describe.serial("スモークテスト", () => {
   test.beforeAll(async ({ browser }) => {
     page = await browser.newPage();
+    page.on("console", (message) => {
+      if (/Content Security Policy/i.test(message.text())) cspViolations.push(message.text());
+    });
   });
   test.afterAll(async () => {
     await page.close();
@@ -43,6 +48,16 @@ test.describe.serial("スモークテスト", () => {
     await page.getByRole("button", { name: "設定を完了して始める" }).click();
 
     await expect(page.getByRole("heading", { level: 1, name: WIKI_NAME })).toBeVisible();
+  });
+
+  test("画面に nonce 付きの CSP が付き、クライアントの JavaScript が動く", async () => {
+    const response = await page.goto("/");
+    const csp = response?.headers()["content-security-policy"] ?? "";
+    expect(csp).toMatch(/script-src 'self' 'nonce-[^']+' 'strict-dynamic'/);
+    // ユーザーメニュー（クライアントコンポーネント）が開ければ、ハイドレーションできている
+    await page.getByRole("button", { name: "ユーザーメニュー" }).click();
+    await expect(page.getByRole("menuitem", { name: "ログアウト" })).toBeVisible();
+    await page.keyboard.press("Escape");
   });
 
   test("ページを作成し、検索し、編集して履歴に 2 版が残る", async () => {
@@ -110,5 +125,9 @@ test.describe.serial("スモークテスト", () => {
     await expect(page.getByRole("heading", { level: 1, name: TITLE })).toBeVisible();
     await page.goto(`/pages/${pageId}/revisions`);
     await expect(page.getByRole("link", { name: /^第\d+版$/ })).toHaveCount(2);
+  });
+
+  test("CSP の違反がない", async () => {
+    expect(cspViolations).toEqual([]);
   });
 });
