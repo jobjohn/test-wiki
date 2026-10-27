@@ -4,15 +4,18 @@ import { defineConfig, devices } from "@playwright/test";
 
 const PORT = 3100;
 
-// 毎回まっさらな DB で始めるため、起動のたびに新しいデータディレクトリを作る
-const dataDir = path.join(process.cwd(), "node_modules", ".cache", `wiki-e2e-${Date.now()}`);
-fs.mkdirSync(dataDir, { recursive: true });
+// 毎回まっさらな DB で始めるため、実行のたびに新しいデータディレクトリを作る。
+// 設定ファイルはワーカーでも読み直されるので、環境変数で 1 回分の場所を引き継ぐ（e2e/global-teardown.ts が消す）
+const cacheDir = path.join(process.cwd(), "node_modules", ".cache");
+fs.mkdirSync(cacheDir, { recursive: true });
+const dataDir = (process.env.WIKI_E2E_DATA_DIR ??= fs.mkdtempSync(path.join(cacheDir, "wiki-e2e-")));
 
 // 手元で Playwright が求める版の Chromium が無いときだけ、実在のパスを環境変数で指す（CI では使わない）
 const executablePath = process.env.PW_CHROMIUM_PATH || undefined;
 
 export default defineConfig({
   testDir: "e2e",
+  globalTeardown: "./e2e/global-teardown.ts",
   // DB を共有し、テストが順番に依存するため 1 本ずつ実行する
   workers: 1,
   fullyParallel: false,

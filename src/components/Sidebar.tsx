@@ -68,10 +68,13 @@ export function Sidebar({ tree, canEdit, ...props }: { tree: TreeData | null; ca
   }, [currentPageId, currentFolderId, tree, parentOf]);
 
   const [expanded, setExpanded] = useState<Set<number>>(() => new Set(current.ancestors));
-  useEffect(() => {
-    // 別のページへ移動したら、そのページを含むフォルダを開く（手動で開いたものはそのまま）
-    setExpanded((prev) => (current.ancestors.every((id) => prev.has(id)) ? prev : new Set([...prev, ...current.ancestors])));
-  }, [current]);
+  // 別のページへ移動したら、そのページを含むフォルダを開く（手動で開いたものはそのまま）。
+  // 描画中に前回の位置と比べて更新する（effect で後から直すと、閉じた状態が一瞬描画される）
+  const [seenCurrent, setSeenCurrent] = useState(current);
+  if (current !== seenCurrent) {
+    setSeenCurrent(current);
+    if (!current.ancestors.every((id) => expanded.has(id))) setExpanded(new Set([...expanded, ...current.ancestors]));
+  }
 
   const setOpen = (id: number, open: boolean) =>
     setExpanded((prev) => {

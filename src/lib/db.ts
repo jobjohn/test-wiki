@@ -2,7 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import type { DatabaseSync, SQLInputValue } from "node:sqlite";
 import { dataDir } from "./env";
-import { MIGRATIONS } from "./migrations";
+import { MIGRATION_BACKFILLS, MIGRATIONS } from "./migrations";
 import { seedFreshDatabase } from "./seed";
 
 type Params = SQLInputValue[];
@@ -33,6 +33,8 @@ function migrate(db: DatabaseSync) {
   try {
     for (let i = current; i < MIGRATIONS.length; i++) db.exec(MIGRATIONS[i]);
     if (current === 0) seedFreshDatabase(db);
+    // 初期データも対象にするため、移行処理はすべての SQL と初期データの投入の後に行う
+    for (let i = current; i < MIGRATIONS.length; i++) MIGRATION_BACKFILLS[i]?.(db);
     db.exec(`PRAGMA user_version = ${MIGRATIONS.length}`);
     db.exec("COMMIT");
   } catch (error) {

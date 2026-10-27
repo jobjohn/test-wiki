@@ -69,19 +69,25 @@ export async function storeUpload(file: File, userId: number | null): Promise<Up
   if (file.size > MAX_UPLOAD_SIZE) throw new ValidationError(`ファイルは ${MAX_UPLOAD_SIZE / 1024 / 1024}MB 以下にしてください`);
 
   const key = randomBytes(16).toString("hex");
-  fs.mkdirSync(filesDir(), { recursive: true });
-  fs.writeFileSync(path.join(filesDir(), key), Buffer.from(await file.arrayBuffer()), { mode: 0o600 });
-
   const filename = (file.name || "file").replace(/[\\/\x00-\x1f]/g, "_").slice(0, 200) || "file";
-  const id = run(
-    "INSERT INTO uploads (filename, content_type, byte_size, storage_key, user_id, created_at) VALUES (?, ?, ?, ?, ?, ?)",
-    filename,
-    file.type || "application/octet-stream",
-    file.size,
-    key,
-    userId,
-    now(),
-  ).lastInsertRowid;
+  fs.mkdirSync(filesDir(), { recursive: true });
+  let id: number | bigint;
+  try {
+    fs.writeFileSync(path.join(filesDir(), key), Buffer.from(await file.arrayBuffer()), { mode: 0o600 });
+    id = run(
+      "INSERT INTO uploads (filename, content_type, byte_size, storage_key, user_id, created_at) VALUES (?, ?, ?, ?, ?, ?)",
+      filename,
+      file.type || "application/octet-stream",
+      file.size,
+      key,
+      userId,
+      now(),
+    ).lastInsertRowid;
+  } catch (error) {
+    // 書きかけ・登録できなかったファイルを残さない（どこからも参照されないゴミになるため）
+    removeUploadFile(key);
+    throw error;
+  }
   return getUpload(id)!;
 }
 

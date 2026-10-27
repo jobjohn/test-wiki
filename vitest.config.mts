@@ -6,6 +6,7 @@ export default defineConfig({
   test: {
     environment: "node",
     include: ["tests/**/*.test.ts"],
+    globalSetup: ["tests/global-setup.ts"],
     setupFiles: ["tests/setup.ts"],
     // 各テストファイルが独立した DB を使えるよう、ファイルごとにプロセスを分ける
     pool: "forks",
