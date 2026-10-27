@@ -1,5 +1,5 @@
 # Wiki の CI。
-# - check:     型チェックと自動テスト
+# - check:     型チェック・ESLint・自動テスト
 # - build:     本番ビルド（next build）
 # - storybook: Storybook のビルド
 # - e2e:       Playwright（Chromium）による E2E スモークテスト
@@ -41,6 +41,8 @@ jobs:
         run: npm ci
       - name: 型チェック
         run: npx tsc --noEmit
+      - name: ESLint
+        run: npm run lint
       - name: 自動テスト
         run: npx vitest run
 
