@@ -1,3 +1,6 @@
+import type { DatabaseSync } from "node:sqlite";
+import { rebuildPageLinks } from "./page-links";
+
 /**
  * スキーマ定義。PRAGMA user_version に適用済みの件数を記録し、
  * 未適用のものを起動時に順番に適用する。既存の項目は変更せず、末尾に追加すること。
@@ -223,4 +226,32 @@ export const MIGRATIONS: string[] = [
     b.updated_by, NULL, NULL, b.updated_at
   FROM bookmarks b;
   `,
+  // 全文検索（FTS5・trigram で日本語も部分一致）とバックリンク（[[リンク]] の索引）
+  // pages_fts は pages を元にした外部コンテンツ表で、トリガーで同期する。page_links はアプリ側で保存時に書き直す
+  `
+  CREATE VIRTUAL TABLE pages_fts USING fts5(title, body, content='pages', content_rowid='id', tokenize='trigram');
+  INSERT INTO pages_fts(pages_fts) VALUES ('rebuild');
+  CREATE TRIGGER pages_fts_after_insert AFTER INSERT ON pages BEGIN
+    INSERT INTO pages_fts(rowid, title, body) VALUES (new.id, new.title, new.body);
+  END;
+  CREATE TRIGGER pages_fts_after_delete AFTER DELETE ON pages BEGIN
+    INSERT INTO pages_fts(pages_fts, rowid, title, body) VALUES ('delete', old.id, old.title, old.body);
+  END;
+  CREATE TRIGGER pages_fts_after_update AFTER UPDATE OF title, body ON pages BEGIN
+    INSERT INTO pages_fts(pages_fts, rowid, title, body) VALUES ('delete', old.id, old.title, old.body);
+    INSERT INTO pages_fts(rowid, title, body) VALUES (new.id, new.title, new.body);
+  END;
+
+  CREATE TABLE page_links (
+    source_id INTEGER NOT NULL REFERENCES pages(id) ON DELETE CASCADE,
+    target_key TEXT NOT NULL,
+    PRIMARY KEY (source_id, target_key)
+  );
+  CREATE INDEX index_page_links_on_target_key ON page_links(target_key);
+  `,
 ];
+
+/** SQL だけでは書けない移行処理。キーは MIGRATIONS の添字で、その SQL の直後（初期データ投入の後）に実行する */
+export const MIGRATION_BACKFILLS: Record<number, (db: DatabaseSync) => void> = {
+  [MIGRATIONS.findIndex((sql) => sql.includes("CREATE TABLE page_links"))]: rebuildPageLinks,
+};

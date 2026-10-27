@@ -55,7 +55,7 @@ describe("ページのゴミ箱", () => {
     const target = createPage(input({ title: "退避ページ", body: "退避用のユニークな本文qwerty" }));
     // 退避するページ自身が [[リンク]] しているページの被リンクからも消える
     const linked = createPage(input({ title: "リンク先ページ" }));
-    run("UPDATE pages SET body = '[[リンク先ページ]] を参照' WHERE id = ?", target);
+    updatePage(target, input({ title: "退避ページ", body: "[[リンク先ページ]] を参照。退避用のユニークな本文qwerty" }), getPage(target)!.lockVersion);
     expect(backlinksFor(getPage(linked)!).map((b) => b.id)).toEqual([target]);
 
     trashPage(target, null);

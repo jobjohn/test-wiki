@@ -1,7 +1,7 @@
-import { all, get, run, transaction } from "./db";
+import { all, get, getDb, run, transaction } from "./db";
 import { NotFoundError, StaleError, ValidationError } from "./errors";
 import { escapeLike, keyOf, normalizeBody, now, parseTagList, squish } from "./text";
-import { extractWikiLinkTitles } from "./wikilinks";
+import { writePageLinks } from "./page-links";
 
 export const TITLE_MAX_LENGTH = 200;
 
@@ -219,6 +219,7 @@ export function createPage(data: PageInput): number {
     ).lastInsertRowid;
     recordRevision(id, title, body, data.summary || "作成", data.userId, data.source ?? null);
     replaceTags(id, parseTagList(data.tags));
+    writePageLinks(getDb(), id, body);
     return id;
   });
 }
@@ -246,6 +247,7 @@ export function updatePage(id: number, data: PageInput, lockVersion: number) {
     if (result.changes === 0) throw new StaleError();
     if (title !== current.title || body !== current.body) recordRevision(id, title, body, data.summary, data.userId, data.source ?? null);
     replaceTags(id, parseTagList(data.tags));
+    if (body !== current.body) writePageLinks(getDb(), id, body);
   });
 }
 
@@ -328,14 +330,28 @@ export function restoreRevision(pageId: number, number: number, userId: number |
 
 // ---- 検索・リンク ----
 
+/** FTS5 の trigram は 3 文字以上の語だけを索引で探せる。短い語は LIKE で探す */
+const FTS_MIN_LENGTH = 3;
+const ftsPhrase = (term: string) => `"${term.replace(/"/g, '""')}"`;
+
 function searchClause(query: string): { where: string; params: string[] } {
   const terms = query
     .split(/[\s　]+/)
     .filter(Boolean)
     .slice(0, 10);
-  const where = terms.map(() => "(p.title LIKE ? ESCAPE '\\' OR p.body LIKE ? ESCAPE '\\')").join(" AND ");
-  const params = terms.flatMap((t) => [`%${escapeLike(t)}%`, `%${escapeLike(t)}%`]);
-  return { where: where || "0", params };
+  const indexed = terms.filter((t) => [...t].length >= FTS_MIN_LENGTH);
+  const short = terms.filter((t) => [...t].length < FTS_MIN_LENGTH);
+  const clauses: string[] = [];
+  const params: string[] = [];
+  if (indexed.length) {
+    clauses.push("p.id IN (SELECT rowid FROM pages_fts WHERE pages_fts MATCH ?)");
+    params.push(indexed.map(ftsPhrase).join(" AND "));
+  }
+  for (const term of short) {
+    clauses.push("(p.title LIKE ? ESCAPE '\\' OR p.body LIKE ? ESCAPE '\\')");
+    params.push(`%${escapeLike(term)}%`, `%${escapeLike(term)}%`);
+  }
+  return { where: clauses.join(" AND ") || "0", params };
 }
 
 /** 空白区切りの全キーワードを含むページ（タイトル一致を先頭に） */
@@ -355,14 +371,10 @@ export function searchPages(query: string, limit: number, offset: number): { pag
 
 /** このページへ [[リンク]] しているページ */
 export function backlinksFor(page: Page): { id: number; title: string }[] {
-  const candidates = all<{ id: number; title: string; body: string }>(
-    "SELECT id, title, body FROM pages WHERE id != ? AND body LIKE ? ESCAPE '\\'",
+  return all<{ id: number; title: string }>(
+    `SELECT p.id, p.title FROM page_links l JOIN pages p ON p.id = l.source_id
+     WHERE l.target_key = ? AND p.id != ?`,
+    keyOf(page.title),
     page.id,
-    `%[[${escapeLike(page.title)}%`,
-  );
-  const key = keyOf(page.title);
-  return candidates
-    .filter((c) => extractWikiLinkTitles(c.body).some((t) => keyOf(t) === key))
-    .map(({ id, title }) => ({ id, title }))
-    .sort((a, b) => a.title.localeCompare(b.title, "ja"));
+  ).sort((a, b) => a.title.localeCompare(b.title, "ja"));
 }

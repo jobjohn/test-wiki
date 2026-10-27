@@ -1,4 +1,5 @@
-import { all, get, run, transaction } from "./db";
+import { all, get, getDb, run, transaction } from "./db";
+import { writePageLinks } from "./page-links";
 import { NotFoundError, ValidationError } from "./errors";
 import { deleteUnusedTags, ensureTag, tagsForPage } from "./pages";
 import { normalizeUrl, parseHttpUrl } from "./bookmark-utils";
@@ -247,6 +248,7 @@ function restorePage(id: number, { page, revisions, tags }: PagePayload) {
   }
   // 退避時に未使用のタグが掃除されていても、名前から作り直す
   for (const name of tags) run("INSERT OR IGNORE INTO taggings (page_id, tag_id) VALUES (?, ?)", id, ensureTag(name));
+  writePageLinks(getDb(), id, page.body);
 }
 
 function restoreBookmark(id: number, { bookmark: b, tags, revisions }: BookmarkPayload) {
