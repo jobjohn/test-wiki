@@ -59,8 +59,8 @@ export function uploadMarkdown(upload: Upload): string {
   return `${isImage(upload.contentType) ? "!" : ""}[${label}](${uploadPath(upload)})`;
 }
 
-export function readUploadFile(upload: Upload): Buffer {
-  return fs.readFileSync(path.join(filesDir(), upload.storageKey));
+export function uploadFilePath(upload: Upload): string {
+  return path.join(filesDir(), upload.storageKey);
 }
 
 /** ファイルを保存して DB に登録する */

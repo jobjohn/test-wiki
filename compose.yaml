@@ -13,6 +13,12 @@ services:
       TZ: ${TZ:-Asia/Tokyo}
       # リバースプロキシで HTTPS 化している場合は true（Cookie に Secure を付けます）
       FORCE_SSL: ${FORCE_SSL:-}
+      # ホーム画面に表示するページのタイトル（未設定なら「ホーム」）
+      WIKI_HOME_PAGE: ${WIKI_HOME_PAGE:-}
+      # 二段階認証の情報を暗号化する鍵（未設定なら初回に生成し、/data に保存します）
+      SECRET_KEY_BASE: ${SECRET_KEY_BASE:-}
+      # リバースプロキシの X-Forwarded-For を信頼してログイン試行を IP 単位でも制限する
+      TRUST_PROXY: ${TRUST_PROXY:-}
     volumes:
       - wiki-data:/data
 
