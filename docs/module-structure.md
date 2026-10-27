@@ -9,7 +9,7 @@ flowchart TD
   proxy["proxy.ts<br/>(リクエスト前処理・CSP nonce)"]
 
   subgraph app["app/ (Next.js App Router)"]
-    pages["(app)/ ・ (auth)/<br/>画面 page.tsx / layout.tsx<br/>not-found"]
+    pages["(app)/ ・ (auth)/<br/>画面 page.tsx / layout.tsx<br/>error ・ not-found ・ global-error"]
     routes["Route Handlers<br/>api/preview ・ api/uploads ・ api/mcp<br/>files/[id]/[name] ・ up<br/>wiki/[...title] ・ pages/[id]/markdown"]
   end
 
