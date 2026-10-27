@@ -136,7 +136,7 @@ SQLite データベース（`wiki.sqlite3`）とアップロードファイル�
 
 ## 開発
 
-Node.js 22.13 以上が必要です。
+Node.js 22.13 以上が必要です（CI と Docker は Node.js 22。`.nvmrc` があるので `nvm use` / `fnm use` で合わせられます）。
 
 ```bash
 npm install

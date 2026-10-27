@@ -15,3 +15,14 @@ tests
 storybook-static
 **/*.stories.tsx
 src/stories
+
+# 開発用のファイル（イメージに入れない）
+.claude
+.github
+e2e
+coverage
+test-results
+playwright-report
+blob-report
+storybook-shots
+*.tsbuildinfo
