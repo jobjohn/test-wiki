@@ -1,0 +1,25 @@
+# 依存パッケージと GitHub Actions の更新を週 1 回 PR で提案する
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+      timezone: Asia/Tokyo
+    open-pull-requests-limit: 5
+    groups:
+      # 互換性のある更新（minor / patch）はまとめて 1 つの PR にする
+      minor-and-patch:
+        update-types: [minor, patch]
+    ignore:
+      # 実行環境（Node 22）の型定義なので、メジャーは Node の更新と合わせて上げる
+      - dependency-name: "@types/node"
+        update-types: [version-update:semver-major]
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      timezone: Asia/Tokyo
+    groups:
+      actions:
+        patterns: ["*"]
