@@ -1,5 +1,4 @@
 import type { Meta, StoryObj } from "@storybook/nextjs-vite";
-import { FileText, History } from "lucide-react";
 import { FolderBreadcrumbs, SimpleBreadcrumb } from "./Breadcrumbs";
 
 const meta = { title: "Components/Breadcrumbs", component: FolderBreadcrumbs, tags: ["autodocs"] } satisfies Meta<typeof FolderBreadcrumbs>;

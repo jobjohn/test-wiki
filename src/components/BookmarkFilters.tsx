@@ -2,7 +2,7 @@
 
 import { Search, Tag as TagIcon } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
-import { type ReactNode, useEffect, useState, useTransition } from "react";
+import { type ReactNode, useState, useTransition } from "react";
 import { Badge } from "@/components/ui/badge";
 import { InputGroup, InputGroupAddon, InputGroupInput } from "@/components/ui/input-group";
 import { NativeSelect } from "@/components/ui/native-select";
@@ -30,8 +30,12 @@ export function BookmarkFilters({
   const pathname = usePathname();
   const [pending, startTransition] = useTransition();
   const [query, setQuery] = useState(q);
-  // タグのリンクなど、検索欄の外で条件が変わったときは検索欄も合わせる
-  useEffect(() => setQuery(q), [q]);
+  // タグのリンクなど、検索欄の外で条件が変わったときは検索欄も合わせる（描画中に前回の値と比べて更新する）
+  const [seenQ, setSeenQ] = useState(q);
+  if (q !== seenQ) {
+    setSeenQ(q);
+    setQuery(q);
+  }
 
   const navigate = (next: { q?: string; tag?: string; sort?: BookmarkSort }) => {
     const merged = { q: query, tag, sort, ...next };

@@ -61,7 +61,12 @@ export function PageForm({
   const dirty =
     title !== initial.title || body !== initial.body || tags !== initial.tags || folderId !== initial.folderId || position !== initial.position;
 
-  useEffect(() => setConflictDismissed(false), [state.conflict]);
+  // 保存のたびに新しい競合が返ってきたら、閉じた警告をもう一度出す（描画中に前回の値と比べて更新する）
+  const [seenConflict, setSeenConflict] = useState(state.conflict);
+  if (state.conflict !== seenConflict) {
+    setSeenConflict(state.conflict);
+    setConflictDismissed(false);
+  }
 
   // 未保存の変更がある状態での離脱（タブを閉じる・別ページへの移動）に確認を出す
   useEffect(() => {

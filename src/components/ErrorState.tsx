@@ -1,6 +1,7 @@
 "use client";
 
 import { RotateCcw, TriangleAlert } from "lucide-react";
+import Link from "next/link";
 import { useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Empty, EmptyContent, EmptyDescription, EmptyHeader, EmptyMedia, EmptyTitle } from "@/components/ui/empty";
@@ -40,8 +41,7 @@ export function ErrorState({ error, retry }: { error: unknown; retry: () => void
           再試行
         </Button>
         <Button variant="outline" asChild>
-          {/* エラー状態のルーターを使わず、ページを読み込み直してホームへ戻す */}
-          <a href="/">ホームに戻る</a>
+          <Link href="/">ホームに戻る</Link>
         </Button>
       </EmptyContent>
     </Empty>
