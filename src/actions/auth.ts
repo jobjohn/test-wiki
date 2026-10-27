@@ -4,8 +4,7 @@ import { redirect } from "next/navigation";
 import { safeNext } from "@/lib/access";
 import { setFlash } from "@/lib/flash";
 import { type FormState, str } from "@/lib/form";
-import { keyOf } from "@/lib/text";
-import { allowAttempt, clientIp, resetAttempts } from "@/lib/rate-limit";
+import { allowAttempt, allowLoginAttempt, clientIp, resetAttempts } from "@/lib/rate-limit";
 import { endSession, getPendingMfaUser, promoteSession, startSession } from "@/lib/session";
 import { authenticate, ensureDefaultAdmin, verifyMfaCode } from "@/lib/users";
 
@@ -17,9 +16,8 @@ export async function loginAction(_prev: FormState, data: FormData): Promise<For
   const email = str(data, "email");
   const next = safeNext(str(data, "next"));
 
-  // X-Forwarded-For は信頼できるプロキシの背後でないと偽装できるため、メールアドレス単位の制限も併用する
-  const allowed = allowAttempt(`login:${await clientIp()}`, 10, WINDOW) && allowAttempt(`login-user:${keyOf(email)}`, 20, 10 * 60_000);
-  if (!allowed) {
+  // X-Forwarded-For は TRUST_PROXY=true のときだけ信頼する（rate-limit.ts 参照）
+  if (!allowLoginAttempt(await clientIp(), email)) {
     return { errors: ["ログイン試行回数が多すぎます。しばらく待ってから再度お試しください。"], values: { email } };
   }
   const result = authenticate(email, str(data, "password"));

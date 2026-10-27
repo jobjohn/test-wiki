@@ -10,6 +10,11 @@ export function isSecure(): boolean {
   return process.env.FORCE_SSL === "true";
 }
 
+/** リバースプロキシの背後にあり、X-Forwarded-For を信頼してよい場合 */
+export function trustProxy(): boolean {
+  return process.env.TRUST_PROXY === "true";
+}
+
 export function timeZone(): string {
   return process.env.TZ || "Asia/Tokyo";
 }
