@@ -2,6 +2,7 @@ import { all, get, getDb, run, transaction } from "./db";
 import { NotFoundError, StaleError, ValidationError } from "./errors";
 import { escapeLike, keyOf, normalizeBody, now, parseTagList, squish } from "./text";
 import { writePageLinks } from "./page-links";
+import { renameWikiLinks } from "./wikilinks";
 
 export const TITLE_MAX_LENGTH = 200;
 
@@ -32,6 +33,10 @@ export interface Revision {
   summary: string | null;
   /** 書き込み元。null は画面、"mcp" は MCP 経由 */
   source: RevisionSource;
+  /** この版のタグ（", " 区切り）。null はタグとフォルダを記録する前の古い版 */
+  tags: string | null;
+  /** この版のフォルダ（tags が null の版では意味を持たない） */
+  folderId: number | null;
   createdAt: string;
   userId: number | null;
   userName: string | null;
@@ -172,6 +177,23 @@ export interface PageInput {
   source?: "mcp";
 }
 
+const TITLE_CLASH = "同じタイトルのページが既にあります";
+
+/**
+ * タイトルの一意制約違反を検証エラーに変える。
+ * 検証はトランザクション内で行うが、別プロセス（スクリプトなど）との競合では一意インデックスが最後の砦になる
+ */
+function withTitleClashAsValidation<T>(fn: () => T): T {
+  try {
+    return fn();
+  } catch (error) {
+    const sqlite = error as { errcode?: number; message?: string };
+    // 2067 = SQLITE_CONSTRAINT_UNIQUE
+    if (sqlite.errcode === 2067 && sqlite.message?.includes("pages.title_key")) throw new ValidationError([TITLE_CLASH]);
+    throw error;
+  }
+}
+
 function validate(input: PageInput, id?: number) {
   const errors: string[] = [];
   const title = squish(input.title);
@@ -179,7 +201,7 @@ function validate(input: PageInput, id?: number) {
   if (title.length > TITLE_MAX_LENGTH) errors.push(`タイトルは ${TITLE_MAX_LENGTH} 文字以内にしてください`);
   if (title) {
     const clash = get<{ id: number }>("SELECT id FROM pages WHERE title_key = ?", keyOf(title));
-    if (clash && clash.id !== id) errors.push("同じタイトルのページが既にあります");
+    if (clash && clash.id !== id) errors.push(TITLE_CLASH);
   }
   if (input.folderId !== null && !get("SELECT 1 FROM folders WHERE id = ?", input.folderId)) errors.push("フォルダが存在しません");
   if (!Number.isInteger(input.position)) errors.push("表示順は整数で指定してください");
@@ -187,10 +209,12 @@ function validate(input: PageInput, id?: number) {
   return title;
 }
 
+/** 版を記録する。タグはタグ付けを保存した後の内容（tagList）を記録するので、replaceTags の後に呼ぶ */
 function recordRevision(pageId: number, title: string, body: string, summary: string | undefined, userId: number | null, source: RevisionSource = null) {
   const next = (get<{ n: number | null }>("SELECT MAX(number) AS n FROM revisions WHERE page_id = ?", pageId)!.n ?? 0) + 1;
+  const { folder_id } = get<{ folder_id: number | null }>("SELECT folder_id FROM pages WHERE id = ?", pageId)!;
   run(
-    "INSERT INTO revisions (page_id, user_id, number, title, body, summary, source, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+    "INSERT INTO revisions (page_id, user_id, number, title, body, summary, source, tags, folder_id, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
     pageId,
     userId,
     next,
@@ -198,57 +222,93 @@ function recordRevision(pageId: number, title: string, body: string, summary: st
     body,
     summary?.trim() ? summary.trim().slice(0, 200) : null,
     source,
+    tagList(pageId),
+    folder_id,
     now(),
   );
 }
 
 export function createPage(data: PageInput): number {
-  const title = validate(data);
   const body = normalizeBody(data.body);
-  return transaction(() => {
-    const timestamp = now();
-    const id = run(
-      "INSERT INTO pages (title, title_key, body, folder_id, position, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)",
-      title,
-      keyOf(title),
-      body,
-      data.folderId,
-      data.position,
-      timestamp,
-      timestamp,
-    ).lastInsertRowid;
-    recordRevision(id, title, body, data.summary || "作成", data.userId, data.source ?? null);
-    replaceTags(id, parseTagList(data.tags));
-    writePageLinks(getDb(), id, body);
-    return id;
-  });
+  return withTitleClashAsValidation(() =>
+    transaction(() => {
+      const title = validate(data);
+      const timestamp = now();
+      const id = run(
+        "INSERT INTO pages (title, title_key, body, folder_id, position, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)",
+        title,
+        keyOf(title),
+        body,
+        data.folderId,
+        data.position,
+        timestamp,
+        timestamp,
+      ).lastInsertRowid;
+      replaceTags(id, parseTagList(data.tags));
+      recordRevision(id, title, body, data.summary || "作成", data.userId, data.source ?? null);
+      writePageLinks(getDb(), id, body);
+      return id;
+    }),
+  );
 }
 
-/** 更新する。lockVersion が最新でなければ StaleError（他の人が先に保存している） */
-export function updatePage(id: number, data: PageInput, lockVersion: number) {
-  const current = getPage(id);
-  if (!current) throw new NotFoundError("page not found");
-  const title = validate(data, id);
-  const body = normalizeBody(data.body);
+/**
+ * 改名したページへの [[旧タイトル]] リンクを、他のページの本文で新しいタイトルに書き換える。
+ * 書き換えたページには版を残し、編集中の人とは楽観ロックでぶつかるよう lock_version も進める。
+ * 戻り値は書き換えたページ数
+ */
+function relinkRenamedPage(pageId: number, oldTitle: string, newTitle: string, userId: number | null, source: RevisionSource): number {
+  const sources = all<{ id: number; title: string; body: string }>(
+    "SELECT p.id, p.title, p.body FROM pages p JOIN page_links l ON l.source_id = p.id WHERE l.target_key = ? AND p.id != ?",
+    keyOf(oldTitle),
+    pageId,
+  );
+  let count = 0;
+  for (const page of sources) {
+    const body = renameWikiLinks(page.body, oldTitle, newTitle);
+    if (body === page.body) continue;
+    run("UPDATE pages SET body = ?, lock_version = lock_version + 1, updated_at = ? WHERE id = ?", body, now(), page.id);
+    recordRevision(page.id, page.title, body, `「${oldTitle}」→「${newTitle}」の改名に合わせてリンクを更新`, userId, source);
+    writePageLinks(getDb(), page.id, body);
+    count++;
+  }
+  return count;
+}
 
-  transaction(() => {
-    const result = run(
-      `UPDATE pages SET title = ?, title_key = ?, body = ?, folder_id = ?, position = ?, lock_version = lock_version + 1, updated_at = ?
-       WHERE id = ? AND lock_version = ?`,
-      title,
-      keyOf(title),
-      body,
-      data.folderId,
-      data.position,
-      now(),
-      id,
-      lockVersion,
-    );
-    if (result.changes === 0) throw new StaleError();
-    if (title !== current.title || body !== current.body) recordRevision(id, title, body, data.summary, data.userId, data.source ?? null);
-    replaceTags(id, parseTagList(data.tags));
-    if (body !== current.body) writePageLinks(getDb(), id, body);
-  });
+/**
+ * 更新する。lockVersion が最新でなければ StaleError（他の人が先に保存している）。
+ * 改名したときは、他のページの [[旧タイトル]] リンクも同じトランザクションで書き換え、その件数を返す
+ */
+export function updatePage(id: number, data: PageInput, lockVersion: number): { relinkedPages: number } {
+  const body = normalizeBody(data.body);
+  return withTitleClashAsValidation(() =>
+    transaction(() => {
+      const current = getPage(id);
+      if (!current) throw new NotFoundError("page not found");
+      const title = validate(data, id);
+      const result = run(
+        `UPDATE pages SET title = ?, title_key = ?, body = ?, folder_id = ?, position = ?, lock_version = lock_version + 1, updated_at = ?
+         WHERE id = ? AND lock_version = ?`,
+        title,
+        keyOf(title),
+        body,
+        data.folderId,
+        data.position,
+        now(),
+        id,
+        lockVersion,
+      );
+      if (result.changes === 0) throw new StaleError();
+      const previousTags = tagList(id);
+      replaceTags(id, parseTagList(data.tags));
+      // 表示順だけの変更では版を残さない
+      const changed = title !== current.title || body !== current.body || tagList(id) !== previousTags || data.folderId !== current.folderId;
+      if (changed) recordRevision(id, title, body, data.summary, data.userId, data.source ?? null);
+      if (body !== current.body) writePageLinks(getDb(), id, body);
+      const renamed = keyOf(title) !== keyOf(current.title);
+      return { relinkedPages: renamed ? relinkRenamedPage(id, current.title, title, data.userId, data.source ?? null) : 0 };
+    }),
+  );
 }
 
 export function deletePage(id: number) {
@@ -266,6 +326,8 @@ interface RevisionRow {
   body: string;
   summary: string | null;
   source: string | null;
+  tags: string | null;
+  folder_id: number | null;
   created_at: string;
   user_id: number | null;
   user_name: string | null;
@@ -281,6 +343,8 @@ const mapRevision = (row: RevisionRow): Revision => ({
   body: row.body,
   summary: row.summary,
   source: row.source === "mcp" ? "mcp" : null,
+  tags: row.tags,
+  folderId: row.folder_id,
   createdAt: row.created_at,
   userId: row.user_id,
   userName: row.user_name,
@@ -308,19 +372,43 @@ export const recentRevisions = (limit: number, offset: number): (Revision & { pa
     offset,
   ).map((row) => ({ ...mapRevision(row), pageTitle: row.page_title }));
 
-/** 過去の版の内容に戻す（新しい版として保存される） */
+export type RestoreScope =
+  /** タイトル・本文・タグ・フォルダを戻す */
+  | "full"
+  /** タイトル・本文・タグを戻す（記録したフォルダが削除済みのため、フォルダは今のまま） */
+  | "folderMissing"
+  /** タイトルと本文だけを戻す（タグとフォルダを記録する前の古い版） */
+  | "titleAndBody";
+
+/** この版に戻したときに、どこまで戻せるか */
+export function restoreScope(revision: Revision): RestoreScope {
+  if (revision.tags === null) return "titleAndBody";
+  if (revision.folderId !== null && !get("SELECT 1 FROM folders WHERE id = ?", revision.folderId)) return "folderMissing";
+  return "full";
+}
+
+/** 「この版に戻す」の確認文 */
+export function restoreDescription(scope: RestoreScope): string {
+  const base = "この版の内容に戻します。現在の内容は履歴に残り、戻した内容が新しい版として保存されます。";
+  if (scope === "titleAndBody") return `${base}この版はタグとフォルダを記録する前の版のため、タイトルと本文だけを戻します（タグとフォルダは今のまま）。`;
+  if (scope === "folderMissing") return `${base}この版のフォルダは削除されているため、フォルダは今のままにします。`;
+  return `${base}タイトル・本文・タグ・フォルダを戻します。`;
+}
+
+/** 過去の版の内容に戻す（新しい版として保存される）。タグとフォルダは、版に記録があれば戻す */
 export function restoreRevision(pageId: number, number: number, userId: number | null) {
   const page = getPage(pageId);
   const revision = getRevision(pageId, number);
   if (!page || !revision) throw new NotFoundError("revision not found");
-  updatePage(
+  const scope = restoreScope(revision);
+  return updatePage(
     pageId,
     {
       title: revision.title,
       body: revision.body,
-      folderId: page.folderId,
+      folderId: scope === "full" ? revision.folderId : page.folderId,
       position: page.position,
-      tags: tagList(pageId),
+      tags: scope === "titleAndBody" ? tagList(pageId) : revision.tags!,
       summary: `第${revision.number}版に復元`,
       userId,
     },

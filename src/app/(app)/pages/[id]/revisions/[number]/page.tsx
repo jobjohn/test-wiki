@@ -1,6 +1,6 @@
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Table, TableBody, TableCell, TableRow } from "@/components/ui/table";
-import { ArrowLeft, ArrowRight, Clock, RotateCcw, User, ChevronRight } from "lucide-react";
+import { ArrowLeft, ArrowRight, Clock, Folder, RotateCcw, Tag, User, ChevronRight } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -15,7 +15,8 @@ import { requireAccess } from "@/lib/access";
 import { hunks, lineDiff } from "@/lib/diff";
 import { formatDateTime } from "@/lib/format";
 import { parseId } from "@/lib/params";
-import { getPage, getRevision, latestRevision, listRevisions } from "@/lib/pages";
+import { folderPathName, getFolder } from "@/lib/folders";
+import { getPage, getRevision, latestRevision, listRevisions, restoreDescription, restoreScope } from "@/lib/pages";
 import { canEdit } from "@/lib/users";
 import { Badge } from "@/components/ui/badge";
 
@@ -36,6 +37,8 @@ export default async function RevisionPage({ params }: { params: Promise<{ id: s
   const next = all[index - 1];
   const diff = lineDiff(previous?.body ?? "", revision.body);
   const isCurrent = latestRevision(page.id)?.number === revision.number;
+  const scope = restoreScope(revision);
+  const folder = revision.folderId === null ? undefined : getFolder(revision.folderId);
 
   return (
     <div className="grid gap-4">
@@ -60,6 +63,18 @@ export default async function RevisionPage({ params }: { params: Promise<{ id: s
           )}
           {revision.summary && <span>{revision.summary}</span>}
         </p>
+        {revision.tags === null ? (
+          <p className="mt-1 text-sm text-muted-foreground">この版はタグとフォルダを記録する前の版です。</p>
+        ) : (
+          <p className="mt-1 flex flex-wrap items-center gap-x-3 text-sm text-muted-foreground">
+            <span className="inline-flex items-center gap-1">
+              <Folder className="size-3.5" aria-hidden /> フォルダ: {folder ? folderPathName(folder) : revision.folderId === null ? "なし" : "（削除済み）"}
+            </span>
+            <span className="inline-flex items-center gap-1">
+              <Tag className="size-3.5" aria-hidden /> タグ: {revision.tags || "なし"}
+            </span>
+          </p>
+        )}
       </div>
 
       <div className="flex flex-wrap gap-2">
@@ -67,7 +82,7 @@ export default async function RevisionPage({ params }: { params: Promise<{ id: s
           <ConfirmAction
             action={restoreRevisionAction.bind(null, page.id, revision.number)}
             title={`第${revision.number}版に戻しますか？`}
-            description="この版の内容に戻します。現在の内容は履歴に残り、戻した内容が新しい版として保存されます。"
+            description={restoreDescription(scope)}
             confirmLabel="この版に戻す"
             trigger={
               <Button>

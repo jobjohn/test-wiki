@@ -19,7 +19,18 @@ export type { TrashKind };
 
 interface PagePayload {
   page: { title: string; body: string; folder_id: number | null; position: number; lock_version: number; created_at: string; updated_at: string };
-  revisions: { number: number; title: string; body: string; summary: string | null; source?: string | null; user_id: number | null; created_at: string }[];
+  revisions: {
+    number: number;
+    title: string;
+    body: string;
+    summary: string | null;
+    source?: string | null;
+    /** 版のタグとフォルダ。これらを記録する前の退避データには無い */
+    tags?: string | null;
+    folder_id?: number | null;
+    user_id: number | null;
+    created_at: string;
+  }[];
   tags: string[];
   /** いいね!。いいね!ができる前の退避データには無い */
   likes?: { user_id: number; created_at: string }[];
@@ -68,9 +79,19 @@ export function trashPage(id: number, userId: number | null) {
     const page = get<PagePayload["page"] & { id: number }>("SELECT * FROM pages WHERE id = ?", id);
     if (!page) throw new NotFoundError("page not found");
     const revisions = all<PagePayload["revisions"][number]>(
-      "SELECT number, title, body, summary, source, user_id, created_at FROM revisions WHERE page_id = ? ORDER BY number",
+      "SELECT number, title, body, summary, source, tags, folder_id, user_id, created_at FROM revisions WHERE page_id = ? ORDER BY number",
       id,
-    ).map((r) => ({ number: r.number, title: r.title, body: r.body, summary: r.summary, source: r.source, user_id: r.user_id, created_at: r.created_at }));
+    ).map((r) => ({
+      number: r.number,
+      title: r.title,
+      body: r.body,
+      summary: r.summary,
+      source: r.source,
+      tags: r.tags,
+      folder_id: r.folder_id,
+      user_id: r.user_id,
+      created_at: r.created_at,
+    }));
     const payload: PagePayload = {
       page: {
         title: page.title,
@@ -240,7 +261,7 @@ function restorePage(id: number, { page, revisions, tags, likes = [] }: PagePayl
   );
   for (const r of revisions) {
     run(
-      "INSERT INTO revisions (page_id, user_id, number, title, body, summary, source, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+      "INSERT INTO revisions (page_id, user_id, number, title, body, summary, source, tags, folder_id, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
       id,
       userExists(r.user_id),
       r.number,
@@ -249,6 +270,9 @@ function restorePage(id: number, { page, revisions, tags, likes = [] }: PagePayl
       r.summary,
       // 書き込み元を持たない古い退避データは画面からの版として戻す
       r.source ?? null,
+      // タグとフォルダを持たない古い退避データは、それらを記録する前の版として戻す
+      r.tags ?? null,
+      r.tags == null ? null : (r.folder_id ?? null),
       r.created_at,
     );
   }

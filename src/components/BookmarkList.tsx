@@ -37,7 +37,7 @@ export function BookmarkList({
         return (
           <Fragment key={bookmark.id}>
             {i > 0 && <ItemSeparator />}
-            <Item size="sm" className="items-start px-0">
+            <Item role="listitem" size="sm" className="items-start px-0">
               <ItemMedia variant="icon">
                 <Favicon src={bookmark.faviconUrl} />
               </ItemMedia>

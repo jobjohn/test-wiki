@@ -261,6 +261,12 @@ export const MIGRATIONS: string[] = [
   );
   CREATE INDEX index_page_likes_on_user_id ON page_likes(user_id);
   `,
+  // 版にタグ（", " 区切り）とフォルダも残す。既存の版は NULL のまま（タイトルと本文だけを記録していた版）。
+  // フォルダは削除されることがあるため外部キーにせず、復元時に存在を確かめる
+  `
+  ALTER TABLE revisions ADD COLUMN tags TEXT;
+  ALTER TABLE revisions ADD COLUMN folder_id INTEGER;
+  `,
   // ファイルの URL 用の推測できない鍵。既存のファイルには直後の移行処理で割り当てる（/files/<id>/<name> の URL もそのまま使える）
   `
   ALTER TABLE uploads ADD COLUMN access_key TEXT;

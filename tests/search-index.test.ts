@@ -71,21 +71,22 @@ describe("バックリンク（page_links）", () => {
     updatePage(source, input({ title: "リンク元ページ", body: "[[ リンク先ページ |別名]]" }), getPage(source)!.lockVersion);
     expect(backlinks()).toEqual(["リンク元ページ"]);
 
-    // リンク先を改名すると、古い名前へのリンクは数えない。同じ名前のページを作り直すとまた数える
+    // リンク先を改名すると、リンク元の本文も新しい名前に書き換わり、バックリンクが付いてくる
     updatePage(target, input({ title: "新しい名前" }), getPage(target)!.lockVersion);
-    expect(backlinks()).toEqual([]);
+    expect(getPage(source)!.body).toBe("[[新しい名前|別名]]");
+    expect(backlinks()).toEqual(["リンク元ページ"]);
     const recreated = createPage(input({ title: "リンク先ページ" }));
-    expect(backlinksFor(getPage(recreated)!).map((p) => p.title)).toEqual(["リンク元ページ"]);
+    expect(backlinksFor(getPage(recreated)!)).toEqual([]);
 
     // リンク元をゴミ箱に移すと外れ、復元すると戻る
     trashPage(source, null);
-    expect(backlinksFor(getPage(recreated)!)).toEqual([]);
+    expect(backlinks()).toEqual([]);
     const item = listTrash({ kind: "page", limit: 10, offset: 0 }).items.find((i) => i.itemId === source)!;
     restoreTrashItem(item.id);
-    expect(backlinksFor(getPage(recreated)!).map((p) => p.title)).toEqual(["リンク元ページ"]);
+    expect(backlinks()).toEqual(["リンク元ページ"]);
 
     deletePage(source);
-    expect(backlinksFor(getPage(recreated)!)).toEqual([]);
+    expect(backlinks()).toEqual([]);
   });
 
   it("初期データのページ間リンクも索引に入っている", () => {

@@ -29,7 +29,7 @@ export function PageList({ pages, query }: { pages: Page[]; query?: string }) {
       {pages.map((page, i) => (
         <Fragment key={page.id}>
           {i > 0 && <ItemSeparator />}
-          <Item size="sm" className="px-0">
+          <Item role="listitem" size="sm" className="px-0">
             <ItemMedia variant="icon">
               <FileText aria-hidden />
             </ItemMedia>

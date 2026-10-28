@@ -106,6 +106,25 @@ describe("ページのゴミ箱", () => {
     expect(listRevisions(old).map((r) => r.source)).toEqual([null]);
   });
 
+  it("版のタグとフォルダも退避・復元され、それらを持たない古い退避データは記録前の版として戻る", () => {
+    const folder = createFolder({ name: "版のフォルダ退避", parentId: null, position: 0 });
+    const id = createPage(input({ title: "版のタグ退避", tags: "退避タグ", folderId: folder }));
+    trashPage(id, null);
+    restoreTrashItem(trashIdOf("page", id));
+    expect(listRevisions(id).map((r) => [r.tags, r.folderId])).toEqual([["退避タグ", folder]]);
+
+    trashPage(id, null);
+    const row = get<{ id: number; payload: string }>("SELECT id, payload FROM trash_items WHERE kind = 'page' AND item_id = ?", id)!;
+    const legacy = JSON.parse(row.payload);
+    for (const r of legacy.revisions) {
+      delete r.tags;
+      delete r.folder_id;
+    }
+    run("UPDATE trash_items SET payload = ? WHERE id = ?", JSON.stringify(legacy), row.id);
+    restoreTrashItem(row.id);
+    expect(listRevisions(id).map((r) => [r.tags, r.folderId])).toEqual([[null, null]]);
+  });
+
   it("復元すると id・版番号・履歴・タグ・フォルダ・lock_version が元どおりに戻る", () => {
     const user = createUser({ email: "trash-editor@example.com", displayName: "編集者", role: "general", password: "password123" });
     const folder = createFolder({ name: "復元フォルダ", parentId: null, position: 0 });

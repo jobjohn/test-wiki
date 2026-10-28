@@ -148,11 +148,30 @@ docker compose exec wiki node scripts/reset-password.mjs you@example.com 新し�
 
 ## バックアップ
 
+動かしたままバックアップできます。`scripts/backup.mjs` が、SQLite の `VACUUM INTO` で整合の取れたデータベースを書き出し、アップロードファイル（`files/`）と秘密鍵などのその他のファイルをコピーします。
+
 ```bash
-docker compose cp wiki:/data ./backup
+# /data/backups/<日時>/ に作成し、手元へ取り出す
+docker compose exec wiki node scripts/backup.mjs
+docker compose cp wiki:/data/backups ./backups
+# 取り出したらコンテナ内の古いバックアップは消してかまいません
+docker compose exec wiki sh -c 'rm -rf /data/backups/*'
 ```
 
-SQLite データベース（`wiki.sqlite3`）とアップロードファイル（`files/`）が含まれます。復元するときは、`docker compose down` のあとでボリュームに書き戻してください。
+開発環境では `npm run backup`（`./storage/backups/<日時>/` に作成）、出力先を指定するなら `npm run backup -- ./my-backup` です。
+
+`/data` を `docker compose cp` でそのままコピーするのは避けてください。データベースは WAL モードなので、書き込み中に本体と `-wal` ファイルを別々にコピーすると、壊れた・欠けたバックアップになることがあります（コンテナを止めてからなら問題ありません）。
+
+### 復元
+
+```bash
+docker compose stop wiki
+# バックアップの中身（wiki.sqlite3・files/ など）を /data に書き戻す
+docker compose cp ./backups/<日時>/. wiki:/data/
+# 古い WAL が残っていると復元したデータベースと食い違うため必ず消し、書き戻したファイルの所有者をアプリのユーザーに戻す
+docker compose run --rm --no-deps --user root --entrypoint sh wiki -c 'rm -f /data/wiki.sqlite3-wal /data/wiki.sqlite3-shm && chown -R wiki:wiki /data'
+docker compose start wiki
+```
 
 ## 開発
 
