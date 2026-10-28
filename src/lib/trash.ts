@@ -20,6 +20,8 @@ interface PagePayload {
   page: { title: string; body: string; folder_id: number | null; position: number; lock_version: number; created_at: string; updated_at: string };
   revisions: { number: number; title: string; body: string; summary: string | null; source?: string | null; user_id: number | null; created_at: string }[];
   tags: string[];
+  /** いいね!。いいね!ができる前の退避データには無い */
+  likes?: { user_id: number; created_at: string }[];
 }
 
 interface BookmarkPayload {
@@ -79,6 +81,7 @@ export function trashPage(id: number, userId: number | null) {
       },
       revisions,
       tags: tagsForPage(id).map((t) => t.name),
+      likes: all<{ user_id: number; created_at: string }>("SELECT user_id, created_at FROM page_likes WHERE page_id = ? ORDER BY id", id),
     };
     insertTrash("page", id, page.title, payload, userId);
     run("DELETE FROM pages WHERE id = ?", id);
@@ -214,7 +217,7 @@ export function restoreTrashItem(id: number): RestoredItem {
   });
 }
 
-function restorePage(id: number, { page, revisions, tags }: PagePayload) {
+function restorePage(id: number, { page, revisions, tags, likes = [] }: PagePayload) {
   const clash = get<{ id: number }>("SELECT id FROM pages WHERE title_key = ?", keyOf(page.title));
   if (clash) throw new ValidationError(`同じタイトルのページ「${page.title}」が既にあるため、復元できません。先にどちらかのタイトルを変えてください`);
   // フォルダが消えていればルートに戻す
@@ -248,6 +251,10 @@ function restorePage(id: number, { page, revisions, tags }: PagePayload) {
   }
   // 退避時に未使用のタグが掃除されていても、名前から作り直す
   for (const name of tags) run("INSERT OR IGNORE INTO taggings (page_id, tag_id) VALUES (?, ?)", id, ensureTag(name));
+  // 退避中に削除されたユーザーのいいね!は戻さない
+  for (const like of likes) {
+    if (userExists(like.user_id) !== null) run("INSERT OR IGNORE INTO page_likes (page_id, user_id, created_at) VALUES (?, ?, ?)", id, like.user_id, like.created_at);
+  }
   writePageLinks(getDb(), id, page.body);
 }
 

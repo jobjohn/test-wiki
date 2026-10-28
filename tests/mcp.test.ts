@@ -209,6 +209,7 @@ describe("MCP プロトコルとツール", () => {
       folder: "開発 / 手順",
       tags: ["手順", "運用"],
       revision: 1,
+      likes: 0,
       hasMore: false,
       url: `http://wiki.test/pages/${pageId}`,
     });
