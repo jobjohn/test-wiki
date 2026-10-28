@@ -5,7 +5,7 @@ import { redirect } from "next/navigation";
 import { guardAction } from "@/lib/access";
 import { NotFoundError, StaleError, ValidationError } from "@/lib/errors";
 import { setFlash } from "@/lib/flash";
-import { type FormState, int, optionalId, str, values } from "@/lib/form";
+import { type FormState, int, optionalId, positionField, str, values } from "@/lib/form";
 import { createPage, getPage, restoreRevision, tagList, updatePage } from "@/lib/pages";
 import { safePurge, TRASH_RETENTION_DAYS, trashPage } from "@/lib/trash";
 
@@ -49,7 +49,7 @@ export async function savePageAction(_prev: FormState, data: FormData): Promise<
             body: latest.body,
             tags: tagList(id),
             folderId: latest.folderId === null ? "" : String(latest.folderId),
-            position: String(latest.position),
+            position: positionField(latest.position),
             lockVersion: latest.lockVersion,
           },
         },

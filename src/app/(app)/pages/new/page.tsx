@@ -20,7 +20,7 @@ export default async function NewPage({ searchParams }: { searchParams: Promise<
       <PageTitle icon={FilePlus}>新規ページ作成</PageTitle>
       <PageForm
         pageId={null}
-        initial={{ title, body: "", folderId, position: "0", tags: "", lockVersion: 0 }}
+        initial={{ title, body: "", folderId, position: "", tags: "", lockVersion: 0 }}
         folders={folderOptions()}
         tagSuggestions={listTagNames()}
         cancelHref={folderId ? `/folders/${folderId}` : "/"}

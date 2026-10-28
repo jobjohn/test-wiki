@@ -6,6 +6,7 @@ import { PageTitle } from "@/components/PageTitle";
 import { requireAccess } from "@/lib/access";
 import { folderOptions, getFolder, selfAndDescendantIds } from "@/lib/folders";
 import { parseId } from "@/lib/params";
+import { positionField } from "@/lib/form";
 
 export const metadata: Metadata = { title: "フォルダの編集" };
 
@@ -19,7 +20,7 @@ export default async function EditFolderPage({ params }: { params: Promise<{ id:
       <PageTitle icon={FolderInput}>フォルダの名前変更・移動</PageTitle>
       <FolderForm
         folderId={folder.id}
-        initial={{ name: folder.name, parentId: folder.parentId === null ? "" : String(folder.parentId), position: String(folder.position) }}
+        initial={{ name: folder.name, parentId: folder.parentId === null ? "" : String(folder.parentId), position: positionField(folder.position) }}
         options={folderOptions(selfAndDescendantIds(folder.id))}
         cancelHref={`/folders/${folder.id}`}
       />

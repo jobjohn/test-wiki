@@ -7,6 +7,7 @@ import { requireAccess } from "@/lib/access";
 import { folderOptions } from "@/lib/folders";
 import { parseId } from "@/lib/params";
 import { getPage, listTagNames, tagList } from "@/lib/pages";
+import { positionField } from "@/lib/form";
 
 export const metadata: Metadata = { title: "ページを編集" };
 
@@ -26,7 +27,7 @@ export default async function EditPage({ params }: { params: Promise<{ id: strin
           title: page.title,
           body: page.body,
           folderId: page.folderId === null ? "" : String(page.folderId),
-          position: String(page.position),
+          position: positionField(page.position),
           tags: tagList(page.id),
           lockVersion: page.lockVersion,
         }}
