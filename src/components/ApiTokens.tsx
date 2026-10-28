@@ -8,7 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Field, FieldDescription, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
-import { NativeSelect } from "@/components/ui/native-select";
+import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import {
   DEFAULT_TOKEN_EXPIRY,
@@ -83,10 +83,10 @@ export function ApiTokenForm({ origin, writeEnabled = false }: { origin: string;
             <Field>
               <FieldLabel htmlFor="token-scope">権限</FieldLabel>
               <NativeSelect id="token-scope" name="scope" value={scope} onChange={(e) => setScope(isTokenScope(e.target.value) ? e.target.value : "read")}>
-                <option value="read">{TOKEN_SCOPES.read}</option>
-                <option value="write" disabled={!writeEnabled}>
+                <NativeSelectOption value="read">{TOKEN_SCOPES.read}</NativeSelectOption>
+                <NativeSelectOption value="write" disabled={!writeEnabled}>
                   {TOKEN_SCOPES.write}
-                </option>
+                </NativeSelectOption>
               </NativeSelect>
               {!writeEnabled && <FieldDescription>書き込みは、管理者が設定で許可すると選べます。</FieldDescription>}
             </Field>
@@ -94,9 +94,9 @@ export function ApiTokenForm({ origin, writeEnabled = false }: { origin: string;
               <FieldLabel htmlFor="token-expiry">有効期限</FieldLabel>
               <NativeSelect id="token-expiry" name="expiry" value={expiryValue} onChange={(e) => setExpiry(e.target.value)}>
                 {expiries.map(([value, { label }]) => (
-                  <option key={value} value={value}>
+                  <NativeSelectOption key={value} value={value}>
                     {label}
-                  </option>
+                  </NativeSelectOption>
                 ))}
               </NativeSelect>
             </Field>

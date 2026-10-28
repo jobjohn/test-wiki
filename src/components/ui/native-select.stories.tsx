@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from "@storybook/nextjs-vite";
-import { NativeSelect } from "./native-select";
+import { NativeSelect, NativeSelectOption } from "./native-select";
 
 const meta = {
   title: "UI/NativeSelect",
@@ -9,9 +9,9 @@ const meta = {
   render: (args) => (
     <div className="w-72">
       <NativeSelect aria-label="フォルダ" {...args}>
-        <option value="">（トップ）</option>
-        <option value="1">開発</option>
-        <option value="2">開発 / API</option>
+        <NativeSelectOption value="">（トップ）</NativeSelectOption>
+        <NativeSelectOption value="1">開発</NativeSelectOption>
+        <NativeSelectOption value="2">開発 / API</NativeSelectOption>
       </NativeSelect>
     </div>
   ),
