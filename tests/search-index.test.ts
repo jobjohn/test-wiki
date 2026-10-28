@@ -100,7 +100,8 @@ describe("検索・リンクの索引のマイグレーション", () => {
     const db = new DatabaseSync(":memory:");
     db.exec("PRAGMA foreign_keys = ON");
     const index = MIGRATIONS.findIndex((sql) => sql.includes("CREATE TABLE page_links"));
-    expect(index).toBe(MIGRATIONS.length - 1);
+    // 新しいマイグレーションが後ろに足されても成り立つよう、「リンクの変更履歴より後」だけを確かめる
+    expect(index).toBeGreaterThan(MIGRATIONS.findIndex((sql) => sql.includes("CREATE TABLE bookmark_revisions")));
     for (const sql of MIGRATIONS.slice(0, index)) db.exec(sql);
     const insert = db.prepare("INSERT INTO pages (title, title_key, body, created_at, updated_at) VALUES (?, ?, ?, 't', 't')");
     insert.run("移行前のページ", "移行前のページ", "古い本文たちつてと [[別のページ]]");

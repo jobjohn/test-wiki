@@ -61,6 +61,7 @@ flowchart LR
   subgraph domain["ドメイン"]
     pages
     page-links
+    page-likes
     folders
     bookmarks
     bookmark-utils
@@ -96,6 +97,7 @@ flowchart LR
   markdown --> pages & text & wikilinks
   pages --> db & errors & page-links & text
   page-links --> text & wikilinks
+  page-likes --> db & errors & text
   folders --> db & errors & text
   bookmarks --> bookmark-utils & db & errors & pages & text
   bookmark-utils --> text
@@ -118,6 +120,7 @@ flowchart LR
 
 - `pages_fts`（FTS5・trigram）は `pages` の外部コンテンツ索引で、トリガーが INSERT/UPDATE/DELETE に追従させる。`pages.searchPages` は 3 文字以上の語を索引で、それより短い語を LIKE で絞り込む。
 - `page_links`（リンク元 ID × リンク先タイトルキー）は `page-links.writePageLinks` が作成・保存・復元のたびに書き直す。リンク元の削除は外部キーの CASCADE で消える。`pages.backlinksFor` はここを引く。
+- `page_likes`（ページ ID × ユーザー ID、組み合わせは一意）は「いいね!」。`page-likes.setPageLike` は切り替えではなく目標の状態（付ける / 外す）を受け取るので、二重送信しても数がずれない。ページ・ユーザーの削除は外部キーの CASCADE で消え、ゴミ箱へ移すときは退避データに含めて、復元時に（まだ存在するユーザーの分だけ）戻す。いいね!できるのはログインしている人全員で、未ログインの閲覧（ログインなしで閲覧を許可）では数だけを表示する。MCP の `get_page` は数（`likes`）だけを読み取り専用で返す。
 - 既存データの取り込みは `migrations.MIGRATION_BACKFILLS` を `db.migrate` がマイグレーション直後に実行する。
 
 ## lib/mcp/
@@ -128,7 +131,7 @@ flowchart LR
   handler --> tools
   handler --> api-tokens & origin & rate-limit
   tools --> result & write-tools
-  tools --> pages & folders & bookmarks & bookmark-utils & format & text
+  tools --> pages & page-likes & folders & bookmarks & bookmark-utils & format & text
   write-tools --> result
   write-tools --> pages & bookmarks & bookmark-utils & url-metadata & users & settings & rate-limit & api-write-logs & errors & text
 ```
@@ -141,6 +144,7 @@ flowchart LR
 | `account.ts` | access, session, users, settings, rate-limit, flash, form, errors |
 | `api-tokens.ts` | access, api-tokens, flash, form, errors |
 | `pages.ts` | access, pages, trash, flash, form, errors |
+| `likes.ts` | access, page-likes, errors |
 | `folders.ts` | access, folders, flash, form, errors |
 | `bookmarks.ts` | access, bookmarks, bookmark-utils, url-metadata, trash, rate-limit, flash, form, errors |
 | `uploads.ts` | access, uploads, trash, flash, errors |

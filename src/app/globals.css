@@ -62,6 +62,22 @@
   }
 }
 
+/*
+ * dark: バリアントを表示モードの設定（<html data-theme>）に合わせる。
+ * Tailwind の既定は OS の配色（prefers-color-scheme）だけを見るため、設定と OS が食い違うと
+ * shadcn/ui の部品の dark: だけが逆の配色になっていた
+ */
+@custom-variant dark {
+  &:where([data-theme="dark"], [data-theme="dark"] *) {
+    @slot;
+  }
+  @media (prefers-color-scheme: dark) {
+    &:where([data-theme="system"], [data-theme="system"] *) {
+      @slot;
+    }
+  }
+}
+
 @utility no-scrollbar {
   -ms-overflow-style: none;
   scrollbar-width: none;
@@ -177,49 +193,10 @@
   --hl-meta: #6e7781;
 }
 
-/* ダークモード（設定が「ダーク」、または「システムに合わせる」で OS がダークのとき） */
-:root[data-theme="dark"] {
-  color-scheme: dark;
-  --background: oklch(0.153 0.006 107.1);
-  --foreground: oklch(0.988 0.003 106.5);
-  --card: oklch(0.228 0.013 107.4);
-  --popover: oklch(0.228 0.013 107.4);
-  --secondary: oklch(0.286 0.016 107.4);
-  --secondary-foreground: oklch(0.988 0.003 106.5);
-  --muted: oklch(0.286 0.016 107.4);
-  --muted-foreground: oklch(0.737 0.021 106.9);
-  --accent: oklch(0.286 0.016 107.4);
-  --accent-foreground: oklch(0.988 0.003 106.5);
-  --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.58 0.031 107.3);
-  --primary: oklch(0.448 0.119 151.328);
-  --highlight: oklch(0.93 0.007 106.5);
-  --highlight-foreground: oklch(0.228 0.013 107.4);
-  --sidebar: oklch(0.228 0.013 107.4);
-  --sidebar-foreground: oklch(0.988 0.003 106.5);
-  --sidebar-primary: oklch(0.723 0.219 149.579);
-  --sidebar-accent: oklch(0.286 0.016 107.4);
-  --sidebar-accent-foreground: oklch(0.988 0.003 106.5);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.58 0.031 107.3);
-  /* リンクの文字は、暗い背景でも読めるよう明るい緑（テーマ green のダーク用の明るい色） */
-  --link: oklch(0.723 0.219 149.579);
-  --highlight-text: color-mix(in srgb, var(--highlight) 70%, #ffffff);
-  --success: #4ade80;
-  --hl-comment: #8b949e;
-  --hl-keyword: #ff7b72;
-  --hl-string: #a5d6ff;
-  --hl-number: #79c0ff;
-  --hl-title: #d2a8ff;
-  --hl-builtin: #ffa657;
-  --hl-tag: #7ee787;
-  --hl-meta: #8b949e;
-}
-@media (prefers-color-scheme: dark) {
-  /* 「システムに合わせる」で OS がダークのときも、ダークモードと同じ配色にする */
-  :root[data-theme="system"] {
+/* ダークモード（設定が「ダーク」、または「システムに合わせる」で OS がダークのとき）。
+ * 条件は上の @custom-variant dark にまとめてあり、Tailwind の dark: と同じ条件で切り替わる */
+:root {
+  @variant dark {
     color-scheme: dark;
     --background: oklch(0.153 0.006 107.1);
     --foreground: oklch(0.988 0.003 106.5);
@@ -246,7 +223,7 @@
     --sidebar-border: oklch(1 0 0 / 10%);
     --sidebar-ring: oklch(0.58 0.031 107.3);
     /* リンクの文字は、暗い背景でも読めるよう明るい緑（テーマ green のダーク用の明るい色） */
-  --link: oklch(0.723 0.219 149.579);
+    --link: oklch(0.723 0.219 149.579);
     --highlight-text: color-mix(in srgb, var(--highlight) 70%, #ffffff);
     --success: #4ade80;
     --hl-comment: #8b949e;

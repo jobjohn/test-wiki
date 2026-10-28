@@ -249,6 +249,17 @@ export const MIGRATIONS: string[] = [
   );
   CREATE INDEX index_page_links_on_target_key ON page_links(target_key);
   `,
+  // ページの「いいね!」（ログインユーザーごとに 1 回）。ページ・ユーザーの削除で一緒に消える
+  `
+  CREATE TABLE page_likes (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    page_id INTEGER NOT NULL REFERENCES pages(id) ON DELETE CASCADE,
+    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    created_at TEXT NOT NULL,
+    UNIQUE (page_id, user_id)
+  );
+  CREATE INDEX index_page_likes_on_user_id ON page_likes(user_id);
+  `,
 ];
 
 /** SQL だけでは書けない移行処理。キーは MIGRATIONS の添字で、その SQL の直後（初期データ投入の後）に実行する */

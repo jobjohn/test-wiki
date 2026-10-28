@@ -5,6 +5,7 @@ import { notFound } from "next/navigation";
 import { deletePageAction } from "@/actions/pages";
 import { FolderBreadcrumbs } from "@/components/Breadcrumbs";
 import { ConfirmAction } from "@/components/ConfirmAction";
+import { LikeButton } from "@/components/LikeButton";
 import { Markdown } from "@/components/Markdown";
 import { PageTitle } from "@/components/PageTitle";
 import { Tags } from "@/components/Tags";
@@ -14,6 +15,7 @@ import { Separator } from "@/components/ui/separator";
 import { canViewContent, requireAccess } from "@/lib/access";
 import { formatDateTime } from "@/lib/format";
 import { getFolder } from "@/lib/folders";
+import { pageLikes } from "@/lib/page-likes";
 import { parseId } from "@/lib/params";
 import { backlinksFor, getPage, latestRevision, tagsForPage } from "@/lib/pages";
 import { canEdit } from "@/lib/users";
@@ -80,6 +82,7 @@ export default async function PageView({ params }: Props) {
               Markdown
             </a>
           </Button>
+          <LikeButton pageId={page.id} initial={pageLikes(page.id, user?.id ?? null)} canLike={user !== null} />
           {editable && (
             <ConfirmAction
               action={deletePageAction.bind(null, page.id)}
