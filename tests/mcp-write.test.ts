@@ -320,6 +320,23 @@ describe("監査ログと回数制限", () => {
     expect(all("SELECT 1 FROM api_write_logs WHERE api_token_id = ?", tokenId)).toHaveLength(2);
   });
 
+  it("書き込みを構造化ログ（1 行の JSON）にも残す。トークン名・本文・トークンは書かない", async () => {
+    const token = newWriteToken();
+    const tokenId = get<{ id: number }>("SELECT id FROM api_tokens ORDER BY id DESC LIMIT 1")!.id;
+    const spy = vi.spyOn(console, "log").mockImplementation(() => {});
+    try {
+      const created = await call(token, "create_page", { title: "構造化ログ", body: "ひみつの本文" });
+      const id = (created.structuredContent as { id: number }).id;
+      const lines = spy.mock.calls.map(([line]) => String(line)).filter((line) => line.includes('"mcp.write"'));
+      expect(lines).toHaveLength(1);
+      expect(JSON.parse(lines[0])).toEqual({ time: expect.any(String), level: "info", event: "mcp.write", tool: "create_page", targetKind: "page", targetId: id, userId, tokenId });
+      expect(lines[0]).not.toMatch(/write-\d|ひみつ|構造化ログ/);
+      expect(lines[0]).not.toContain(token);
+    } finally {
+      spy.mockRestore();
+    }
+  });
+
   it("書き込みは 1 分に 20 回まで。21 回目は isError", async () => {
     const token = newWriteToken();
     const client = await connect(token);

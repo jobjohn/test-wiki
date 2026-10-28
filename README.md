@@ -130,6 +130,21 @@ docker compose exec wiki node scripts/reset-password.mjs you@example.com 新し�
 docker compose exec wiki node scripts/reset-password.mjs you@example.com 新しいパスワード --activate
 ```
 
+## ログ
+
+サーバーのログ（`docker compose logs wiki`）には、次の出来事が 1 行 1 件の JSON（`{"time":…,"level":…,"event":…}`）で出力されます。
+
+| event | 内容 |
+| --- | --- |
+| `auth.login` | ログインした（`userId`、二段階認証を経たか） |
+| `auth.login_failed` | ログインに失敗した（`reason`: `invalid` / `disabled` / `rate_limited`、`emailHash`） |
+| `auth.mfa_failed` | 二段階認証のパスコードが違う・回数制限（`userId`） |
+| `mcp.write` | AI（MCP）からの書き込み（ツール名・対象・`userId`・`tokenId`） |
+| `mcp.write_rejected` / `mcp.write_error` / `mcp.tool_error` | MCP の書き込みの回数制限・処理中のエラー |
+| `request.error` | サーバー側で処理しきれなかったエラー（ルートの型、例外の名前・メッセージ・スタックの先頭） |
+
+パスワード・トークン・メールアドレス・IP アドレス・本文・実際の URL は出力しません。`emailHash` は秘密鍵を使ったメールアドレスのハッシュで、同じアドレスなら同じ値になります（ログだけからアドレスを推測することはできません）。
+
 ## バックアップ
 
 ```bash

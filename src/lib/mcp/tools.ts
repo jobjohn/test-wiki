@@ -15,6 +15,7 @@ import {
   tagsForPage,
 } from "../pages";
 import { formatDateTime } from "../format";
+import { errorFields, logEvent } from "../log";
 import { likeCount } from "../page-likes";
 import { keyOf } from "../text";
 import { fail, ok, UNTRUSTED_NOTICE } from "./result";
@@ -76,7 +77,7 @@ export function createMcpServer(origin: string, auth?: McpAuth): McpServer {
         try {
           return await callback(...args);
         } catch (error) {
-          console.error(`[mcp] ツール ${name} の処理中にエラーが発生しました`, error);
+          logEvent("error", "mcp.tool_error", { tool: name, ...errorFields(error) });
           return fail("処理中にエラーが発生しました。時間をおいて再度お試しください。");
         }
       }) as never,
