@@ -15,6 +15,10 @@ updates:
       # 実行環境（Node 22）の型定義なので、メジャーは Node の更新と合わせて上げる
       - dependency-name: "@types/node"
         update-types: [version-update:semver-major]
+      # typescript-eslint 8.x が typescript <6.1.0 までしか対応していない（7.x だと npm ci が ERESOLVE で失敗する）。
+      # typescript-eslint が新しいメジャーに対応したら、この ignore を外して一緒に上げる
+      - dependency-name: typescript
+        update-types: [version-update:semver-major]
   - package-ecosystem: github-actions
     directory: /
     schedule:

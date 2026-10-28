@@ -162,10 +162,12 @@
   --secondary: oklch(0.966 0.005 106.5);
   --secondary-foreground: oklch(0.228 0.013 107.4);
   --muted: oklch(0.966 0.005 106.5);
-  --muted-foreground: oklch(0.58 0.031 107.3);
+  /* 白地・muted 地のどちらでも WCAG AA（4.5:1）を満たす濃さ（元のプリセットは 0.58 で 4.25:1 だった） */
+  --muted-foreground: oklch(0.54 0.031 107.3);
   --accent: oklch(0.966 0.005 106.5);
   --accent-foreground: oklch(0.228 0.013 107.4);
-  --destructive: oklch(0.577 0.245 27.325);
+  /* 薄い赤の背景（destructive/10）に載せても 4.5:1 を満たす濃さ（元は 0.577 で 4:1） */
+  --destructive: oklch(0.52 0.21 27.325);
   --border: oklch(0.93 0.007 106.5);
   --input: oklch(0.93 0.007 106.5);
   --ring: oklch(0.737 0.021 106.9);
@@ -181,7 +183,8 @@
 
   --link: var(--primary);
   --highlight-text: color-mix(in srgb, var(--highlight) 55%, var(--foreground));
-  --success: #15803d;
+  /* 薄い緑の背景（バッジ）に載せても 4.5:1 を満たす濃さ（元は #15803d で 4.1:1） */
+  --success: #166534;
 
   --hl-comment: #6b7280;
   --hl-keyword: #cf222e;
