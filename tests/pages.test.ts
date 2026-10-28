@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { getDb } from "@/lib/db";
 import { StaleError, ValidationError } from "@/lib/errors";
 import { createFolder } from "@/lib/folders";
@@ -14,13 +14,16 @@ import {
   listRevisions,
   listTagNames,
   listTagsWithCounts,
+  restoreDescription,
   restoreRevision,
+  restoreScope,
   searchPages,
   tagList,
   updatePage,
   type PageInput,
 } from "@/lib/pages";
 import { createUser } from "@/lib/users";
+import { renameWikiLinks } from "@/lib/wikilinks";
 
 const input = (overrides: Partial<PageInput> = {}): PageInput => ({
   title: "無題",
@@ -33,7 +36,7 @@ const input = (overrides: Partial<PageInput> = {}): PageInput => ({
 });
 
 describe("ページと履歴", () => {
-  it("作成時と本文・タイトルの変更時に版を記録し、それ以外の変更では記録しない", () => {
+  it("作成時と本文・タイトル・タグ・フォルダの変更時に版を記録し、表示順だけの変更では記録しない", () => {
     getDb();
     const userId = createUser({ email: "author@example.com", displayName: "編集 太郎", role: "general", password: "password123" });
     const id = createPage(input({ title: "履歴テスト", body: "one", summary: "作成", userId }));
@@ -48,6 +51,15 @@ describe("ページと履歴", () => {
     updatePage(id, input({ title: "履歴テスト", body: "two", position: 5, userId }), page.lockVersion);
     expect(listRevisions(id)).toHaveLength(2);
     expect(getPage(id)?.position).toBe(5);
+
+    const folder = createFolder({ name: "版のフォルダ", parentId: null, position: 0 });
+    updatePage(id, input({ title: "履歴テスト", body: "two", position: 5, tags: "b, A", userId }), getPage(id)!.lockVersion);
+    expect(latestRevision(id)).toMatchObject({ number: 3, tags: "A, b", folderId: null });
+    updatePage(id, input({ title: "履歴テスト", body: "two", position: 5, tags: "A, b", folderId: folder, userId }), getPage(id)!.lockVersion);
+    expect(latestRevision(id)).toMatchObject({ number: 4, tags: "A, b", folderId: folder });
+    // タグの並びだけ違っても同じタグなら記録しない
+    updatePage(id, input({ title: "履歴テスト", body: "two", position: 5, tags: "b, a", folderId: folder, userId }), getPage(id)!.lockVersion);
+    expect(listRevisions(id)).toHaveLength(4);
   });
 
   it("改行コードを LF にそろえる", () => {
@@ -60,6 +72,32 @@ describe("ページと履歴", () => {
     expect(() => createPage(input({ title: "guide  page" }))).toThrow(/同じタイトル/);
     expect(() => createPage(input({ title: "ＧＵＩＤＥ　ＰＡＧＥ" }))).toThrow(/同じタイトル/);
     expect(findPageByTitle("GUIDE PAGE")?.title).toBe("Guide Page");
+  });
+
+  it("一意インデックスでの衝突（検証をすり抜けた別プロセスとの競合）も検証エラーとして返す", () => {
+    createPage(input({ title: "競合タイトル" }));
+    const id = createPage(input({ title: "別タイトル" }));
+    const db = getDb();
+    const original = db.prepare.bind(db);
+    // 別プロセスが検証の後に同じタイトルで保存した状況を再現するため、
+    // 検証の SELECT だけを「衝突なし」に見せかけ、INSERT・UPDATE は本物の一意インデックスにぶつける
+    const spy = vi.spyOn(db, "prepare").mockImplementation((sql: string) =>
+      sql === "SELECT id FROM pages WHERE title_key = ?" ? original("SELECT NULL AS id WHERE ? IS NULL") : original(sql),
+    );
+    try {
+      let caught: unknown;
+      try {
+        updatePage(id, input({ title: "競合タイトル" }), getPage(id)!.lockVersion);
+      } catch (error) {
+        caught = error;
+      }
+      expect(caught).toBeInstanceOf(ValidationError);
+      expect((caught as ValidationError).messages).toEqual(["同じタイトルのページが既にあります"]);
+      expect(() => createPage(input({ title: "競合タイトル" }))).toThrow(ValidationError);
+    } finally {
+      spy.mockRestore();
+    }
+    expect(getPage(id)!.title).toBe("別タイトル");
   });
 
   it("入力を検証する", () => {
@@ -83,6 +121,42 @@ describe("ページと履歴", () => {
     expect(getPage(id)?.body).toBe("v1");
     expect(latestRevision(id)).toMatchObject({ number: 3, summary: "第1版に復元" });
     expect(getRevision(id, 2)?.body).toBe("v2");
+  });
+
+  it("版に記録したタグとフォルダも戻す", () => {
+    const folder = createFolder({ name: "復元元フォルダ", parentId: null, position: 0 });
+    const id = createPage(input({ title: "タグ復元", body: "v1", tags: "古いタグ", folderId: folder }));
+    updatePage(id, input({ title: "タグ復元", body: "v2", tags: "新しいタグ" }), getPage(id)!.lockVersion);
+    expect(restoreScope(getRevision(id, 1)!)).toBe("full");
+    restoreRevision(id, 1, null);
+    expect(getPage(id)).toMatchObject({ body: "v1", folderId: folder });
+    expect(tagList(id)).toBe("古いタグ");
+    expect(latestRevision(id)).toMatchObject({ number: 3, tags: "古いタグ", folderId: folder });
+  });
+
+  it("記録したフォルダが消えていれば、フォルダは今のままでタイトル・本文・タグを戻す", () => {
+    const folder = createFolder({ name: "消えるフォルダ", parentId: null, position: 0 });
+    const id = createPage(input({ title: "フォルダ消失", body: "v1", tags: "t1", folderId: folder }));
+    updatePage(id, input({ title: "フォルダ消失", body: "v2", tags: "t2" }), getPage(id)!.lockVersion);
+    getDb().prepare("DELETE FROM folders WHERE id = ?").run(folder);
+    expect(restoreScope(getRevision(id, 1)!)).toBe("folderMissing");
+    restoreRevision(id, 1, null);
+    expect(getPage(id)).toMatchObject({ body: "v1", folderId: null });
+    expect(tagList(id)).toBe("t1");
+  });
+
+  it("タグとフォルダを記録する前の古い版は、タイトルと本文だけを戻す", () => {
+    const folder = createFolder({ name: "今のフォルダ", parentId: null, position: 0 });
+    const id = createPage(input({ title: "古い版", body: "v1", tags: "昔のタグ" }));
+    updatePage(id, input({ title: "古い版（改）", body: "v2", tags: "今のタグ", folderId: folder }), getPage(id)!.lockVersion);
+    // マイグレーション前に作られた版を再現する
+    getDb().prepare("UPDATE revisions SET tags = NULL, folder_id = NULL WHERE page_id = ? AND number = 1").run(id);
+    expect(getRevision(id, 1)).toMatchObject({ tags: null, folderId: null });
+    expect(restoreScope(getRevision(id, 1)!)).toBe("titleAndBody");
+    expect(restoreDescription("titleAndBody")).toMatch(/タイトルと本文だけ/);
+    restoreRevision(id, 1, null);
+    expect(getPage(id)).toMatchObject({ title: "古い版", body: "v1", folderId: folder });
+    expect(tagList(id)).toBe("今のタグ");
   });
 
   it("削除すると履歴も消え、使われなくなったタグも消える", () => {
@@ -139,5 +213,55 @@ describe("検索とリンク", () => {
     const folder = createFolder({ name: "ページ用", parentId: null, position: 0 });
     const id = createPage(input({ title: "フォルダ内", folderId: folder }));
     expect(getPage(id)?.folderId).toBe(folder);
+  });
+});
+
+describe("改名とリンクの書き換え", () => {
+  it("[[旧名]] を keyOf と同じ規則で照合し、表示名とコード内はそのまま残す", () => {
+    const body = "[[Old  Name]] [[ｏｌｄ name|こちら]] [[old name2]] `[[old name]]`\n```\n[[old name]]\n```\n[[ old name ]]";
+    expect(renameWikiLinks(body, "Old Name", "新しい名前")).toBe(
+      "[[新しい名前]] [[新しい名前|こちら]] [[old name2]] `[[old name]]`\n```\n[[old name]]\n```\n[[新しい名前]]",
+    );
+    // Wiki リンクで書けないタイトルには書き換えない
+    expect(renameWikiLinks("[[old name]]", "old name", "a|b")).toBe("[[old name]]");
+  });
+
+  it("改名すると他のページのリンクを同じトランザクションで書き換え、版とリンクの索引も更新する", () => {
+    const userId = createUser({ email: "renamer@example.com", displayName: "改名 花子", role: "general", password: "password123" });
+    const target = createPage(input({ title: "改名前" }));
+    const source = createPage(input({ title: "改名リンク元", body: "[[改名前]] と [[改名前|別名]]", tags: "残るタグ" }));
+    const untouched = createPage(input({ title: "改名無関係", body: "[[改名前2]]" }));
+    const sourceLock = getPage(source)!.lockVersion;
+
+    const result = updatePage(target, input({ title: "改名後", userId }), getPage(target)!.lockVersion);
+    expect(result).toEqual({ relinkedPages: 1 });
+    expect(getPage(source)!.body).toBe("[[改名後]] と [[改名後|別名]]");
+    expect(getPage(source)!.lockVersion).toBe(sourceLock + 1);
+    expect(tagList(source)).toBe("残るタグ");
+    expect(latestRevision(source)).toMatchObject({ number: 2, userName: "改名 花子", summary: "「改名前」→「改名後」の改名に合わせてリンクを更新" });
+    expect(backlinksFor(getPage(target)!).map((p) => p.title)).toEqual(["改名リンク元"]);
+    expect(getPage(untouched)!.body).toBe("[[改名前2]]");
+    expect(listRevisions(untouched)).toHaveLength(1);
+
+    // 大文字小文字だけの変更はリンクが切れないので書き換えない
+    const latin = createPage(input({ title: "Case Page" }));
+    const linker = createPage(input({ title: "Case Linker", body: "[[case page]]" }));
+    expect(updatePage(latin, input({ title: "CASE PAGE" }), getPage(latin)!.lockVersion)).toEqual({ relinkedPages: 0 });
+    expect(getPage(linker)!.body).toBe("[[case page]]");
+  });
+
+  it("リンク元の書き換えに失敗すると改名ごと取り消す", () => {
+    const target = createPage(input({ title: "取り消し前" }));
+    const source = createPage(input({ title: "取り消しリンク元", body: "[[取り消し前]]" }));
+    getDb().exec(
+      `CREATE TEMP TRIGGER fail_relink BEFORE UPDATE OF body ON pages WHEN new.id = ${source} BEGIN SELECT RAISE(ABORT, 'boom'); END`,
+    );
+    try {
+      expect(() => updatePage(target, input({ title: "取り消し後" }), getPage(target)!.lockVersion)).toThrow(/boom/);
+    } finally {
+      getDb().exec("DROP TRIGGER fail_relink");
+    }
+    expect(getPage(target)!.title).toBe("取り消し前");
+    expect(getPage(source)!.body).toBe("[[取り消し前]]");
   });
 });
