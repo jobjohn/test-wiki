@@ -5,6 +5,9 @@ import { isSecure } from "@/lib/env";
 /**
  * - ログインが必要なページから /login へ送るとき、元のパスを戻り先として使えるようにする
  * - 画面には nonce 付きの Content-Security-Policy を付ける（Next.js はリクエストの CSP から nonce を読み取り、自身のスクリプトに付ける）
+ *
+ * /api/uploads は対象外にする。proxy を通るリクエストは本文がメモリに複製され、10MB（proxyClientMaxBodySize）を超えると
+ * 黙って切り詰められるため、大きなファイルを壊さずにディスクへ流し込めなくなる（JSON を返す API なので CSP も不要）。
  */
 export function proxy(request: NextRequest) {
   const headers = new Headers(request.headers);
@@ -21,5 +24,5 @@ export function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/((?!_next/static|_next/image|favicon.ico|icon.svg).*)"],
+  matcher: ["/((?!_next/static|_next/image|favicon.ico|icon.svg|api/uploads).*)"],
 };
