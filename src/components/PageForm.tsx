@@ -11,7 +11,8 @@ import { Input } from "@/components/ui/input";
 import { NativeSelect } from "@/components/ui/native-select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
-import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
+import { Field, FieldDescription, FieldGroup, FieldLabel } from "@/components/ui/field";
+import { PAGE_POSITION_PLACEHOLDER } from "@/lib/form";
 import { FormErrors } from "./FormErrors";
 import { SubmitButton } from "./SubmitButton";
 import { Badge } from "@/components/ui/badge";
@@ -202,7 +203,7 @@ export function PageForm({
           />
         </Field>
 
-        <div className="grid gap-5 md:grid-cols-[1fr_1fr_7rem]">
+        <div className="grid gap-5 md:grid-cols-[1fr_1fr_11rem]">
           <Field>
             <FieldLabel htmlFor="folderId">フォルダ</FieldLabel>
             <NativeSelect id="folderId" name="folderId" value={folderId} onChange={(e) => setFolderId(e.target.value)}>
@@ -232,7 +233,16 @@ export function PageForm({
           </Field>
           <Field>
             <FieldLabel htmlFor="position">表示順</FieldLabel>
-            <Input type="number" id="position" name="position" step={1} value={position} onChange={(e) => setPosition(e.target.value)} />
+            <Input
+              type="number"
+              id="position"
+              name="position"
+              step={1}
+              value={position}
+              onChange={(e) => setPosition(e.target.value)}
+              placeholder={PAGE_POSITION_PLACEHOLDER}
+            />
+            <FieldDescription>小さい数ほど先に並びます</FieldDescription>
           </Field>
         </div>
 

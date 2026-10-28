@@ -11,6 +11,7 @@ import { NativeSelect } from "@/components/ui/native-select";
 import { Field, FieldDescription, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { FormErrors } from "./FormErrors";
 import { SubmitButton } from "./SubmitButton";
+import { FOLDER_POSITION_PLACEHOLDER } from "@/lib/form";
 
 export function FolderForm({
   folderId,
@@ -36,7 +37,7 @@ export function FolderForm({
               <FieldLabel htmlFor="name">フォルダ名</FieldLabel>
               <Input id="name" name="name" defaultValue={v.name} required maxLength={100} autoFocus placeholder="例: 開発ドキュメント" />
             </Field>
-            <div className="grid gap-5 sm:grid-cols-[1fr_8rem]">
+            <div className="grid gap-5 sm:grid-cols-[1fr_11rem]">
               <Field>
                 <FieldLabel htmlFor="parentId">親フォルダ</FieldLabel>
                 <NativeSelect id="parentId" name="parentId" defaultValue={v.parentId}>
@@ -51,7 +52,8 @@ export function FolderForm({
               </Field>
               <Field>
                 <FieldLabel htmlFor="position">表示順</FieldLabel>
-                <Input type="number" id="position" name="position" step={1} defaultValue={v.position} />
+                <Input type="number" id="position" name="position" step={1} defaultValue={v.position} placeholder={FOLDER_POSITION_PLACEHOLDER} />
+                <FieldDescription>小さい数ほど先に並びます</FieldDescription>
               </Field>
             </div>
             <div className="flex gap-2">

@@ -18,7 +18,7 @@ export default async function NewFolderPage({ searchParams }: { searchParams: Pr
       <PageTitle icon={FolderPlus}>新しいフォルダ</PageTitle>
       <FolderForm
         folderId={null}
-        initial={{ name: "", parentId, position: "0" }}
+        initial={{ name: "", parentId, position: "" }}
         options={folderOptions()}
         cancelHref={parentId ? `/folders/${parentId}` : "/"}
       />

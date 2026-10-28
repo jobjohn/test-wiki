@@ -10,11 +10,13 @@ const meta = {
   title: "Forms/FolderForm",
   component: FolderForm,
   tags: ["autodocs"],
-  args: { folderId: null, options, initial: { name: "", parentId: "", position: "0" }, cancelHref: "/" },
+  args: { folderId: null, options, initial: { name: "", parentId: "", position: "" }, cancelHref: "/" },
   decorators: [(Story) => <div className="max-w-2xl"><Story /></div>],
 } satisfies Meta<typeof FolderForm>;
 export default meta;
 type Story = StoryObj<typeof meta>;
 
 export const New: Story = {};
-export const Edit: Story = { args: { folderId: 2, initial: { name: "API", parentId: "1", position: "0" } } };
+export const Edit: Story = { args: { folderId: 2, initial: { name: "API", parentId: "1", position: "" } } };
+/** 表示順を指定したフォルダ（空欄＝お任せ以外） */
+export const WithPosition: Story = { args: { folderId: 2, initial: { name: "API", parentId: "1", position: "3" } } };

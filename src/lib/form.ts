@@ -22,6 +22,14 @@ export const int = (data: FormData, key: string, fallback = 0): number => {
   return /^-?\d+$/.test(value) ? Number(value) : value === "" ? fallback : NaN;
 };
 
+/**
+ * 表示順の入力欄に出す値。既定の 0 は「お任せ（タイトル順）」として空欄で表示する。
+ * 空欄で送ると int() が 0 として受け取るので、保存される値は今までと変わらない
+ */
+export const PAGE_POSITION_PLACEHOLDER = "お任せ（タイトル順）";
+export const FOLDER_POSITION_PLACEHOLDER = "お任せ（名前順）";
+export const positionField = (position: number): string => (position === 0 ? "" : String(position));
+
 export const optionalId = (data: FormData, key: string): number | null => {
   const value = str(data, key).trim();
   return /^\d+$/.test(value) ? Number(value) : null;

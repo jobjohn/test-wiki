@@ -77,6 +77,9 @@ test.describe.serial("スモークテスト", () => {
     await expect(page.getByRole("main").getByRole("link", { name: TITLE })).toBeVisible();
 
     await page.goto(`/pages/${pageId}/edit`);
+    // 既定の表示順（0）は「お任せ」として空欄で表示される
+    await expect(page.locator("#position")).toHaveValue("");
+    await expect(page.locator("#position")).toHaveAttribute("placeholder", "お任せ（タイトル順）");
     await page.locator("#body").fill(`編集後の本文です。${KEYWORD}`);
     await page.locator("#summary").fill("E2E で編集");
     await page.getByRole("button", { name: "保存" }).click();
