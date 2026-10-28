@@ -1,10 +1,9 @@
 # Wiki の CI。
 # - check:     型チェック・ESLint・自動テスト
-# - build:     本番ビルド（next build）
 # - storybook: Storybook のビルド
-# - e2e:       Playwright（Chromium）による E2E スモークテスト
+# - e2e:       本番ビルド（next build）と Playwright（Chromium）による E2E スモークテスト
 # - docker:    Docker イメージのビルドと起動確認（main への push、または Docker 関連ファイルを変えた PR のみ）
-# secrets は使わず、権限は読み取りのみ。ブランチ保護では check と build を必須にすると安全です。
+# secrets は使わず、権限は読み取りのみ。ブランチ保護では check と e2e を必須にすると安全です。
 name: CI
 
 on:
@@ -46,30 +45,6 @@ jobs:
       - name: 自動テスト
         run: npx vitest run
 
-  build:
-    name: ビルド
-    runs-on: ubuntu-latest
-    steps:
-      - name: ソースの取得
-        uses: actions/checkout@v4
-      - name: Node.js の準備
-        uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: npm
-      - name: 依存パッケージのインストール
-        run: npm ci
-      # ソースが変わっても前回のキャッシュを足がかりに使えるよう、restore-keys は package-lock のみにする
-      - name: Next.js のビルドキャッシュ
-        uses: actions/cache@v4
-        with:
-          path: .next/cache
-          key: nextjs-${{ runner.os }}-${{ hashFiles('package-lock.json') }}-${{ hashFiles('src/**', 'next.config.ts', 'tsconfig.json', 'postcss.config.mjs') }}
-          restore-keys: |
-            nextjs-${{ runner.os }}-${{ hashFiles('package-lock.json') }}-
-      - name: ビルド
-        run: npx next build
-
   storybook:
     name: Storybook のビルド
     runs-on: ubuntu-latest
@@ -87,7 +62,7 @@ jobs:
         run: npx storybook build --quiet
 
   e2e:
-    name: E2E スモークテスト
+    name: ビルドと E2E スモークテスト
     runs-on: ubuntu-latest
     steps:
       - name: ソースの取得
@@ -112,6 +87,14 @@ jobs:
       - name: Chromium の依存ライブラリのインストール
         if: steps.playwright-cache.outputs.cache-hit == 'true'
         run: npx playwright install-deps chromium
+      # ソースが変わっても前回のキャッシュを足がかりに使えるよう、restore-keys は package-lock のみにする
+      - name: Next.js のビルドキャッシュ
+        uses: actions/cache@v4
+        with:
+          path: .next/cache
+          key: nextjs-${{ runner.os }}-${{ hashFiles('package-lock.json') }}-${{ hashFiles('src/**', 'next.config.ts', 'tsconfig.json', 'postcss.config.mjs') }}
+          restore-keys: |
+            nextjs-${{ runner.os }}-${{ hashFiles('package-lock.json') }}-
       - name: ビルド
         run: npx next build
       - name: E2E テストの実行
@@ -165,7 +148,8 @@ jobs:
           load: true
           tags: wiki:ci
           cache-from: type=gha
-          cache-to: type=gha,mode=max
+          # mode=max だと依存パッケージの中間層まで書き出して 1 分以上かかるため、最終イメージの層だけにする
+          cache-to: type=gha,mode=min
       # データは /data、ポートは 3000（Dockerfile のとおり）。SECRET_KEY_BASE は未設定なら初回に自動生成される
       - name: コンテナの起動
         if: steps.changes.outputs.run == 'true'
