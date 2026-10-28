@@ -82,6 +82,13 @@ export function ShellFrame({
   return (
     <TooltipProvider>
       <SidebarProvider className="flex-col" style={{ "--header-height": "3.5rem" } as CSSProperties}>
+        {/* キーボード操作で、ヘッダーとサイドバーを飛ばして本文へ移れるようにする（フォーカスしたときだけ見える） */}
+        <a
+          href="#main-content"
+          className="sr-only rounded-md bg-background px-3 py-2 text-sm font-medium shadow-md ring-2 ring-ring focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-50"
+        >
+          本文へスキップ
+        </a>
         <header className="sticky top-0 z-30 flex h-(--header-height) items-center gap-2 border-b bg-background px-3 md:gap-3 md:px-4">
           <SidebarTrigger />
 
@@ -118,7 +125,7 @@ export function ShellFrame({
 
         <div className="flex flex-1">
           <Sidebar tree={tree} canEdit={!!user?.canEdit} className="top-(--header-height) h-[calc(100svh-var(--header-height))]!" />
-          <SidebarInset className="min-w-0 px-4 pt-6 pb-16 md:px-10 md:pt-8">
+          <SidebarInset id="main-content" tabIndex={-1} className="min-w-0 px-4 pt-6 pb-16 outline-none md:px-10 md:pt-8">
             <FlashBanner flash={flash} />
             <div className="mx-auto w-full max-w-5xl">{children}</div>
           </SidebarInset>

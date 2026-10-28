@@ -8,7 +8,7 @@ import { getSettings } from "@/lib/settings";
 export default async function AuthLayout({ children }: { children: ReactNode }) {
   const { wikiName } = getSettings();
   return (
-    <div className="grid min-h-svh place-items-center p-4">
+    <main className="grid min-h-svh place-items-center p-4">
       <Card className="w-full max-w-sm">
         <CardHeader>
           <CardTitle className="flex items-center justify-center gap-2">
@@ -21,6 +21,6 @@ export default async function AuthLayout({ children }: { children: ReactNode }) 
           {children}
         </CardContent>
       </Card>
-    </div>
+    </main>
   );
 }

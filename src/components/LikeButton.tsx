@@ -35,7 +35,6 @@ export function LikeButton({ pageId, initial, canLike }: { pageId: number; initi
       onClick={toggle}
       disabled={!canLike}
       aria-pressed={canLike ? likes.liked : undefined}
-      aria-label={`いいね!（${likes.count} 件）`}
       title={canLike ? undefined : "ログインすると、いいね!できます"}
     >
       <Heart aria-hidden className={cn(likes.liked && "fill-primary text-primary")} />
@@ -43,6 +42,8 @@ export function LikeButton({ pageId, initial, canLike }: { pageId: number; initi
       <span className="tabular-nums text-muted-foreground" data-testid="like-count">
         {likes.count}
       </span>
+      {/* 読み上げは「いいね! 3 件」。見えている文字をそのまま名前に含める（label-content-name-mismatch 対策） */}
+      <span className="sr-only">件</span>
     </Button>
   );
 }
