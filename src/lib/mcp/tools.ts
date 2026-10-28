@@ -15,6 +15,7 @@ import {
   tagsForPage,
 } from "../pages";
 import { formatDateTime } from "../format";
+import { likeCount } from "../page-likes";
 import { keyOf } from "../text";
 import { fail, ok, UNTRUSTED_NOTICE } from "./result";
 import { type McpAuth, registerWriteTools, writeBlockReason } from "./write-tools";
@@ -140,13 +141,14 @@ export function createMcpServer(origin: string, auth?: McpAuth): McpServer {
         revision: revision?.number ?? null,
         // update_page に渡す楽観ロックの値
         lockVersion: page.lockVersion,
+        likes: likeCount(page.id),
         url: pageUrl(origin, page.id),
       };
       const structured = { ...meta, body: content, offset, totalChars: page.body.length, hasMore, nextOffset: hasMore ? nextOffset : null };
       const text = [
         `# ${meta.title}`,
         `id: ${meta.id} / 版: ${meta.revision ?? "-"} / lockVersion: ${meta.lockVersion} / 更新: ${formatDateTime(meta.updatedAt)}`,
-        `フォルダ: ${meta.folder || "（なし）"} / タグ: ${meta.tags.join(", ") || "（なし）"}`,
+        `フォルダ: ${meta.folder || "（なし）"} / タグ: ${meta.tags.join(", ") || "（なし）"} / いいね!: ${meta.likes}`,
         `URL: ${meta.url}`,
         "",
         content,

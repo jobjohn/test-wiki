@@ -34,3 +34,5 @@ export const revokeApiTokenAction = noopAction;
 export const restoreTrashAction = noopAction;
 export const purgeTrashItemAction = noopAction;
 export const emptyTrashAction = noopAction;
+/** いいね!は保存せず、押した状態をそのまま返す（画面の切り替えだけ確認できる） */
+export const setPageLikeAction = async () => ({ error: "Storybook では保存されません。" });

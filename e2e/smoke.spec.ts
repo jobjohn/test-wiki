@@ -87,6 +87,25 @@ test.describe.serial("スモークテスト", () => {
     await expect(page.getByRole("link", { name: /^第\d+版$/ })).toHaveCount(2);
   });
 
+  test("ページにいいね!を付けて外せ、再読み込みしても数が残る", async () => {
+    await page.goto(`/pages/${pageId}`);
+    const like = page.getByRole("button", { name: /^いいね!/ });
+    await expect(like).toHaveAttribute("aria-pressed", "false");
+    await expect(like.getByTestId("like-count")).toHaveText("0");
+
+    await like.click();
+    await expect(like).toHaveAttribute("aria-pressed", "true");
+    await expect(like.getByTestId("like-count")).toHaveText("1");
+    await page.reload();
+    await expect(like).toHaveAttribute("aria-pressed", "true");
+    await expect(like.getByTestId("like-count")).toHaveText("1");
+
+    await like.click();
+    await expect(like).toHaveAttribute("aria-pressed", "false");
+    await page.reload();
+    await expect(like.getByTestId("like-count")).toHaveText("0");
+  });
+
   test("ログアウトすると、ページを開いてもログイン画面に戻される", async () => {
     await page.goto("/");
     await page.getByRole("button", { name: "ユーザーメニュー" }).click();
