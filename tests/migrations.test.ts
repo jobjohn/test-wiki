@@ -138,4 +138,18 @@ describe("マイグレーション", () => {
     // 鍵は重複できない（未割り当ての NULL は複数あってよい）
     expect(() => db.prepare("UPDATE uploads SET access_key = ? WHERE id = 2").run(rows[0].access_key)).toThrow(/UNIQUE/);
   });
+
+  it("セッションに最終利用日時の列を足す（既存のセッションはそのまま使え、値は変えない）", () => {
+    const db = new DatabaseSync(":memory:");
+    const index = MIGRATIONS.findIndex((sql) => sql.includes("ADD COLUMN last_seen_at"));
+    expect(index).toBeGreaterThanOrEqual(0);
+    for (const sql of MIGRATIONS.slice(0, index)) db.exec(sql);
+    db.exec("PRAGMA foreign_keys = OFF"); // ユーザーの行は用意しない
+    db.exec("INSERT INTO sessions (id, user_id, pending_mfa, created_at, expires_at) VALUES ('s1', 1, 0, '2026-01-01T00:00:00.000Z', '2026-01-15T00:00:00.000Z')");
+    const before = db.prepare("SELECT * FROM sessions").all();
+
+    db.exec(MIGRATIONS[index]);
+    expect(MIGRATION_BACKFILLS[index]).toBeUndefined();
+    expect(db.prepare("SELECT * FROM sessions").all()).toEqual(before.map((row) => ({ ...row, last_seen_at: null })));
+  });
 });

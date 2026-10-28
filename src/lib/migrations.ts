@@ -266,6 +266,10 @@ export const MIGRATIONS: string[] = [
   ALTER TABLE uploads ADD COLUMN access_key TEXT;
   CREATE UNIQUE INDEX index_uploads_on_access_key ON uploads(access_key);
   `,
+  // セッションの最終利用日時（使っている間は有効期限を延ばす。NULL は created_at と同じ扱い）
+  `
+  ALTER TABLE sessions ADD COLUMN last_seen_at TEXT;
+  `,
 ];
 
 /** SQL だけでは書けない移行処理。キーは MIGRATIONS の添字で、その SQL の直後（初期データ投入の後）に実行する */
