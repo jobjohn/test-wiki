@@ -3,6 +3,7 @@ import { writePageLinks } from "./page-links";
 import { NotFoundError, ValidationError } from "./errors";
 import { deleteUnusedTags, ensureTag, tagsForPage } from "./pages";
 import { normalizeUrl, parseHttpUrl } from "./bookmark-utils";
+import { newUploadAccessKey } from "./upload-keys";
 import { removeUploadFile } from "./uploads";
 import { keyOf, now } from "./text";
 import { TRASH_RETENTION_DAYS, type TrashKind } from "./trash-utils";
@@ -42,7 +43,8 @@ interface BookmarkPayload {
 }
 
 interface UploadPayload {
-  upload: { filename: string; content_type: string; byte_size: number; storage_key: string; user_id: number | null; created_at: string };
+  /** access_key は鍵を足す前に退避したものには無い（戻すときに新しく割り当てる） */
+  upload: { filename: string; content_type: string; byte_size: number; storage_key: string; access_key?: string | null; user_id: number | null; created_at: string };
 }
 
 function insertTrash(kind: TrashKind, itemId: number, title: string, payload: object, userId: number | null) {
@@ -132,6 +134,7 @@ export function trashUpload(id: number, userId: number | null) {
         content_type: row.content_type,
         byte_size: row.byte_size,
         storage_key: row.storage_key,
+        access_key: row.access_key,
         user_id: row.user_id,
         created_at: row.created_at,
       },
@@ -306,12 +309,14 @@ function restoreBookmark(id: number, { bookmark: b, tags, revisions }: BookmarkP
 
 function restoreUpload(id: number, { upload: u }: UploadPayload) {
   run(
-    "INSERT INTO uploads (id, filename, content_type, byte_size, storage_key, user_id, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)",
+    "INSERT INTO uploads (id, filename, content_type, byte_size, storage_key, access_key, user_id, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
     id,
     u.filename,
     u.content_type,
     u.byte_size,
     u.storage_key,
+    // 退避前と同じ鍵に戻す（ページに貼られた鍵の URL が元どおり開けるように）
+    u.access_key || newUploadAccessKey(),
     userExists(u.user_id),
     u.created_at,
   );

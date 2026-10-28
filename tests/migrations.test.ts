@@ -1,6 +1,6 @@
 import { DatabaseSync } from "node:sqlite";
 import { describe, expect, it } from "vitest";
-import { MIGRATIONS } from "@/lib/migrations";
+import { MIGRATION_BACKFILLS, MIGRATIONS } from "@/lib/migrations";
 
 describe("マイグレーション", () => {
   it("ユーザー名のユーザーをメールアドレスに、編集者・閲覧者を一般に移行し、全員を有効にする", () => {
@@ -113,5 +113,29 @@ describe("マイグレーション", () => {
     expect(db.prepare("SELECT number, title, url, description_md, tags, user_id, source, summary, created_at FROM bookmark_revisions").all()).toEqual([
       expect.objectContaining({ number: 1, title: "B", url: "https://e.com/", description_md: "説明", tags: "t1,t2", user_id: 1, source: null, created_at: "u" }),
     ]);
+  });
+
+  it("ファイルに URL 用の鍵の列を足し、既存のファイルへ重ならない鍵を割り当てる（他の値は変えない）", () => {
+    const db = new DatabaseSync(":memory:");
+    const keyIndex = MIGRATIONS.findIndex((sql) => sql.includes("ADD COLUMN access_key"));
+    expect(keyIndex).toBeGreaterThanOrEqual(0);
+    for (const sql of MIGRATIONS.slice(0, keyIndex)) db.exec(sql);
+    const insert = db.prepare("INSERT INTO uploads (filename, content_type, byte_size, storage_key, created_at) VALUES (?, 'text/plain', 1, ?, 't')");
+    insert.run("a.txt", "k1");
+    insert.run("b.txt", "k2");
+    const before = db.prepare("SELECT id, filename, content_type, byte_size, storage_key, user_id, created_at FROM uploads ORDER BY id").all();
+
+    db.exec(MIGRATIONS[keyIndex]);
+    MIGRATION_BACKFILLS[keyIndex](db);
+
+    const rows = db.prepare("SELECT * FROM uploads ORDER BY id").all() as { access_key: string }[];
+    expect(rows.map(({ access_key: _key, ...rest }) => rest)).toEqual(before);
+    for (const row of rows) expect(row.access_key).toMatch(/^[A-Za-z0-9_-]{24}$/);
+    expect(new Set(rows.map((r) => r.access_key)).size).toBe(2);
+    // 2 回目の実行では、割り当て済みの鍵を変えない
+    MIGRATION_BACKFILLS[keyIndex](db);
+    expect((db.prepare("SELECT access_key FROM uploads ORDER BY id").all() as { access_key: string }[]).map((r) => r.access_key)).toEqual(rows.map((r) => r.access_key));
+    // 鍵は重複できない（未割り当ての NULL は複数あってよい）
+    expect(() => db.prepare("UPDATE uploads SET access_key = ? WHERE id = 2").run(rows[0].access_key)).toThrow(/UNIQUE/);
   });
 });

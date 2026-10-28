@@ -1,5 +1,6 @@
 import type { DatabaseSync } from "node:sqlite";
 import { rebuildPageLinks } from "./page-links";
+import { backfillUploadAccessKeys } from "./upload-keys";
 
 /**
  * スキーマ定義。PRAGMA user_version に適用済みの件数を記録し、
@@ -260,9 +261,15 @@ export const MIGRATIONS: string[] = [
   );
   CREATE INDEX index_page_likes_on_user_id ON page_likes(user_id);
   `,
+  // ファイルの URL 用の推測できない鍵。既存のファイルには直後の移行処理で割り当てる（/files/<id>/<name> の URL もそのまま使える）
+  `
+  ALTER TABLE uploads ADD COLUMN access_key TEXT;
+  CREATE UNIQUE INDEX index_uploads_on_access_key ON uploads(access_key);
+  `,
 ];
 
 /** SQL だけでは書けない移行処理。キーは MIGRATIONS の添字で、その SQL の直後（初期データ投入の後）に実行する */
 export const MIGRATION_BACKFILLS: Record<number, (db: DatabaseSync) => void> = {
   [MIGRATIONS.findIndex((sql) => sql.includes("CREATE TABLE page_links"))]: rebuildPageLinks,
+  [MIGRATIONS.findIndex((sql) => sql.includes("ADD COLUMN access_key"))]: backfillUploadAccessKeys,
 };

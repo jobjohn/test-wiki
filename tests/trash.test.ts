@@ -33,7 +33,7 @@ import {
   trashUpload,
 } from "@/lib/trash";
 import { trashDaysLeft } from "@/lib/trash-utils";
-import { getUpload, storeUpload } from "@/lib/uploads";
+import { getUpload, getUploadByAccessKey, storeUpload } from "@/lib/uploads";
 import { createUser, deleteUser } from "@/lib/users";
 
 const input = (overrides: Partial<PageInput> = {}): PageInput => ({ title: "無題", body: "", folderId: null, position: 0, tags: "", userId: null, ...overrides });
@@ -258,6 +258,24 @@ describe("ファイルのゴミ箱", () => {
     expect(restoreTrashItem(trashIdOf("upload", upload.id)).href).toBe("/uploads");
     expect(getUpload(upload.id)).toEqual(upload);
     expect(fs.readFileSync(fileOnDisk(upload.storageKey), "utf8")).toBe("中身");
+    // 鍵の URL も退避前と同じものが使える
+    expect(getUploadByAccessKey(upload.accessKey!)?.id).toBe(upload.id);
+  });
+
+  it("鍵を足す前に退避したファイルは、戻すときに新しい鍵を割り当てる（番号の URL はそのまま使える）", async () => {
+    const upload = await storeUpload(new File(["古い"], "legacy.txt", { type: "text/plain" }), null);
+    trashUpload(upload.id, null);
+    const trashId = trashIdOf("upload", upload.id);
+    const { payload } = get<{ payload: string }>("SELECT payload FROM trash_items WHERE id = ?", trashId)!;
+    const legacy = JSON.parse(payload);
+    delete legacy.upload.access_key;
+    run("UPDATE trash_items SET payload = ? WHERE id = ?", JSON.stringify(legacy), trashId);
+
+    restoreTrashItem(trashId);
+    const restored = getUpload(upload.id)!;
+    expect(restored.accessKey).toMatch(/^[A-Za-z0-9_-]{24}$/);
+    expect(restored.accessKey).not.toBe(upload.accessKey);
+    expect(restored.storageKey).toBe(upload.storageKey);
   });
 
   it("完全削除で実ファイルも消える", async () => {

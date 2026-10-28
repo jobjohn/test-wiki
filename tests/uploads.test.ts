@@ -4,7 +4,7 @@ import { describe, expect, it } from "vitest";
 import { dataDir } from "@/lib/env";
 import { createPage } from "@/lib/pages";
 import { trashPage } from "@/lib/trash";
-import { listUploads, MAX_UPLOAD_SIZE, storeUpload, storeUploadStream, uploadPath } from "@/lib/uploads";
+import { getUpload, getUploadByAccessKey, listUploads, MAX_UPLOAD_SIZE, storeUpload, storeUploadStream, uploadMarkdown, uploadPath } from "@/lib/uploads";
 
 const filesIn = () => {
   const dir = path.join(dataDir(), "files");
@@ -94,7 +94,7 @@ describe("ファイル一覧", () => {
       if (String(b.id).length > String(a.id).length + 1) a = b;
       b = await storeUpload(new File(["b"], "b.txt", { type: "text/plain" }), null);
     }
-    createPage({ title: `長い番号だけを参照 ${b.id}`, body: `[b](${uploadPath(b)})`, folderId: null, position: 0, tags: "", userId: null });
+    createPage({ title: `長い番号だけを参照 ${b.id}`, body: `[b](/files/${b.id}/b.txt)`, folderId: null, position: 0, tags: "", userId: null });
     const unreferenced = listUploads({ filter: "unreferenced", limit: 1000 }).uploads.map((u) => u.id);
     expect(unreferenced).toContain(a.id);
     expect(unreferenced).not.toContain(b.id);
@@ -107,5 +107,35 @@ describe("ファイル一覧", () => {
     expect(total).toBeGreaterThan(4);
     expect(first).toHaveLength(2);
     expect(second.map((u) => u.id)).not.toEqual(expect.arrayContaining(first.map((u) => u.id)));
+  });
+});
+
+describe("ファイルの URL", () => {
+  it("新しいファイルには推測できない鍵が付き、リンクは鍵の形になる", async () => {
+    const a = await storeUpload(new File(["a"], "画像 1.png", { type: "image/png" }), null);
+    const b = await storeUpload(new File(["b"], "b.txt", { type: "text/plain" }), null);
+    expect(a.accessKey).toMatch(/^[A-Za-z0-9_-]{24}$/);
+    expect(a.accessKey).not.toBe(b.accessKey);
+    expect(uploadPath(a)).toBe(`/files/k/${a.accessKey}/${encodeURIComponent("画像 1.png")}`);
+    expect(uploadMarkdown(a)).toBe(`![画像 1.png](${uploadPath(a)})`);
+    expect(getUploadByAccessKey(a.accessKey!)?.id).toBe(a.id);
+  });
+
+  it("鍵として形の合わない値・存在しない鍵では見つからない", () => {
+    expect(getUploadByAccessKey("1")).toBeUndefined();
+    expect(getUploadByAccessKey("../../etc/passwd")).toBeUndefined();
+    expect(getUploadByAccessKey("A".repeat(24))).toBeUndefined();
+  });
+
+  it("鍵がない（移行前の）ファイルは、番号の URL を使う", async () => {
+    const upload = await storeUpload(new File(["c"], "c.txt", { type: "text/plain" }), null);
+    expect(uploadPath({ ...upload, accessKey: null })).toBe(`/files/${upload.id}/c.txt`);
+    expect(getUpload(upload.id)?.accessKey).toBe(upload.accessKey);
+  });
+
+  it("古い番号の URL で貼られたリンクも参照として数える", async () => {
+    const upload = await storeUpload(new File(["d"], "d.txt", { type: "text/plain" }), null);
+    createPage({ title: "番号の URL を使うページ", body: `[d](/files/${upload.id}/d.txt)`, folderId: null, position: 0, tags: "", userId: null });
+    expect(listUploads({ filter: "unreferenced", limit: 1000 }).uploads.map((u) => u.id)).not.toContain(upload.id);
   });
 });

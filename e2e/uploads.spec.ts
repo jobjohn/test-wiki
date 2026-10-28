@@ -41,6 +41,12 @@ test.describe("ファイルのアップロード", () => {
     const body = await download.body();
     expect(body.length).toBe(data.length);
     expect(sha(body)).toBe(sha(data));
+
+    // 新しいリンクは推測できない鍵の URL。以前の番号の URL も開ける（既に貼られたリンクを壊さない）
+    expect(json.url).toMatch(/^\/files\/k\/[A-Za-z0-9_-]{24}\//);
+    const legacy = await page.request.get(`/files/${json.id}/x`, { headers: { Range: "bytes=0-9" } });
+    expect(legacy.status()).toBe(206);
+    expect(await legacy.body()).toEqual(data.subarray(0, 10));
   });
 
   test("上限を超えるファイルは 413 で断る", async ({ page, baseURL }) => {

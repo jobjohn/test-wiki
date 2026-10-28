@@ -8,6 +8,7 @@ import { all, get, run } from "./db";
 import { dataDir } from "./env";
 import { ValidationError } from "./errors";
 import { now } from "./text";
+import { newUploadAccessKey } from "./upload-keys";
 
 export const MAX_UPLOAD_SIZE = 20 * 1024 * 1024;
 
@@ -17,6 +18,8 @@ export interface Upload {
   contentType: string;
   byteSize: number;
   storageKey: string;
+  /** URL 用の推測できない鍵（移行処理で全件に割り当てる。念のため無い場合は番号の URL を使う） */
+  accessKey: string | null;
   createdAt: string;
 }
 
@@ -26,6 +29,7 @@ interface UploadRow {
   content_type: string;
   byte_size: number;
   storage_key: string;
+  access_key: string | null;
   created_at: string;
 }
 
@@ -35,6 +39,7 @@ const mapUpload = (row: UploadRow): Upload => ({
   contentType: row.content_type,
   byteSize: row.byte_size,
   storageKey: row.storage_key,
+  accessKey: row.access_key,
   createdAt: row.created_at,
 });
 
@@ -45,20 +50,31 @@ const INLINE_TYPES = /^(image\/(png|jpeg|gif|webp|avif|bmp)|application\/pdf|tex
 export const isInlineType = (contentType: string) => INLINE_TYPES.test(contentType);
 export const isImage = (contentType: string) => /^image\/(png|jpeg|gif|webp|avif|bmp)$/.test(contentType);
 
+/** 番号から探す（/files/<id>/<name> の古い形式の URL 用） */
 export function getUpload(id: number): Upload | undefined {
   const row = get<UploadRow>("SELECT * FROM uploads WHERE id = ?", id);
+  return row && mapUpload(row);
+}
+
+/** 鍵から探す（/files/k/<鍵>/<name> の URL 用） */
+export function getUploadByAccessKey(key: string): Upload | undefined {
+  if (!/^[A-Za-z0-9_-]{16,64}$/.test(key)) return undefined;
+  const row = get<UploadRow>("SELECT * FROM uploads WHERE access_key = ?", key);
   return row && mapUpload(row);
 }
 
 /**
  * ファイルがどこかから参照されているか（SQL の条件式。uploads を u として使う）。
  * 今のページ本文・リンク集の説明・ゴミ箱の中身（戻したときに必要になるため）を見る。過去の版だけからの参照は数えない。
+ * 鍵の URL（/files/k/<鍵>/）と古い番号の URL（/files/<id>/）の両方を探す。
  * `/files/12/` の形で探すので、`/files/123/` を 12 番の参照と取り違えることはない。
  */
+const referencedIn = (column: string) =>
+  `(instr(${column}, '/files/' || u.id || '/') > 0 OR (u.access_key IS NOT NULL AND instr(${column}, '/files/k/' || u.access_key || '/') > 0))`;
 const REFERENCED_SQL = `(
-  EXISTS (SELECT 1 FROM pages p WHERE instr(p.body, '/files/' || u.id || '/') > 0)
-  OR EXISTS (SELECT 1 FROM bookmarks b WHERE instr(b.description_md, '/files/' || u.id || '/') > 0)
-  OR EXISTS (SELECT 1 FROM trash_items t WHERE t.kind <> 'upload' AND instr(t.payload, '/files/' || u.id || '/') > 0)
+  EXISTS (SELECT 1 FROM pages p WHERE ${referencedIn("p.body")})
+  OR EXISTS (SELECT 1 FROM bookmarks b WHERE ${referencedIn("b.description_md")})
+  OR EXISTS (SELECT 1 FROM trash_items t WHERE t.kind <> 'upload' AND ${referencedIn("t.payload")})
 )`;
 
 export type UploadFilter = "all" | "unreferenced";
@@ -83,8 +99,13 @@ export function listUploads({ filter = "all", limit = 50, offset = 0 }: { filter
   return { uploads: rows.map((row) => ({ ...mapUpload(row), referenced: !!row.referenced })), total };
 }
 
+/**
+ * ファイルの URL。新しく貼るリンクは推測できない鍵の形（/files/k/<鍵>/<名前>）にする。
+ * 以前の番号の形（/files/<id>/<名前>）も、既にページへ貼られたリンクを壊さないよう引き続き使える。
+ */
 export function uploadPath(upload: Upload): string {
-  return `/files/${upload.id}/${encodeURIComponent(upload.filename)}`;
+  const name = encodeURIComponent(upload.filename);
+  return upload.accessKey ? `/files/k/${upload.accessKey}/${name}` : `/files/${upload.id}/${name}`;
 }
 
 export function uploadMarkdown(upload: Upload): string {
@@ -132,11 +153,12 @@ export async function storeUploadStream(
     if (size === 0) throw new ValidationError("ファイルを選択してください");
     if (expectedSize !== undefined && size !== expectedSize) throw new ValidationError("ファイルを最後まで受け取れませんでした。もう一度アップロードしてください");
     id = run(
-      "INSERT INTO uploads (filename, content_type, byte_size, storage_key, user_id, created_at) VALUES (?, ?, ?, ?, ?, ?)",
+      "INSERT INTO uploads (filename, content_type, byte_size, storage_key, access_key, user_id, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)",
       safeFilename(filename),
       contentType || "application/octet-stream",
       size,
       key,
+      newUploadAccessKey(),
       userId,
       now(),
     ).lastInsertRowid;
