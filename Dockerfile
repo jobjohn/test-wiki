@@ -11,7 +11,8 @@ WORKDIR /app
 # --- 依存パッケージ ---
 FROM base AS deps
 COPY package.json package-lock.json ./
-RUN npm ci
+# npm のダウンロードキャッシュを再利用する（手元の docker compose build で効く）
+RUN --mount=type=cache,target=/root/.npm npm ci
 
 # --- ビルド ---
 FROM base AS build

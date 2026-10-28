@@ -154,7 +154,7 @@ npm run storybook  # 部品の一覧（http://localhost:6006）
 
 ### CI
 
-GitHub Actions（`.github/workflows/ci.yml`）が、main 向けの PR と main への push で、型チェック・テスト（`check`）、本番ビルド（`build`）、Storybook のビルド（`storybook`）、ブラウザでの E2E スモークテスト（`e2e`）を自動で実行します。Docker イメージの起動確認（`docker`）は、main への push と、Dockerfile などを変えた PR のときだけ動きます。
+GitHub Actions（`.github/workflows/ci.yml`）が、main 向けの PR と main への push で、型チェック・テスト（`check`）、Storybook のビルド（`storybook`）、本番ビルドとブラウザでの E2E スモークテスト（`e2e`）を自動で実行します。Docker イメージの起動確認（`docker`）は、main への push と、Dockerfile などを変えた PR のときだけ動きます。
 GitHub のブランチ保護で `check` と `build` を必須にすると安全です。
 
 ### Storybook（部品の一覧）
