@@ -1,6 +1,6 @@
 import { DatabaseSync } from "node:sqlite";
 import { describe, expect, it } from "vitest";
-import { MIGRATIONS } from "@/lib/migrations";
+import { MIGRATION_BACKFILLS, MIGRATIONS } from "@/lib/migrations";
 
 describe("マイグレーション", () => {
   it("ユーザー名のユーザーをメールアドレスに、編集者・閲覧者を一般に移行し、全員を有効にする", () => {
@@ -127,5 +127,49 @@ describe("マイグレーション", () => {
     db.exec(MIGRATIONS[index]);
 
     expect({ ...db.prepare("SELECT title, body, tags, folder_id FROM revisions").get() }).toEqual({ title: "P", body: "本文", tags: null, folder_id: null });
+  });
+
+  it("ファイルに URL 用の鍵の列を足し、既存のファイルへ重ならない鍵を割り当てる（他の値は変えない）", () => {
+    const db = new DatabaseSync(":memory:");
+    const keyIndex = MIGRATIONS.findIndex((sql) => sql.includes("ADD COLUMN access_key"));
+    expect(keyIndex).toBeGreaterThanOrEqual(0);
+    for (const sql of MIGRATIONS.slice(0, keyIndex)) db.exec(sql);
+    const insert = db.prepare("INSERT INTO uploads (filename, content_type, byte_size, storage_key, created_at) VALUES (?, 'text/plain', 1, ?, 't')");
+    insert.run("a.txt", "k1");
+    insert.run("b.txt", "k2");
+    const before = db.prepare("SELECT id, filename, content_type, byte_size, storage_key, user_id, created_at FROM uploads ORDER BY id").all();
+
+    db.exec(MIGRATIONS[keyIndex]);
+    MIGRATION_BACKFILLS[keyIndex](db);
+
+    const rows = db.prepare("SELECT * FROM uploads ORDER BY id").all() as { access_key: string }[];
+    expect(rows.map(({ access_key: _key, ...rest }) => rest)).toEqual(before);
+    for (const row of rows) expect(row.access_key).toMatch(/^[A-Za-z0-9_-]{24}$/);
+    expect(new Set(rows.map((r) => r.access_key)).size).toBe(2);
+    // 2 回目の実行では、割り当て済みの鍵を変えない
+    MIGRATION_BACKFILLS[keyIndex](db);
+    expect((db.prepare("SELECT access_key FROM uploads ORDER BY id").all() as { access_key: string }[]).map((r) => r.access_key)).toEqual(rows.map((r) => r.access_key));
+    // 鍵は重複できない（未割り当ての NULL は複数あってよい）
+    expect(() => db.prepare("UPDATE uploads SET access_key = ? WHERE id = 2").run(rows[0].access_key)).toThrow(/UNIQUE/);
+  });
+
+  it("セッションに最終利用日時の列を足す（既存のセッションはそのまま使え、値は変えない）", () => {
+    const db = new DatabaseSync(":memory:");
+    const index = MIGRATIONS.findIndex((sql) => sql.includes("ADD COLUMN last_seen_at"));
+    expect(index).toBeGreaterThanOrEqual(0);
+    for (const sql of MIGRATIONS.slice(0, index)) db.exec(sql);
+    db.exec("PRAGMA foreign_keys = OFF"); // ユーザーの行は用意しない
+    db.exec("INSERT INTO sessions (id, user_id, pending_mfa, created_at, expires_at) VALUES ('s1', 1, 0, '2026-01-01T00:00:00.000Z', '2026-01-15T00:00:00.000Z')");
+    const before = db.prepare("SELECT * FROM sessions").all();
+
+    db.exec(MIGRATIONS[index]);
+    expect(MIGRATION_BACKFILLS[index]).toBeUndefined();
+    expect(db.prepare("SELECT * FROM sessions").all()).toEqual(before.map((row) => ({ ...row, last_seen_at: null })));
+  });
+
+  it("移行は追加の順に並ぶ（版のタグ・フォルダ → ファイルの鍵 → セッションの最終利用日時）", () => {
+    const at = (needle: string) => MIGRATIONS.findIndex((sql) => sql.includes(needle));
+    const order = [at("ALTER TABLE revisions ADD COLUMN tags"), at("ADD COLUMN access_key"), at("ADD COLUMN last_seen_at")];
+    expect(order).toEqual([MIGRATIONS.length - 3, MIGRATIONS.length - 2, MIGRATIONS.length - 1]);
   });
 });

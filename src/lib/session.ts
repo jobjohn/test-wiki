@@ -6,7 +6,13 @@ import { isSecure } from "./env";
 import { getUser, touchSignIn, type User } from "./users";
 
 const COOKIE = "wiki_session";
-const SESSION_DAYS = 14;
+const DAY = 86_400_000;
+/** 最後に使ってからこの期間が過ぎるとログアウト（使っている間は延びる） */
+export const SESSION_IDLE_MS = 14 * DAY;
+/** 使い続けていても、ログインからこの期間が過ぎるとログアウト */
+export const SESSION_ABSOLUTE_MS = 30 * DAY;
+/** 最終利用日時の書き込みは、この間隔より頻繁には行わない */
+export const SESSION_TOUCH_INTERVAL_MS = 60 * 60_000;
 const MFA_PENDING_MINUTES = 10;
 
 const hashToken = (token: string) => createHash("sha256").update(token).digest("hex");
@@ -15,7 +21,29 @@ interface SessionRow {
   id: string;
   user_id: number;
   pending_mfa: number;
+  created_at: string;
   expires_at: string;
+  last_seen_at: string | null;
+}
+
+/**
+ * 使われたセッションの新しい有効期限。前回の記録から SESSION_TOUCH_INTERVAL_MS 経っていなければ null（書き込まない）。
+ * 有効期限は「今から SESSION_IDLE_MS 後」と「ログインから SESSION_ABSOLUTE_MS 後」の早いほう。MFA の確認待ちは延ばさない。
+ */
+export function slidingExpiry(row: Pick<SessionRow, "pending_mfa" | "created_at" | "last_seen_at">, now = Date.now()): string | null {
+  if (row.pending_mfa) return null;
+  const created = Date.parse(row.created_at);
+  const lastSeen = Date.parse(row.last_seen_at ?? row.created_at);
+  if (Number.isNaN(created)) return null;
+  if (!Number.isNaN(lastSeen) && now - lastSeen < SESSION_TOUCH_INTERVAL_MS) return null;
+  return new Date(Math.min(now + SESSION_IDLE_MS, created + SESSION_ABSOLUTE_MS)).toISOString();
+}
+
+/** セッションの最終利用日時を記録し、有効期限を延ばす（書き込みは 1 時間に 1 回まで） */
+export function touchSession(row: SessionRow, now = Date.now()) {
+  const expiresAt = slidingExpiry(row, now);
+  if (!expiresAt) return;
+  run("UPDATE sessions SET last_seen_at = ?, expires_at = ? WHERE id = ?", new Date(now).toISOString(), expiresAt, row.id);
 }
 
 function cookieOptions(expires: Date) {
@@ -26,18 +54,21 @@ function cookieOptions(expires: Date) {
 export async function startSession(userId: number, options: { pendingMfa?: boolean } = {}) {
   await endSession();
   const token = randomBytes(32).toString("base64url");
-  const ttl = options.pendingMfa ? MFA_PENDING_MINUTES * 60_000 : SESSION_DAYS * 86_400_000;
-  const expires = new Date(Date.now() + ttl);
+  const now = Date.now();
+  const expires = new Date(now + (options.pendingMfa ? MFA_PENDING_MINUTES * 60_000 : SESSION_IDLE_MS));
   run(
-    "INSERT INTO sessions (id, user_id, pending_mfa, created_at, expires_at) VALUES (?, ?, ?, ?, ?)",
+    "INSERT INTO sessions (id, user_id, pending_mfa, created_at, expires_at, last_seen_at) VALUES (?, ?, ?, ?, ?, ?)",
     hashToken(token),
     userId,
     options.pendingMfa ? 1 : 0,
-    new Date().toISOString(),
+    new Date(now).toISOString(),
     expires.toISOString(),
+    new Date(now).toISOString(),
   );
-  run("DELETE FROM sessions WHERE expires_at < ?", new Date().toISOString());
-  (await cookies()).set(COOKIE, token, cookieOptions(expires));
+  run("DELETE FROM sessions WHERE expires_at < ?", new Date(now).toISOString());
+  // 期限を延ばすたびに Cookie を書き直さなくて済むよう、Cookie は上限（30 日）まで持たせ、実際の期限はサーバー側（expires_at）で判定する
+  const cookieExpires = options.pendingMfa ? expires : new Date(now + SESSION_ABSOLUTE_MS);
+  (await cookies()).set(COOKIE, token, cookieOptions(cookieExpires));
   if (!options.pendingMfa) touchSignIn(userId);
 }
 
@@ -62,6 +93,7 @@ async function loadSession(): Promise<SessionRow | undefined> {
     run("DELETE FROM sessions WHERE id = ?", row.id);
     return undefined;
   }
+  touchSession(row);
   return row;
 }
 

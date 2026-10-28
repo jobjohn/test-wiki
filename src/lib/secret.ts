@@ -1,4 +1,4 @@
-import { createCipheriv, createDecipheriv, hkdfSync, randomBytes } from "node:crypto";
+import { createCipheriv, createDecipheriv, createHmac, hkdfSync, randomBytes } from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
 import { dataDir } from "./env";
@@ -38,4 +38,12 @@ export function decrypt(payload: string): string {
   const decipher = createDecipheriv("aes-256-gcm", deriveKey("encryption"), Buffer.from(iv, "base64"));
   decipher.setAuthTag(Buffer.from(tag, "base64"));
   return Buffer.concat([decipher.update(Buffer.from(data, "base64")), decipher.final()]).toString("utf8");
+}
+
+/**
+ * ログ用のメールアドレスのハッシュ。同じアドレスなら同じ値になるので、ログ同士を突き合わせられる。
+ * 秘密の鍵を使う HMAC なので、ログだけを見た人がよくあるアドレスを総当たりして元に戻すことはできない。
+ */
+export function emailHash(email: string): string {
+  return createHmac("sha256", deriveKey("log-email")).update(email.trim().toLowerCase()).digest("hex").slice(0, 16);
 }

@@ -13,6 +13,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { Field, FieldDescription, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { PAGE_POSITION_PLACEHOLDER } from "@/lib/form";
+import { uploadFile } from "@/lib/upload-client";
 import { FormErrors } from "./FormErrors";
 import { SubmitButton } from "./SubmitButton";
 import { Badge } from "@/components/ui/badge";
@@ -144,9 +145,7 @@ export function PageForm({
       insertText(placeholder);
       let replacement = "";
       try {
-        const data = new FormData();
-        data.append("file", file);
-        const response = await fetch("/api/uploads", { method: "POST", body: data, credentials: "same-origin" });
+        const response = await uploadFile(file);
         const json = await response.json();
         if (!response.ok) throw new Error(json.error ?? response.statusText);
         replacement = json.markdown;

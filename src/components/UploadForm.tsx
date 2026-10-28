@@ -2,6 +2,7 @@
 
 import { Upload } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { uploadFile } from "@/lib/upload-client";
 import { useRef, useState } from "react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -21,9 +22,7 @@ export function UploadForm() {
     setBusy(true);
     setError("");
     for (const file of files) {
-      const data = new FormData();
-      data.append("file", file);
-      const response = await fetch("/api/uploads", { method: "POST", body: data, credentials: "same-origin" });
+      const response = await uploadFile(file);
       if (!response.ok) {
         const json = await response.json().catch(() => ({}));
         setError(`${file.name}: ${json.error ?? "アップロードに失敗しました。"}`);

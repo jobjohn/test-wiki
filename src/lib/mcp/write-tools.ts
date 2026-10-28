@@ -2,6 +2,7 @@ import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import type { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
 import { z } from "zod";
 import { recordWriteLog } from "../api-write-logs";
+import { errorFields, logEvent } from "../log";
 import type { VerifiedToken } from "../api-tokens";
 import { BOOKMARK_DESCRIPTION_MAX_LENGTH, BOOKMARK_TAGS_MAX, BOOKMARK_TITLE_MAX_LENGTH, BOOKMARK_URL_MAX_LENGTH, parseHttpUrl } from "../bookmark-utils";
 import { createBookmark, findBookmarkByUrl, getBookmark, updateBookmark } from "../bookmarks";
@@ -62,6 +63,7 @@ export function registerWriteTools(server: McpServer, auth: McpAuth | undefined,
         const reason = writeBlockReason(auth);
         if (reason) return fail(reason);
         if (!allowAttempt(`mcp-write:${auth.tokenId}`, WRITE_RATE_LIMIT, WRITE_RATE_WINDOW_MS)) {
+          logEvent("warn", "mcp.write_rejected", { tool: name, reason: "rate_limited", userId: auth.user.id, tokenId: auth.tokenId });
           return fail(`書き込みの回数が上限（1 分あたり ${WRITE_RATE_LIMIT} 回）を超えました。しばらく待ってから再度お試しください。`);
         }
         try {
@@ -70,7 +72,7 @@ export function registerWriteTools(server: McpServer, auth: McpAuth | undefined,
           if (error instanceof ValidationError) return fail(`入力に問題があります: ${error.messages.join(" / ")}`);
           if (error instanceof NotFoundError) return fail("対象が見つかりません（削除された可能性があります）。");
           // 予期しない例外の内部メッセージは返さない
-          console.error(`[mcp] ツール ${name} の処理中にエラーが発生しました`, error);
+          logEvent("error", "mcp.write_error", { tool: name, userId: auth.user.id, tokenId: auth.tokenId, ...errorFields(error) });
           return fail("処理中にエラーが発生しました。時間をおいて再度お試しください。");
         }
       }) as never,
@@ -78,10 +80,12 @@ export function registerWriteTools(server: McpServer, auth: McpAuth | undefined,
 
   /** 監査ログ。ログの失敗で、成功した書き込みをエラーとして返さない */
   const log = (tool: string, targetKind: "page" | "bookmark", targetId: number) => {
+    // トークン名は利用者が付けた文字列なので、構造化ログには ID だけを書く
+    logEvent("info", "mcp.write", { tool, targetKind, targetId, userId: auth.user.id, tokenId: auth.tokenId });
     try {
       recordWriteLog({ tokenId: auth.tokenId, tokenName: auth.tokenName, userId: auth.user.id, tool, targetKind, targetId });
     } catch (error) {
-      console.error("[mcp] 書き込みログの保存に失敗しました", error);
+      logEvent("error", "mcp.write_log_failed", { tool, userId: auth.user.id, tokenId: auth.tokenId, ...errorFields(error) });
     }
   };
 
