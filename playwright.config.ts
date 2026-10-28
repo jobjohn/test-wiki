@@ -29,6 +29,14 @@ export default defineConfig({
   projects: [
     {
       name: "chromium",
+      testIgnore: /a11y\.spec\.ts$/,
+      use: { ...devices["Desktop Chrome"], launchOptions: { executablePath } },
+    },
+    // アクセシビリティの検査は、スモークテストで初期設定とページの作成が済んだ DB で行う
+    {
+      name: "a11y",
+      testMatch: /a11y\.spec\.ts$/,
+      dependencies: ["chromium"],
       use: { ...devices["Desktop Chrome"], launchOptions: { executablePath } },
     },
   ],

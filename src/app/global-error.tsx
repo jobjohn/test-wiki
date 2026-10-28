@@ -13,7 +13,9 @@ export default function GlobalError({ error, retry }: { error: unknown; retry: (
     <html lang="ja" data-theme="system">
       <body>
         <title>エラーが発生しました</title>
-        <ErrorState error={error} retry={retry} />
+        <main>
+          <ErrorState error={error} retry={retry} />
+        </main>
       </body>
     </html>
   );
