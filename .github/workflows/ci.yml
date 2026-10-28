@@ -30,9 +30,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: ソースの取得
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
       - name: Node.js の準備
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
           node-version: 22
           cache: npm
@@ -50,9 +50,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: ソースの取得
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
       - name: Node.js の準備
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
           node-version: 22
           cache: npm
@@ -66,9 +66,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: ソースの取得
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
       - name: Node.js の準備
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v7
         with:
           node-version: 22
           cache: npm
@@ -76,7 +76,7 @@ jobs:
         run: npm ci
       - name: Playwright のブラウザのキャッシュ
         id: playwright-cache
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: ~/.cache/ms-playwright
           key: playwright-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
@@ -89,7 +89,7 @@ jobs:
         run: npx playwright install-deps chromium
       # ソースが変わっても前回のキャッシュを足がかりに使えるよう、restore-keys は package-lock のみにする
       - name: Next.js のビルドキャッシュ
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: .next/cache
           key: nextjs-${{ runner.os }}-${{ hashFiles('package-lock.json') }}-${{ hashFiles('src/**', 'next.config.ts', 'tsconfig.json', 'postcss.config.mjs') }}
@@ -101,7 +101,7 @@ jobs:
         run: npx playwright test
       - name: レポートのアップロード
         if: failure()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: playwright-report
           path: |
@@ -114,7 +114,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: ソースの取得
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
       # 外部アクションを増やさないよう git diff で判定する。
       # PR では、取得されるマージ結果と main の差分（= その PR の変更）を見る。
       - name: Docker 関連ファイルの変更を確認
@@ -138,10 +138,10 @@ jobs:
           fi
       - name: Buildx の準備
         if: steps.changes.outputs.run == 'true'
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@v4
       - name: イメージのビルド
         if: steps.changes.outputs.run == 'true'
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           context: .
           push: false
