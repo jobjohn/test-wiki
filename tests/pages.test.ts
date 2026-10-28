@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { getDb } from "@/lib/db";
 import { StaleError, ValidationError } from "@/lib/errors";
 import { createFolder } from "@/lib/folders";
@@ -61,6 +61,32 @@ describe("ページと履歴", () => {
     expect(() => createPage(input({ title: "guide  page" }))).toThrow(/同じタイトル/);
     expect(() => createPage(input({ title: "ＧＵＩＤＥ　ＰＡＧＥ" }))).toThrow(/同じタイトル/);
     expect(findPageByTitle("GUIDE PAGE")?.title).toBe("Guide Page");
+  });
+
+  it("一意インデックスでの衝突（検証をすり抜けた別プロセスとの競合）も検証エラーとして返す", () => {
+    createPage(input({ title: "競合タイトル" }));
+    const id = createPage(input({ title: "別タイトル" }));
+    const db = getDb();
+    const original = db.prepare.bind(db);
+    // 別プロセスが検証の後に同じタイトルで保存した状況を再現するため、
+    // 検証の SELECT だけを「衝突なし」に見せかけ、INSERT・UPDATE は本物の一意インデックスにぶつける
+    const spy = vi.spyOn(db, "prepare").mockImplementation((sql: string) =>
+      sql === "SELECT id FROM pages WHERE title_key = ?" ? original("SELECT NULL AS id WHERE ? IS NULL") : original(sql),
+    );
+    try {
+      let caught: unknown;
+      try {
+        updatePage(id, input({ title: "競合タイトル" }), getPage(id)!.lockVersion);
+      } catch (error) {
+        caught = error;
+      }
+      expect(caught).toBeInstanceOf(ValidationError);
+      expect((caught as ValidationError).messages).toEqual(["同じタイトルのページが既にあります"]);
+      expect(() => createPage(input({ title: "競合タイトル" }))).toThrow(ValidationError);
+    } finally {
+      spy.mockRestore();
+    }
+    expect(getPage(id)!.title).toBe("別タイトル");
   });
 
   it("入力を検証する", () => {

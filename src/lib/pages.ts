@@ -173,6 +173,23 @@ export interface PageInput {
   source?: "mcp";
 }
 
+const TITLE_CLASH = "同じタイトルのページが既にあります";
+
+/**
+ * タイトルの一意制約違反を検証エラーに変える。
+ * 検証はトランザクション内で行うが、別プロセス（スクリプトなど）との競合では一意インデックスが最後の砦になる
+ */
+function withTitleClashAsValidation<T>(fn: () => T): T {
+  try {
+    return fn();
+  } catch (error) {
+    const sqlite = error as { errcode?: number; message?: string };
+    // 2067 = SQLITE_CONSTRAINT_UNIQUE
+    if (sqlite.errcode === 2067 && sqlite.message?.includes("pages.title_key")) throw new ValidationError([TITLE_CLASH]);
+    throw error;
+  }
+}
+
 function validate(input: PageInput, id?: number) {
   const errors: string[] = [];
   const title = squish(input.title);
@@ -180,7 +197,7 @@ function validate(input: PageInput, id?: number) {
   if (title.length > TITLE_MAX_LENGTH) errors.push(`タイトルは ${TITLE_MAX_LENGTH} 文字以内にしてください`);
   if (title) {
     const clash = get<{ id: number }>("SELECT id FROM pages WHERE title_key = ?", keyOf(title));
-    if (clash && clash.id !== id) errors.push("同じタイトルのページが既にあります");
+    if (clash && clash.id !== id) errors.push(TITLE_CLASH);
   }
   if (input.folderId !== null && !get("SELECT 1 FROM folders WHERE id = ?", input.folderId)) errors.push("フォルダが存在しません");
   if (!Number.isInteger(input.position)) errors.push("表示順は整数で指定してください");
@@ -204,25 +221,27 @@ function recordRevision(pageId: number, title: string, body: string, summary: st
 }
 
 export function createPage(data: PageInput): number {
-  const title = validate(data);
   const body = normalizeBody(data.body);
-  return transaction(() => {
-    const timestamp = now();
-    const id = run(
-      "INSERT INTO pages (title, title_key, body, folder_id, position, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)",
-      title,
-      keyOf(title),
-      body,
-      data.folderId,
-      data.position,
-      timestamp,
-      timestamp,
-    ).lastInsertRowid;
-    recordRevision(id, title, body, data.summary || "作成", data.userId, data.source ?? null);
-    replaceTags(id, parseTagList(data.tags));
-    writePageLinks(getDb(), id, body);
-    return id;
-  });
+  return withTitleClashAsValidation(() =>
+    transaction(() => {
+      const title = validate(data);
+      const timestamp = now();
+      const id = run(
+        "INSERT INTO pages (title, title_key, body, folder_id, position, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)",
+        title,
+        keyOf(title),
+        body,
+        data.folderId,
+        data.position,
+        timestamp,
+        timestamp,
+      ).lastInsertRowid;
+      recordRevision(id, title, body, data.summary || "作成", data.userId, data.source ?? null);
+      replaceTags(id, parseTagList(data.tags));
+      writePageLinks(getDb(), id, body);
+      return id;
+    }),
+  );
 }
 
 /**
@@ -253,31 +272,32 @@ function relinkRenamedPage(pageId: number, oldTitle: string, newTitle: string, u
  * 改名したときは、他のページの [[旧タイトル]] リンクも同じトランザクションで書き換え、その件数を返す
  */
 export function updatePage(id: number, data: PageInput, lockVersion: number): { relinkedPages: number } {
-  const current = getPage(id);
-  if (!current) throw new NotFoundError("page not found");
-  const title = validate(data, id);
   const body = normalizeBody(data.body);
-
-  return transaction(() => {
-    const result = run(
-      `UPDATE pages SET title = ?, title_key = ?, body = ?, folder_id = ?, position = ?, lock_version = lock_version + 1, updated_at = ?
-       WHERE id = ? AND lock_version = ?`,
-      title,
-      keyOf(title),
-      body,
-      data.folderId,
-      data.position,
-      now(),
-      id,
-      lockVersion,
-    );
-    if (result.changes === 0) throw new StaleError();
-    if (title !== current.title || body !== current.body) recordRevision(id, title, body, data.summary, data.userId, data.source ?? null);
-    replaceTags(id, parseTagList(data.tags));
-    if (body !== current.body) writePageLinks(getDb(), id, body);
-    const renamed = keyOf(title) !== keyOf(current.title);
-    return { relinkedPages: renamed ? relinkRenamedPage(id, current.title, title, data.userId, data.source ?? null) : 0 };
-  });
+  return withTitleClashAsValidation(() =>
+    transaction(() => {
+      const current = getPage(id);
+      if (!current) throw new NotFoundError("page not found");
+      const title = validate(data, id);
+      const result = run(
+        `UPDATE pages SET title = ?, title_key = ?, body = ?, folder_id = ?, position = ?, lock_version = lock_version + 1, updated_at = ?
+         WHERE id = ? AND lock_version = ?`,
+        title,
+        keyOf(title),
+        body,
+        data.folderId,
+        data.position,
+        now(),
+        id,
+        lockVersion,
+      );
+      if (result.changes === 0) throw new StaleError();
+      if (title !== current.title || body !== current.body) recordRevision(id, title, body, data.summary, data.userId, data.source ?? null);
+      replaceTags(id, parseTagList(data.tags));
+      if (body !== current.body) writePageLinks(getDb(), id, body);
+      const renamed = keyOf(title) !== keyOf(current.title);
+      return { relinkedPages: renamed ? relinkRenamedPage(id, current.title, title, data.userId, data.source ?? null) : 0 };
+    }),
+  );
 }
 
 export function deletePage(id: number) {
