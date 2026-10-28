@@ -21,6 +21,7 @@ import {
   type PageInput,
 } from "@/lib/pages";
 import { createUser } from "@/lib/users";
+import { renameWikiLinks } from "@/lib/wikilinks";
 
 const input = (overrides: Partial<PageInput> = {}): PageInput => ({
   title: "無題",
@@ -139,5 +140,55 @@ describe("検索とリンク", () => {
     const folder = createFolder({ name: "ページ用", parentId: null, position: 0 });
     const id = createPage(input({ title: "フォルダ内", folderId: folder }));
     expect(getPage(id)?.folderId).toBe(folder);
+  });
+});
+
+describe("改名とリンクの書き換え", () => {
+  it("[[旧名]] を keyOf と同じ規則で照合し、表示名とコード内はそのまま残す", () => {
+    const body = "[[Old  Name]] [[ｏｌｄ name|こちら]] [[old name2]] `[[old name]]`\n```\n[[old name]]\n```\n[[ old name ]]";
+    expect(renameWikiLinks(body, "Old Name", "新しい名前")).toBe(
+      "[[新しい名前]] [[新しい名前|こちら]] [[old name2]] `[[old name]]`\n```\n[[old name]]\n```\n[[新しい名前]]",
+    );
+    // Wiki リンクで書けないタイトルには書き換えない
+    expect(renameWikiLinks("[[old name]]", "old name", "a|b")).toBe("[[old name]]");
+  });
+
+  it("改名すると他のページのリンクを同じトランザクションで書き換え、版とリンクの索引も更新する", () => {
+    const userId = createUser({ email: "renamer@example.com", displayName: "改名 花子", role: "general", password: "password123" });
+    const target = createPage(input({ title: "改名前" }));
+    const source = createPage(input({ title: "改名リンク元", body: "[[改名前]] と [[改名前|別名]]", tags: "残るタグ" }));
+    const untouched = createPage(input({ title: "改名無関係", body: "[[改名前2]]" }));
+    const sourceLock = getPage(source)!.lockVersion;
+
+    const result = updatePage(target, input({ title: "改名後", userId }), getPage(target)!.lockVersion);
+    expect(result).toEqual({ relinkedPages: 1 });
+    expect(getPage(source)!.body).toBe("[[改名後]] と [[改名後|別名]]");
+    expect(getPage(source)!.lockVersion).toBe(sourceLock + 1);
+    expect(tagList(source)).toBe("残るタグ");
+    expect(latestRevision(source)).toMatchObject({ number: 2, userName: "改名 花子", summary: "「改名前」→「改名後」の改名に合わせてリンクを更新" });
+    expect(backlinksFor(getPage(target)!).map((p) => p.title)).toEqual(["改名リンク元"]);
+    expect(getPage(untouched)!.body).toBe("[[改名前2]]");
+    expect(listRevisions(untouched)).toHaveLength(1);
+
+    // 大文字小文字だけの変更はリンクが切れないので書き換えない
+    const latin = createPage(input({ title: "Case Page" }));
+    const linker = createPage(input({ title: "Case Linker", body: "[[case page]]" }));
+    expect(updatePage(latin, input({ title: "CASE PAGE" }), getPage(latin)!.lockVersion)).toEqual({ relinkedPages: 0 });
+    expect(getPage(linker)!.body).toBe("[[case page]]");
+  });
+
+  it("リンク元の書き換えに失敗すると改名ごと取り消す", () => {
+    const target = createPage(input({ title: "取り消し前" }));
+    const source = createPage(input({ title: "取り消しリンク元", body: "[[取り消し前]]" }));
+    getDb().exec(
+      `CREATE TEMP TRIGGER fail_relink BEFORE UPDATE OF body ON pages WHEN new.id = ${source} BEGIN SELECT RAISE(ABORT, 'boom'); END`,
+    );
+    try {
+      expect(() => updatePage(target, input({ title: "取り消し後" }), getPage(target)!.lockVersion)).toThrow(/boom/);
+    } finally {
+      getDb().exec("DROP TRIGGER fail_relink");
+    }
+    expect(getPage(target)!.title).toBe("取り消し前");
+    expect(getPage(source)!.body).toBe("[[取り消し前]]");
   });
 });

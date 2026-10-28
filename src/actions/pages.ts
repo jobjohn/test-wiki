@@ -27,10 +27,16 @@ export async function savePageAction(_prev: FormState, data: FormData): Promise<
   };
 
   try {
-    const savedId = id === null ? createPage(input) : (updatePage(id, input, int(data, "lockVersion", -1)), id);
+    if (id === null) {
+      const savedId = createPage(input);
+      revalidatePath("/", "layout");
+      await setFlash("notice", `ページ「${input.title.trim()}」を作成しました。`);
+      redirect(`/pages/${savedId}`);
+    }
+    const { relinkedPages } = updatePage(id, input, int(data, "lockVersion", -1));
     revalidatePath("/", "layout");
-    await setFlash("notice", id === null ? `ページ「${input.title.trim()}」を作成しました。` : "ページを更新しました。");
-    redirect(`/pages/${savedId}`);
+    await setFlash("notice", relinkedPages ? `ページを更新しました。リンクしていた ${relinkedPages} ページのリンクも新しいタイトルに書き換えました。` : "ページを更新しました。");
+    redirect(`/pages/${id}`);
   } catch (error) {
     if (error instanceof ValidationError) return { errors: error.messages, values: values(data, FIELDS) };
     if (error instanceof NotFoundError) {

@@ -2,6 +2,7 @@ import { all, get, getDb, run, transaction } from "./db";
 import { NotFoundError, StaleError, ValidationError } from "./errors";
 import { escapeLike, keyOf, normalizeBody, now, parseTagList, squish } from "./text";
 import { writePageLinks } from "./page-links";
+import { renameWikiLinks } from "./wikilinks";
 
 export const TITLE_MAX_LENGTH = 200;
 
@@ -224,14 +225,40 @@ export function createPage(data: PageInput): number {
   });
 }
 
-/** 更新する。lockVersion が最新でなければ StaleError（他の人が先に保存している） */
-export function updatePage(id: number, data: PageInput, lockVersion: number) {
+/**
+ * 改名したページへの [[旧タイトル]] リンクを、他のページの本文で新しいタイトルに書き換える。
+ * 書き換えたページには版を残し、編集中の人とは楽観ロックでぶつかるよう lock_version も進める。
+ * 戻り値は書き換えたページ数
+ */
+function relinkRenamedPage(pageId: number, oldTitle: string, newTitle: string, userId: number | null, source: RevisionSource): number {
+  const sources = all<{ id: number; title: string; body: string }>(
+    "SELECT p.id, p.title, p.body FROM pages p JOIN page_links l ON l.source_id = p.id WHERE l.target_key = ? AND p.id != ?",
+    keyOf(oldTitle),
+    pageId,
+  );
+  let count = 0;
+  for (const page of sources) {
+    const body = renameWikiLinks(page.body, oldTitle, newTitle);
+    if (body === page.body) continue;
+    run("UPDATE pages SET body = ?, lock_version = lock_version + 1, updated_at = ? WHERE id = ?", body, now(), page.id);
+    recordRevision(page.id, page.title, body, `「${oldTitle}」→「${newTitle}」の改名に合わせてリンクを更新`, userId, source);
+    writePageLinks(getDb(), page.id, body);
+    count++;
+  }
+  return count;
+}
+
+/**
+ * 更新する。lockVersion が最新でなければ StaleError（他の人が先に保存している）。
+ * 改名したときは、他のページの [[旧タイトル]] リンクも同じトランザクションで書き換え、その件数を返す
+ */
+export function updatePage(id: number, data: PageInput, lockVersion: number): { relinkedPages: number } {
   const current = getPage(id);
   if (!current) throw new NotFoundError("page not found");
   const title = validate(data, id);
   const body = normalizeBody(data.body);
 
-  transaction(() => {
+  return transaction(() => {
     const result = run(
       `UPDATE pages SET title = ?, title_key = ?, body = ?, folder_id = ?, position = ?, lock_version = lock_version + 1, updated_at = ?
        WHERE id = ? AND lock_version = ?`,
@@ -248,6 +275,8 @@ export function updatePage(id: number, data: PageInput, lockVersion: number) {
     if (title !== current.title || body !== current.body) recordRevision(id, title, body, data.summary, data.userId, data.source ?? null);
     replaceTags(id, parseTagList(data.tags));
     if (body !== current.body) writePageLinks(getDb(), id, body);
+    const renamed = keyOf(title) !== keyOf(current.title);
+    return { relinkedPages: renamed ? relinkRenamedPage(id, current.title, title, data.userId, data.source ?? null) : 0 };
   });
 }
 
