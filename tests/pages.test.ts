@@ -14,7 +14,9 @@ import {
   listRevisions,
   listTagNames,
   listTagsWithCounts,
+  restoreDescription,
   restoreRevision,
+  restoreScope,
   searchPages,
   tagList,
   updatePage,
@@ -34,7 +36,7 @@ const input = (overrides: Partial<PageInput> = {}): PageInput => ({
 });
 
 describe("ページと履歴", () => {
-  it("作成時と本文・タイトルの変更時に版を記録し、それ以外の変更では記録しない", () => {
+  it("作成時と本文・タイトル・タグ・フォルダの変更時に版を記録し、表示順だけの変更では記録しない", () => {
     getDb();
     const userId = createUser({ email: "author@example.com", displayName: "編集 太郎", role: "general", password: "password123" });
     const id = createPage(input({ title: "履歴テスト", body: "one", summary: "作成", userId }));
@@ -49,6 +51,15 @@ describe("ページと履歴", () => {
     updatePage(id, input({ title: "履歴テスト", body: "two", position: 5, userId }), page.lockVersion);
     expect(listRevisions(id)).toHaveLength(2);
     expect(getPage(id)?.position).toBe(5);
+
+    const folder = createFolder({ name: "版のフォルダ", parentId: null, position: 0 });
+    updatePage(id, input({ title: "履歴テスト", body: "two", position: 5, tags: "b, A", userId }), getPage(id)!.lockVersion);
+    expect(latestRevision(id)).toMatchObject({ number: 3, tags: "A, b", folderId: null });
+    updatePage(id, input({ title: "履歴テスト", body: "two", position: 5, tags: "A, b", folderId: folder, userId }), getPage(id)!.lockVersion);
+    expect(latestRevision(id)).toMatchObject({ number: 4, tags: "A, b", folderId: folder });
+    // タグの並びだけ違っても同じタグなら記録しない
+    updatePage(id, input({ title: "履歴テスト", body: "two", position: 5, tags: "b, a", folderId: folder, userId }), getPage(id)!.lockVersion);
+    expect(listRevisions(id)).toHaveLength(4);
   });
 
   it("改行コードを LF にそろえる", () => {
@@ -110,6 +121,42 @@ describe("ページと履歴", () => {
     expect(getPage(id)?.body).toBe("v1");
     expect(latestRevision(id)).toMatchObject({ number: 3, summary: "第1版に復元" });
     expect(getRevision(id, 2)?.body).toBe("v2");
+  });
+
+  it("版に記録したタグとフォルダも戻す", () => {
+    const folder = createFolder({ name: "復元元フォルダ", parentId: null, position: 0 });
+    const id = createPage(input({ title: "タグ復元", body: "v1", tags: "古いタグ", folderId: folder }));
+    updatePage(id, input({ title: "タグ復元", body: "v2", tags: "新しいタグ" }), getPage(id)!.lockVersion);
+    expect(restoreScope(getRevision(id, 1)!)).toBe("full");
+    restoreRevision(id, 1, null);
+    expect(getPage(id)).toMatchObject({ body: "v1", folderId: folder });
+    expect(tagList(id)).toBe("古いタグ");
+    expect(latestRevision(id)).toMatchObject({ number: 3, tags: "古いタグ", folderId: folder });
+  });
+
+  it("記録したフォルダが消えていれば、フォルダは今のままでタイトル・本文・タグを戻す", () => {
+    const folder = createFolder({ name: "消えるフォルダ", parentId: null, position: 0 });
+    const id = createPage(input({ title: "フォルダ消失", body: "v1", tags: "t1", folderId: folder }));
+    updatePage(id, input({ title: "フォルダ消失", body: "v2", tags: "t2" }), getPage(id)!.lockVersion);
+    getDb().prepare("DELETE FROM folders WHERE id = ?").run(folder);
+    expect(restoreScope(getRevision(id, 1)!)).toBe("folderMissing");
+    restoreRevision(id, 1, null);
+    expect(getPage(id)).toMatchObject({ body: "v1", folderId: null });
+    expect(tagList(id)).toBe("t1");
+  });
+
+  it("タグとフォルダを記録する前の古い版は、タイトルと本文だけを戻す", () => {
+    const folder = createFolder({ name: "今のフォルダ", parentId: null, position: 0 });
+    const id = createPage(input({ title: "古い版", body: "v1", tags: "昔のタグ" }));
+    updatePage(id, input({ title: "古い版（改）", body: "v2", tags: "今のタグ", folderId: folder }), getPage(id)!.lockVersion);
+    // マイグレーション前に作られた版を再現する
+    getDb().prepare("UPDATE revisions SET tags = NULL, folder_id = NULL WHERE page_id = ? AND number = 1").run(id);
+    expect(getRevision(id, 1)).toMatchObject({ tags: null, folderId: null });
+    expect(restoreScope(getRevision(id, 1)!)).toBe("titleAndBody");
+    expect(restoreDescription("titleAndBody")).toMatch(/タイトルと本文だけ/);
+    restoreRevision(id, 1, null);
+    expect(getPage(id)).toMatchObject({ title: "古い版", body: "v1", folderId: folder });
+    expect(tagList(id)).toBe("今のタグ");
   });
 
   it("削除すると履歴も消え、使われなくなったタグも消える", () => {

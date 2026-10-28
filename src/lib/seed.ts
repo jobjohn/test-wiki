@@ -84,7 +84,9 @@ export function seedFreshDatabase(db: DatabaseSync) {
 
   const insertFolder = db.prepare("INSERT INTO folders (name, name_key, created_at, updated_at) VALUES (?, ?, ?, ?)");
   const insertPage = db.prepare("INSERT INTO pages (title, title_key, body, folder_id, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)");
-  const insertRevision = db.prepare("INSERT INTO revisions (page_id, number, title, body, summary, created_at) VALUES (?, 1, ?, ?, '初期ページ', ?)");
+  const insertRevision = db.prepare(
+    "INSERT INTO revisions (page_id, number, title, body, summary, tags, folder_id, created_at) VALUES (?, 1, ?, ?, '初期ページ', ?, ?, ?)",
+  );
   const insertTag = db.prepare("INSERT INTO tags (name, name_key) VALUES (?, ?) ON CONFLICT(name_key) DO NOTHING");
   const selectTag = db.prepare("SELECT id FROM tags WHERE name_key = ?");
   const insertTagging = db.prepare("INSERT INTO taggings (page_id, tag_id) VALUES (?, ?)");
@@ -96,7 +98,9 @@ export function seedFreshDatabase(db: DatabaseSync) {
   ];
   for (const page of pages) {
     const pageId = Number(insertPage.run(page.title, keyOf(page.title), page.body, page.folderId, timestamp, timestamp).lastInsertRowid);
-    insertRevision.run(pageId, page.title, page.body, timestamp);
+    // 版のタグは tagList と同じく name_key 順・", " 区切り
+    const tags = [...page.tags].sort((a, b) => (keyOf(a) < keyOf(b) ? -1 : keyOf(a) > keyOf(b) ? 1 : 0)).join(", ");
+    insertRevision.run(pageId, page.title, page.body, tags, page.folderId, timestamp);
     for (const tag of page.tags) {
       insertTag.run(tag, keyOf(tag));
       const row = selectTag.get(keyOf(tag)) as { id: number };

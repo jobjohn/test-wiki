@@ -13,7 +13,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { requireAccess } from "@/lib/access";
 import { formatDateTime } from "@/lib/format";
 import { parseId } from "@/lib/params";
-import { getPage, listRevisions } from "@/lib/pages";
+import { getPage, listRevisions, restoreDescription, restoreScope } from "@/lib/pages";
 import { canEdit } from "@/lib/users";
 
 export const metadata: Metadata = { title: "変更履歴" };
@@ -70,7 +70,7 @@ export default async function RevisionsPage({ params }: { params: Promise<{ id: 
                         <ConfirmAction
                           action={restoreRevisionAction.bind(null, page.id, revision.number)}
                           title={`第${revision.number}版に戻しますか？`}
-                          description="この版の内容に戻します。現在の内容は履歴に残り、戻した内容が新しい版として保存されます。"
+                          description={restoreDescription(restoreScope(revision))}
                           confirmLabel="この版に戻す"
                           trigger={
                             <Button variant="outline" size="sm">

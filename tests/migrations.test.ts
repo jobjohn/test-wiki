@@ -114,4 +114,18 @@ describe("マイグレーション", () => {
       expect.objectContaining({ number: 1, title: "B", url: "https://e.com/", description_md: "説明", tags: "t1,t2", user_id: 1, source: null, created_at: "u" }),
     ]);
   });
+
+  it("版にタグとフォルダの列を足す。既存の版は NULL（記録前の版）のまま残す", () => {
+    const db = new DatabaseSync(":memory:");
+    db.exec("PRAGMA foreign_keys = ON");
+    const index = MIGRATIONS.findIndex((sql) => sql.includes("ALTER TABLE revisions ADD COLUMN tags"));
+    expect(index).toBeGreaterThan(MIGRATIONS.findIndex((sql) => sql.includes("CREATE TABLE page_likes")));
+    for (const sql of MIGRATIONS.slice(0, index)) db.exec(sql);
+    db.prepare("INSERT INTO pages (title, title_key, created_at, updated_at) VALUES ('P', 'p', 't', 't')").run();
+    db.prepare("INSERT INTO revisions (page_id, number, title, body, created_at) VALUES (1, 1, 'P', '本文', 't')").run();
+
+    db.exec(MIGRATIONS[index]);
+
+    expect({ ...db.prepare("SELECT title, body, tags, folder_id FROM revisions").get() }).toEqual({ title: "P", body: "本文", tags: null, folder_id: null });
+  });
 });

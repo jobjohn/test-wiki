@@ -33,6 +33,10 @@ export interface Revision {
   summary: string | null;
   /** 書き込み元。null は画面、"mcp" は MCP 経由 */
   source: RevisionSource;
+  /** この版のタグ（", " 区切り）。null はタグとフォルダを記録する前の古い版 */
+  tags: string | null;
+  /** この版のフォルダ（tags が null の版では意味を持たない） */
+  folderId: number | null;
   createdAt: string;
   userId: number | null;
   userName: string | null;
@@ -205,10 +209,12 @@ function validate(input: PageInput, id?: number) {
   return title;
 }
 
+/** 版を記録する。タグはタグ付けを保存した後の内容（tagList）を記録するので、replaceTags の後に呼ぶ */
 function recordRevision(pageId: number, title: string, body: string, summary: string | undefined, userId: number | null, source: RevisionSource = null) {
   const next = (get<{ n: number | null }>("SELECT MAX(number) AS n FROM revisions WHERE page_id = ?", pageId)!.n ?? 0) + 1;
+  const { folder_id } = get<{ folder_id: number | null }>("SELECT folder_id FROM pages WHERE id = ?", pageId)!;
   run(
-    "INSERT INTO revisions (page_id, user_id, number, title, body, summary, source, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+    "INSERT INTO revisions (page_id, user_id, number, title, body, summary, source, tags, folder_id, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
     pageId,
     userId,
     next,
@@ -216,6 +222,8 @@ function recordRevision(pageId: number, title: string, body: string, summary: st
     body,
     summary?.trim() ? summary.trim().slice(0, 200) : null,
     source,
+    tagList(pageId),
+    folder_id,
     now(),
   );
 }
@@ -236,8 +244,8 @@ export function createPage(data: PageInput): number {
         timestamp,
         timestamp,
       ).lastInsertRowid;
-      recordRevision(id, title, body, data.summary || "作成", data.userId, data.source ?? null);
       replaceTags(id, parseTagList(data.tags));
+      recordRevision(id, title, body, data.summary || "作成", data.userId, data.source ?? null);
       writePageLinks(getDb(), id, body);
       return id;
     }),
@@ -291,8 +299,11 @@ export function updatePage(id: number, data: PageInput, lockVersion: number): { 
         lockVersion,
       );
       if (result.changes === 0) throw new StaleError();
-      if (title !== current.title || body !== current.body) recordRevision(id, title, body, data.summary, data.userId, data.source ?? null);
+      const previousTags = tagList(id);
       replaceTags(id, parseTagList(data.tags));
+      // 表示順だけの変更では版を残さない
+      const changed = title !== current.title || body !== current.body || tagList(id) !== previousTags || data.folderId !== current.folderId;
+      if (changed) recordRevision(id, title, body, data.summary, data.userId, data.source ?? null);
       if (body !== current.body) writePageLinks(getDb(), id, body);
       const renamed = keyOf(title) !== keyOf(current.title);
       return { relinkedPages: renamed ? relinkRenamedPage(id, current.title, title, data.userId, data.source ?? null) : 0 };
@@ -315,6 +326,8 @@ interface RevisionRow {
   body: string;
   summary: string | null;
   source: string | null;
+  tags: string | null;
+  folder_id: number | null;
   created_at: string;
   user_id: number | null;
   user_name: string | null;
@@ -330,6 +343,8 @@ const mapRevision = (row: RevisionRow): Revision => ({
   body: row.body,
   summary: row.summary,
   source: row.source === "mcp" ? "mcp" : null,
+  tags: row.tags,
+  folderId: row.folder_id,
   createdAt: row.created_at,
   userId: row.user_id,
   userName: row.user_name,
@@ -357,19 +372,43 @@ export const recentRevisions = (limit: number, offset: number): (Revision & { pa
     offset,
   ).map((row) => ({ ...mapRevision(row), pageTitle: row.page_title }));
 
-/** 過去の版の内容に戻す（新しい版として保存される） */
+export type RestoreScope =
+  /** タイトル・本文・タグ・フォルダを戻す */
+  | "full"
+  /** タイトル・本文・タグを戻す（記録したフォルダが削除済みのため、フォルダは今のまま） */
+  | "folderMissing"
+  /** タイトルと本文だけを戻す（タグとフォルダを記録する前の古い版） */
+  | "titleAndBody";
+
+/** この版に戻したときに、どこまで戻せるか */
+export function restoreScope(revision: Revision): RestoreScope {
+  if (revision.tags === null) return "titleAndBody";
+  if (revision.folderId !== null && !get("SELECT 1 FROM folders WHERE id = ?", revision.folderId)) return "folderMissing";
+  return "full";
+}
+
+/** 「この版に戻す」の確認文 */
+export function restoreDescription(scope: RestoreScope): string {
+  const base = "この版の内容に戻します。現在の内容は履歴に残り、戻した内容が新しい版として保存されます。";
+  if (scope === "titleAndBody") return `${base}この版はタグとフォルダを記録する前の版のため、タイトルと本文だけを戻します（タグとフォルダは今のまま）。`;
+  if (scope === "folderMissing") return `${base}この版のフォルダは削除されているため、フォルダは今のままにします。`;
+  return `${base}タイトル・本文・タグ・フォルダを戻します。`;
+}
+
+/** 過去の版の内容に戻す（新しい版として保存される）。タグとフォルダは、版に記録があれば戻す */
 export function restoreRevision(pageId: number, number: number, userId: number | null) {
   const page = getPage(pageId);
   const revision = getRevision(pageId, number);
   if (!page || !revision) throw new NotFoundError("revision not found");
-  updatePage(
+  const scope = restoreScope(revision);
+  return updatePage(
     pageId,
     {
       title: revision.title,
       body: revision.body,
-      folderId: page.folderId,
+      folderId: scope === "full" ? revision.folderId : page.folderId,
       position: page.position,
-      tags: tagList(pageId),
+      tags: scope === "titleAndBody" ? tagList(pageId) : revision.tags!,
       summary: `第${revision.number}版に復元`,
       userId,
     },
