@@ -9,7 +9,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { NativeSelect } from "@/components/ui/native-select";
+import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
 import { ROLES, STATUSES, type Role, type Status } from "@/lib/roles";
 import { ActionForm } from "./ActionForm";
 import { Field, FieldDescription, FieldGroup, FieldLabel } from "@/components/ui/field";
@@ -48,9 +48,9 @@ export function UserForm({
                 <FieldLabel htmlFor="role">ロール</FieldLabel>
                 <NativeSelect id="role" name="role" defaultValue={v.role}>
                   {(Object.entries(ROLES) as [Role, string][]).map(([key, label]) => (
-                    <option key={key} value={key}>
+                    <NativeSelectOption key={key} value={key}>
                       {label}
-                    </option>
+                    </NativeSelectOption>
                   ))}
                 </NativeSelect>
                 <FieldDescription>一般: ページの閲覧・編集 ／ 管理者: 管理者設定（ユーザー管理）と一般設定も可能</FieldDescription>
@@ -59,9 +59,9 @@ export function UserForm({
                 <FieldLabel htmlFor="status">ステータス</FieldLabel>
                 <NativeSelect id="status" name="status" defaultValue={v.status}>
                   {(Object.entries(STATUSES) as [Status, string][]).map(([key, label]) => (
-                    <option key={key} value={key}>
+                    <NativeSelectOption key={key} value={key}>
                       {label}
-                    </option>
+                    </NativeSelectOption>
                   ))}
                 </NativeSelect>
                 <FieldDescription>無効にすると、ログインできなくなります（ログイン中の端末からもログアウトします）</FieldDescription>

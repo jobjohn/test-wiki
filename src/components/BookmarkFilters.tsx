@@ -5,7 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { type ReactNode, useState, useTransition } from "react";
 import { Badge } from "@/components/ui/badge";
 import { InputGroup, InputGroupAddon, InputGroupInput } from "@/components/ui/input-group";
-import { NativeSelect } from "@/components/ui/native-select";
+import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
 import { Spinner } from "@/components/ui/spinner";
 import { BOOKMARK_SORTS, type BookmarkSort } from "@/lib/bookmark-utils";
 
@@ -77,9 +77,9 @@ export function BookmarkFilters({
         </InputGroup>
         <NativeSelect value={sort} onChange={(e) => navigate({ sort: e.target.value as BookmarkSort })} aria-label="並び順" className="sm:w-36">
           {Object.entries(BOOKMARK_SORTS).map(([value, label]) => (
-            <option key={value} value={value}>
+            <NativeSelectOption key={value} value={value}>
               {label}
-            </option>
+            </NativeSelectOption>
           ))}
         </NativeSelect>
       </form>

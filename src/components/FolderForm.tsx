@@ -7,7 +7,7 @@ import { saveFolderAction } from "@/actions/folders";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { NativeSelect } from "@/components/ui/native-select";
+import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
 import { Field, FieldDescription, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { FormErrors } from "./FormErrors";
 import { SubmitButton } from "./SubmitButton";
@@ -41,11 +41,11 @@ export function FolderForm({
               <Field>
                 <FieldLabel htmlFor="parentId">親フォルダ</FieldLabel>
                 <NativeSelect id="parentId" name="parentId" defaultValue={v.parentId}>
-                  <option value="">（トップ）</option>
+                  <NativeSelectOption value="">（トップ）</NativeSelectOption>
                   {options.map((o) => (
-                    <option key={o.id} value={o.id}>
+                    <NativeSelectOption key={o.id} value={o.id}>
                       {o.label}
-                    </option>
+                    </NativeSelectOption>
                   ))}
                 </NativeSelect>
                 <FieldDescription>フォルダの中にフォルダを入れて階層化できます。</FieldDescription>

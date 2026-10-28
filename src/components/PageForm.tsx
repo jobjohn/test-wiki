@@ -8,7 +8,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { NativeSelect } from "@/components/ui/native-select";
+import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { Field, FieldDescription, FieldGroup, FieldLabel } from "@/components/ui/field";
@@ -206,11 +206,11 @@ export function PageForm({
           <Field>
             <FieldLabel htmlFor="folderId">フォルダ</FieldLabel>
             <NativeSelect id="folderId" name="folderId" value={folderId} onChange={(e) => setFolderId(e.target.value)}>
-              <option value="">（トップ）</option>
+              <NativeSelectOption value="">（トップ）</NativeSelectOption>
               {folders.map((f) => (
-                <option key={f.id} value={f.id}>
+                <NativeSelectOption key={f.id} value={f.id}>
                   {f.label}
-                </option>
+                </NativeSelectOption>
               ))}
             </NativeSelect>
           </Field>
