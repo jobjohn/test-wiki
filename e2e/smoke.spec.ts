@@ -127,7 +127,8 @@ test.describe.serial("スモークテスト", () => {
     await expect(page.getByRole("heading", { level: 1, name: WIKI_NAME })).toBeVisible();
 
     await page.goto(`/pages/${pageId}`);
-    await page.getByRole("button", { name: "ゴミ箱に移動" }).click();
+    await page.getByRole("button", { name: "ページの操作" }).click();
+    await page.getByRole("menuitem", { name: "ゴミ箱に移動" }).click();
     await page.getByRole("alertdialog").getByRole("button", { name: "ゴミ箱に移動する" }).click();
     await expect(page.getByText(`ページ「${TITLE}」をゴミ箱に移動しました`)).toBeVisible();
 
