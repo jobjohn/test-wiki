@@ -15,8 +15,10 @@ import { canViewContent, requireAccess } from "@/lib/access";
 import { formatDateTime } from "@/lib/format";
 import { getFolder } from "@/lib/folders";
 import { pageLikes } from "@/lib/page-likes";
+import { renderMarkdown } from "@/lib/markdown";
 import { parseId } from "@/lib/params";
 import { backlinksFor, getPage, latestRevision, tagsForPage } from "@/lib/pages";
+import { extractToc } from "@/lib/toc";
 import { canEdit } from "@/lib/users";
 
 type Props = { params: Promise<{ id: string }> };
@@ -36,6 +38,8 @@ export default async function PageView({ params }: Props) {
   const revision = latestRevision(page.id);
   const backlinks = backlinksFor(page);
   const editable = canEdit(user);
+  const html = page.body.trim() ? renderMarkdown(page.body) : "";
+  const toc = extractToc(html);
 
   return (
     <article className="page">
@@ -68,27 +72,34 @@ export default async function PageView({ params }: Props) {
         </div>
       </header>
 
-      <Toc target=".page > .markdown-body" />
+      <div className={toc.length >= 3 ? "md:grid md:grid-cols-[minmax(0,1fr)_15rem] md:gap-8" : undefined}>
+        {toc.length >= 3 && (
+          <div className="md:col-start-2 md:row-start-1">
+            <Toc items={toc} />
+          </div>
+        )}
+        <div className={toc.length >= 3 ? "min-w-0 md:col-start-1 md:row-start-1" : undefined}>
+          {html ? <Markdown html={html} /> : <p className="text-muted-foreground">本文はまだありません。</p>}
 
-      {page.body.trim() ? <Markdown source={page.body} /> : <p className="text-muted-foreground">本文はまだありません。</p>}
-
-      {backlinks.length > 0 && (
-        <section className="clear-both mt-10">
-          <Separator className="mb-3" />
-          <h2 className="mb-2 flex items-center gap-1.5">
-            <LinkIcon className="size-4" aria-hidden /> このページへのリンク
-          </h2>
-          <ul className="grid gap-1">
-            {backlinks.map((link) => (
-              <li key={link.id}>
-                <Button variant="link" asChild className="h-auto p-0">
-                  <Link href={`/pages/${link.id}`}>{link.title}</Link>
-                </Button>
-              </li>
-            ))}
-          </ul>
-        </section>
-      )}
+          {backlinks.length > 0 && (
+            <section className="mt-10">
+              <Separator className="mb-3" />
+              <h2 className="mb-2 flex items-center gap-1.5">
+                <LinkIcon className="size-4" aria-hidden /> このページへのリンク
+              </h2>
+              <ul className="grid gap-1">
+                {backlinks.map((link) => (
+                  <li key={link.id}>
+                    <Button variant="link" asChild className="h-auto p-0">
+                      <Link href={`/pages/${link.id}`}>{link.title}</Link>
+                    </Button>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )}
+        </div>
+      </div>
     </article>
   );
 }
