@@ -3,6 +3,7 @@
 import { Eye, Paperclip, Pencil, Save, TriangleAlert } from "lucide-react";
 import Link from "next/link";
 import { useActionState, useEffect, useRef, useState } from "react";
+import { isRedirectError } from "next/dist/client/components/redirect-error";
 import { savePageAction } from "@/actions/pages";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -12,7 +13,8 @@ import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { Field, FieldDescription, FieldGroup, FieldLabel } from "@/components/ui/field";
-import { PAGE_POSITION_PLACEHOLDER } from "@/lib/form";
+import { PAGE_POSITION_PLACEHOLDER, type FormState } from "@/lib/form";
+import { clearPageDraft, isPageDirty, readPageDraft, writePageDraft, type PageDraft } from "@/lib/page-draft";
 import { uploadFile } from "@/lib/upload-client";
 import { FormErrors } from "./FormErrors";
 import { SubmitButton } from "./SubmitButton";
@@ -42,7 +44,21 @@ export function PageForm({
   tagSuggestions: string[];
   cancelHref: string;
 }) {
-  const [state, action, pending] = useActionState(savePageAction, {});
+  const skipDraftSave = useRef(false);
+  const [state, action, pending] = useActionState(async (prev: FormState, data: FormData) => {
+    // 保存に成功したら下書きを消す。失敗したときは、このあとまた書き戻す
+    skipDraftSave.current = true;
+    try {
+      const result = await savePageAction(prev, data);
+      if (result.errors?.length || result.conflict) skipDraftSave.current = false;
+      else clearPageDraft(localStorage, pageId);
+      return result;
+    } catch (error) {
+      if (isRedirectError(error)) clearPageDraft(localStorage, pageId);
+      else skipDraftSave.current = false;
+      throw error;
+    }
+  }, {});
   const [title, setTitle] = useState(initial.title);
   const [body, setBody] = useState(initial.body);
   const [folderId, setFolderId] = useState(initial.folderId);
@@ -51,6 +67,7 @@ export function PageForm({
   const [summary, setSummary] = useState("");
   const [lockVersion, setLockVersion] = useState(initial.lockVersion);
   const [conflictDismissed, setConflictDismissed] = useState(false);
+  const [draftOffer, setDraftOffer] = useState<PageDraft | null>(null);
 
   const [tab, setTab] = useState<"write" | "preview">("write");
   const [previewHtml, setPreviewHtml] = useState("");
@@ -60,8 +77,7 @@ export function PageForm({
   const formRef = useRef<HTMLFormElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-  const dirty =
-    title !== initial.title || body !== initial.body || tags !== initial.tags || folderId !== initial.folderId || position !== initial.position;
+  const dirty = isPageDirty({ title, body, folderId, position, tags, summary }, initial);
 
   // 保存のたびに新しい競合が返ってきたら、閉じた警告をもう一度出す（描画中に前回の値と比べて更新する）
   const [seenConflict, setSeenConflict] = useState(state.conflict);
@@ -69,6 +85,67 @@ export function PageForm({
     setSeenConflict(state.conflict);
     setConflictDismissed(false);
   }
+
+  // 戻ったときに復元できるよう、ページ ID ごとの下書きをローカルに残す（サーバーのデータは変えない）
+  useEffect(() => {
+    try {
+      const draft = readPageDraft(localStorage, pageId);
+      if (draft && isPageDirty(draft, initial)) setDraftOffer(draft);
+    } catch {
+      // localStorage が使えない環境では、下書きなしで編集を続ける
+    }
+  }, [pageId, initial]);
+
+  useEffect(() => {
+    if (!dirty || skipDraftSave.current) return;
+    const save = () => {
+      if (skipDraftSave.current) return;
+      try {
+        writePageDraft(localStorage, pageId, {
+          title,
+          body,
+          folderId,
+          position,
+          tags,
+          summary,
+          savedAt: new Date().toISOString(),
+        });
+      } catch {
+        // 容量不足やプライベートモードでも、編集自体は続ける
+      }
+    };
+    const timer = window.setTimeout(save, 300);
+    const onVisibility = () => {
+      if (document.visibilityState === "hidden") save();
+    };
+    window.addEventListener("pagehide", save);
+    document.addEventListener("visibilitychange", onVisibility);
+    return () => {
+      window.clearTimeout(timer);
+      window.removeEventListener("pagehide", save);
+      document.removeEventListener("visibilitychange", onVisibility);
+    };
+  }, [dirty, title, body, folderId, position, tags, summary, pageId]);
+
+  const restoreDraft = () => {
+    if (!draftOffer) return;
+    setTitle(draftOffer.title);
+    setBody(draftOffer.body);
+    setFolderId(draftOffer.folderId);
+    setPosition(draftOffer.position);
+    setTags(draftOffer.tags);
+    setSummary(draftOffer.summary);
+    setDraftOffer(null);
+  };
+
+  const discardDraft = () => {
+    try {
+      clearPageDraft(localStorage, pageId);
+    } catch {
+      // 消せなくても、案内は閉じる
+    }
+    setDraftOffer(null);
+  };
 
   // 未保存の変更がある状態での離脱（タブを閉じる・別ページへの移動）に確認を出す
   useEffect(() => {
@@ -172,6 +249,20 @@ export function PageForm({
     <form ref={formRef} action={action} className="max-md:flex max-md:min-h-0 max-md:flex-1 max-md:flex-col">
       <FieldGroup className="max-md:min-h-0 max-md:flex-1 max-md:overflow-y-auto">
         <FormErrors errors={state.errors} />
+        {draftOffer && (
+          <Alert>
+            <AlertTitle>未保存の下書きがあります</AlertTitle>
+            <AlertDescription className="flex flex-wrap items-center gap-2">
+              <span>この端末に残っている編集内容を戻せます。</span>
+              <Button type="button" onClick={restoreDraft}>
+                下書きを復元
+              </Button>
+              <Button type="button" variant="outline" onClick={discardDraft}>
+                破棄
+              </Button>
+            </AlertDescription>
+          </Alert>
+        )}
         {state.conflict && !conflictDismissed && (
           <Alert variant="destructive" className="gap-y-2">
             <TriangleAlert aria-hidden />
