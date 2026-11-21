@@ -95,7 +95,7 @@ test.describe("アクセシビリティ（axe）", () => {
 
     const checkbox = page.locator('article input[type="checkbox"]').first();
     await expect(checkbox).toHaveAttribute("aria-label", "完了した作業");
-    await expect(page.locator("article th").first()).toHaveAttribute("aria-label", "見出しなし");
+    await expect(page.locator("article th").first()).toHaveText("見出しなし");
     const code = page.locator("article pre").first();
     await expect(code).toHaveAttribute("tabindex", "0");
     await expect(code).toHaveAttribute("aria-label", "コード");

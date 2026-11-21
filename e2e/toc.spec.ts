@@ -10,7 +10,11 @@ async function login(page: Page) {
   await page.locator("#password").fill(PASSWORD);
   await page.getByRole("button", { name: "ログイン", exact: true }).click();
   await page.waitForURL((url) => !url.pathname.startsWith("/login"));
-  if (await page.locator("#wikiName").isVisible()) {
+  // ログイン直後は / を経由して /setup へ移る。途中の URL で判定すると初期設定を飛ばす
+  if (!page.url().includes("/setup")) {
+    await page.waitForURL(/\/setup/, { timeout: 3000 }).catch(() => {});
+  }
+  if (page.url().includes("/setup")) {
     await page.locator("#wikiName").fill("E2E テスト Wiki");
     if (await page.locator("#passwordConfirmation").isVisible()) {
       await page.locator("#password").fill(PASSWORD);

@@ -103,7 +103,10 @@ function rehypeMarkdownA11y() {
         const language = languageOf(code && "properties" in code ? code.properties : undefined);
         element.properties.ariaLabel = language ? `${language} のコード` : "コード";
       }
-      if (element.tagName === "th" && !elementText(element)) element.properties.ariaLabel = "見出しなし";
+      if (element.tagName === "th" && !elementText(element)) {
+        // axe の empty-table-header は aria-label を見ず、スクリーンリーダーに読める文字を要求する
+        element.children.push({ type: "text", value: "見出しなし" });
+      }
       if (element.tagName === "table" && !element.properties.ariaLabel) {
         element.properties.tabIndex = 0;
         element.properties.ariaLabel = "表";

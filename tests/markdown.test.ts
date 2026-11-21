@@ -53,7 +53,7 @@ describe("Markdown", () => {
     const html = renderMarkdown("- [x] 完了した作業\n- [ ] 残作業\n\n|  | 名前 |\n| --- | --- |\n| 1 | 値 |\n");
     expect(html).toContain('aria-label="完了した作業"');
     expect(html).toContain('aria-label="残作業"');
-    expect(html).toContain('<th aria-label="見出しなし"></th>');
+    expect(html).toContain("<th>見出しなし</th>");
     expect(html).toContain('aria-label="表"');
   });
 
