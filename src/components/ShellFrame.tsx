@@ -90,7 +90,7 @@ export function ShellFrame({
           本文へスキップ
         </a>
         <header className="sticky top-0 z-30 flex h-(--header-height) items-center gap-2 border-b bg-background px-3 md:gap-3 md:px-4">
-          <SidebarTrigger />
+          <SidebarTrigger className="max-md:size-11" />
 
           <Button variant="ghost" asChild className="min-w-0">
             <Link href="/">
@@ -104,7 +104,7 @@ export function ShellFrame({
           </Suspense>
 
           {user?.canEdit && (
-            <Button variant="highlight" asChild aria-label="新規ページ">
+            <Button variant="highlight" asChild aria-label="新規ページ" className="max-md:min-h-11 max-md:min-w-11">
               <Link href="/pages/new">
                 <Plus aria-hidden />
                 <span className="hidden sm:inline">新規ページ</span>

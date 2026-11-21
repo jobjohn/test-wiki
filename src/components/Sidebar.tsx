@@ -154,7 +154,7 @@ export function Sidebar({ tree, canEdit, ...props }: { tree: TreeData | null; ca
             <>
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <SidebarGroupAction asChild className="right-10">
+                  <SidebarGroupAction asChild className="max-md:right-14 md:right-10">
                     <Link href="/folders/new" aria-label="新しいフォルダ">
                       <FolderPlus aria-hidden />
                     </Link>
