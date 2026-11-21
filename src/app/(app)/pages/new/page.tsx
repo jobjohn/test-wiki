@@ -16,8 +16,8 @@ export default async function NewPage({ searchParams }: { searchParams: Promise<
   const title = first(query.title).slice(0, 200);
 
   return (
-    <div className="grid gap-5">
-      <PageTitle icon={FilePlus}>新規ページ作成</PageTitle>
+    <div className="flex flex-col gap-5 max-md:-mb-16 max-md:h-[calc(100svh-var(--header-height)-1.5rem)] max-md:min-h-0">
+      <PageTitle className="shrink-0" icon={FilePlus}>新規ページ作成</PageTitle>
       <PageForm
         pageId={null}
         initial={{ title, body: "", folderId, position: "", tags: "", lockVersion: 0 }}

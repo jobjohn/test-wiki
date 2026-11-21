@@ -8,7 +8,7 @@ import "./globals.css";
 // 設定・ログイン状態に応じて毎回描画する（ビルド時にデータベースへ接続しない）
 export const dynamic = "force-dynamic";
 
-export const viewport: Viewport = { width: "device-width", initialScale: 1, colorScheme: "light dark" };
+export const viewport: Viewport = { width: "device-width", initialScale: 1, viewportFit: "cover", colorScheme: "light dark" };
 
 export function generateMetadata(): Metadata {
   const { wikiName } = getSettings();
