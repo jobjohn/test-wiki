@@ -63,6 +63,58 @@ const sanitizeSchema: SanitizeOptions = {
   },
 };
 
+interface HtmlElement {
+  type: "element";
+  tagName: string;
+  properties: Record<string, unknown>;
+  children: Array<HtmlElement | { type: string; value?: string; tagName?: string; children?: HtmlElement["children"]; properties?: Record<string, unknown> }>;
+}
+
+function elementText(node: { children?: HtmlElement["children"] }): string {
+  let text = "";
+  for (const child of node.children ?? []) {
+    if (child.type === "text") text += child.value ?? "";
+    else if (child.type === "element" && child.tagName !== "input") text += elementText(child);
+  }
+  return text.replace(/\s+/g, " ").trim();
+}
+
+function languageOf(properties: Record<string, unknown> | undefined): string | undefined {
+  const value = properties?.className;
+  const classes = Array.isArray(value) ? value.map(String) : String(value ?? "").split(/\s+/);
+  const found = classes.find((name) => name.startsWith("language-"));
+  return found ? found.slice("language-".length) : undefined;
+}
+
+/** チェックボックスの名前、コードと表のキーボード到達、空の見出しを補う（sanitize の後なので属性は残る） */
+function rehypeMarkdownA11y() {
+  return (tree: Parameters<typeof visit>[0]) => {
+    visit(tree, "element", (node, _index, parent) => {
+      const element = node as HtmlElement;
+      element.properties ??= {};
+      if (element.tagName === "input" && element.properties.type === "checkbox" && !element.properties.ariaLabel) {
+        const owner = parent as HtmlElement | undefined;
+        const label = owner?.type === "element" ? elementText(owner) : "";
+        element.properties.ariaLabel = label || "チェック項目";
+      }
+      if (element.tagName === "pre") {
+        element.properties.tabIndex = 0;
+        const code = element.children.find((child) => child.type === "element" && child.tagName === "code");
+        const language = languageOf(code && "properties" in code ? code.properties : undefined);
+        element.properties.ariaLabel = language ? `${language} のコード` : "コード";
+      }
+      if (element.tagName === "th" && !elementText(element)) {
+        // axe の empty-table-header は aria-label を見ず、スクリーンリーダーに読める文字を要求する
+        element.children.push({ type: "text", value: "見出しなし" });
+      }
+      if (element.tagName === "table" && !element.properties.ariaLabel) {
+        element.properties.tabIndex = 0;
+        element.properties.ariaLabel = "表";
+      }
+    });
+  };
+}
+
 const processor = unified()
   .use(remarkParse)
   .use(remarkGfm)
@@ -72,6 +124,7 @@ const processor = unified()
   .use(rehypeSlug)
   .use(rehypeSanitize, sanitizeSchema)
   .use(rehypeHighlight, { detect: false })
+  .use(rehypeMarkdownA11y)
   .use(rehypeStringify);
 
 /**

@@ -2,7 +2,8 @@
 
 import { Eye, Paperclip, Pencil, Save, TriangleAlert } from "lucide-react";
 import Link from "next/link";
-import { useActionState, useEffect, useRef, useState } from "react";
+import { useActionState, useEffect, useRef, useState, useSyncExternalStore } from "react";
+import { isRedirectError } from "next/dist/client/components/redirect-error";
 import { savePageAction } from "@/actions/pages";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -12,11 +13,16 @@ import { NativeSelect, NativeSelectOption } from "@/components/ui/native-select"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { Field, FieldDescription, FieldGroup, FieldLabel } from "@/components/ui/field";
-import { PAGE_POSITION_PLACEHOLDER } from "@/lib/form";
+import { PAGE_POSITION_PLACEHOLDER, type FormState } from "@/lib/form";
+import { clearPageDraft, isPageDirty, readPageDraftOffer, writePageDraft } from "@/lib/page-draft";
 import { uploadFile } from "@/lib/upload-client";
 import { FormErrors } from "./FormErrors";
 import { SubmitButton } from "./SubmitButton";
 import { Badge } from "@/components/ui/badge";
+
+function subscribePageDraft() {
+  return () => {};
+}
 
 export interface PageFormValues {
   title: string;
@@ -42,7 +48,21 @@ export function PageForm({
   tagSuggestions: string[];
   cancelHref: string;
 }) {
-  const [state, action, pending] = useActionState(savePageAction, {});
+  const skipDraftSave = useRef(false);
+  const [state, action, pending] = useActionState(async (prev: FormState, data: FormData) => {
+    // 保存に成功したら下書きを消す。失敗したときは、このあとまた書き戻す
+    skipDraftSave.current = true;
+    try {
+      const result = await savePageAction(prev, data);
+      if (result.errors?.length || result.conflict) skipDraftSave.current = false;
+      else clearPageDraft(localStorage, pageId);
+      return result;
+    } catch (error) {
+      if (isRedirectError(error)) clearPageDraft(localStorage, pageId);
+      else skipDraftSave.current = false;
+      throw error;
+    }
+  }, {});
   const [title, setTitle] = useState(initial.title);
   const [body, setBody] = useState(initial.body);
   const [folderId, setFolderId] = useState(initial.folderId);
@@ -60,8 +80,7 @@ export function PageForm({
   const formRef = useRef<HTMLFormElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-  const dirty =
-    title !== initial.title || body !== initial.body || tags !== initial.tags || folderId !== initial.folderId || position !== initial.position;
+  const dirty = isPageDirty({ title, body, folderId, position, tags, summary }, initial);
 
   // 保存のたびに新しい競合が返ってきたら、閉じた警告をもう一度出す（描画中に前回の値と比べて更新する）
   const [seenConflict, setSeenConflict] = useState(state.conflict);
@@ -69,6 +88,67 @@ export function PageForm({
     setSeenConflict(state.conflict);
     setConflictDismissed(false);
   }
+
+  // 戻ったときに復元できるよう、保存済みの下書きを描画中に読む（サーバー描画では null）
+  const storedDraft = useSyncExternalStore(
+    subscribePageDraft,
+    () => readPageDraftOffer(localStorage, pageId, initial),
+    () => null,
+  );
+  const draftKey = pageId === null ? "new" : String(pageId);
+  const [hiddenDraftKey, setHiddenDraftKey] = useState<string | null>(null);
+  const draftOffer = hiddenDraftKey === draftKey ? null : storedDraft;
+
+  useEffect(() => {
+    if (!dirty || skipDraftSave.current) return;
+    const save = () => {
+      if (skipDraftSave.current) return;
+      try {
+        writePageDraft(localStorage, pageId, {
+          title,
+          body,
+          folderId,
+          position,
+          tags,
+          summary,
+          savedAt: new Date().toISOString(),
+        });
+      } catch {
+        // 容量不足やプライベートモードでも、編集自体は続ける
+      }
+    };
+    const timer = window.setTimeout(save, 300);
+    const onVisibility = () => {
+      if (document.visibilityState === "hidden") save();
+    };
+    window.addEventListener("pagehide", save);
+    document.addEventListener("visibilitychange", onVisibility);
+    return () => {
+      window.clearTimeout(timer);
+      window.removeEventListener("pagehide", save);
+      document.removeEventListener("visibilitychange", onVisibility);
+    };
+  }, [dirty, title, body, folderId, position, tags, summary, pageId]);
+
+  const restoreDraft = () => {
+    if (!draftOffer) return;
+    setTitle(draftOffer.title);
+    setBody(draftOffer.body);
+    setFolderId(draftOffer.folderId);
+    setPosition(draftOffer.position);
+    setTags(draftOffer.tags);
+    setSummary(draftOffer.summary);
+    setHiddenDraftKey(draftKey);
+  };
+
+  const discardDraft = () => {
+    try {
+      clearPageDraft(localStorage, pageId);
+    } catch {
+      // 消せなくても、案内は閉じる
+    }
+    setHiddenDraftKey(draftKey);
+  };
 
   // 未保存の変更がある状態での離脱（タブを閉じる・別ページへの移動）に確認を出す
   useEffect(() => {
@@ -169,9 +249,23 @@ export function PageForm({
   };
 
   return (
-    <form ref={formRef} action={action}>
-      <FieldGroup>
+    <form ref={formRef} action={action} className="max-md:flex max-md:min-h-0 max-md:flex-1 max-md:flex-col">
+      <FieldGroup className="max-md:min-h-0 max-md:flex-1 max-md:overflow-y-auto">
         <FormErrors errors={state.errors} />
+        {draftOffer && (
+          <Alert>
+            <AlertTitle>未保存の下書きがあります</AlertTitle>
+            <AlertDescription className="flex flex-wrap items-center gap-2">
+              <span>この端末に残っている編集内容を戻せます。</span>
+              <Button type="button" onClick={restoreDraft}>
+                下書きを復元
+              </Button>
+              <Button type="button" variant="outline" onClick={discardDraft}>
+                破棄
+              </Button>
+            </AlertDescription>
+          </Alert>
+        )}
         {state.conflict && !conflictDismissed && (
           <Alert variant="destructive" className="gap-y-2">
             <TriangleAlert aria-hidden />
@@ -245,8 +339,8 @@ export function PageForm({
           </Field>
         </div>
 
-        <div className="grid gap-2">
-          <Tabs value={tab} onValueChange={(v) => (v === "preview" ? void showPreview() : showWrite())}>
+        <div className="grid gap-2 max-md:flex max-md:min-h-48 max-md:flex-1 max-md:flex-col">
+          <Tabs value={tab} onValueChange={(v) => (v === "preview" ? void showPreview() : showWrite())} className="max-md:min-h-0 max-md:flex-1">
             <div className="flex items-center justify-between gap-2">
               <TabsList>
                 <TabsTrigger value="write">
@@ -277,7 +371,7 @@ export function PageForm({
             </div>
 
             {/* 送信するため、編集欄は非表示のときも DOM に残す（forceMount） */}
-            <TabsContent value="write" forceMount className="data-[state=inactive]:hidden">
+            <TabsContent value="write" forceMount className="data-[state=inactive]:hidden max-md:flex max-md:min-h-0 max-md:flex-1 max-md:flex-col">
               <Textarea
                 ref={textareaRef}
                 id="body"
@@ -287,7 +381,7 @@ export function PageForm({
                 value={body}
                 onChange={(e) => setBody(e.target.value)}
                 placeholder={"Markdown で記述できます。\n[[ページ名]] で他のページへリンク、画像はドラッグ＆ドロップや貼り付けで添付できます。"}
-                className="min-h-[26rem]"
+                className="min-h-[26rem] max-md:min-h-0 max-md:flex-1 max-md:basis-0 max-md:resize-none max-md:field-sizing-fixed"
                 onDragOver={(e) => {
                   if ([...e.dataTransfer.types].includes("Files")) {
                     e.preventDefault();
@@ -320,8 +414,8 @@ export function PageForm({
                 }}
               />
             </TabsContent>
-            <TabsContent value="preview" forceMount className="data-[state=inactive]:hidden">
-              <Card className="min-h-[26rem]">
+            <TabsContent value="preview" forceMount className="data-[state=inactive]:hidden max-md:flex max-md:min-h-0 max-md:flex-1 max-md:flex-col">
+              <Card className="min-h-[26rem] max-md:min-h-0 max-md:flex-1 max-md:overflow-y-auto">
                 <CardContent>
                   {previewState === "loading" && <p className="text-muted-foreground">プレビューを生成中...</p>}
                   {previewState === "error" && (
@@ -358,16 +452,19 @@ export function PageForm({
           />
         </Field>
 
-        <div className="flex gap-2">
-          <SubmitButton pendingText="保存中...">
-            <Save aria-hidden />
-            保存
-          </SubmitButton>
-          <Button variant="outline" asChild>
-            <Link href={cancelHref}>キャンセル</Link>
-          </Button>
-        </div>
       </FieldGroup>
+      <div
+        data-testid="save-bar"
+        className="flex gap-2 max-md:z-20 max-md:-mx-4 max-md:shrink-0 max-md:border-t max-md:bg-background max-md:px-4 max-md:pt-3 max-md:pb-[max(0.75rem,env(safe-area-inset-bottom))]"
+      >
+        <SubmitButton pendingText="保存中...">
+          <Save aria-hidden />
+          保存
+        </SubmitButton>
+        <Button variant="outline" asChild>
+          <Link href={cancelHref}>キャンセル</Link>
+        </Button>
+      </div>
     </form>
   );
 }

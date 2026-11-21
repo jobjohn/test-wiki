@@ -1,12 +1,11 @@
-import { Clock, Download, History, Link as LinkIcon, Pencil, Trash2, User } from "lucide-react";
+import { Clock, History, Link as LinkIcon, User } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { deletePageAction } from "@/actions/pages";
 import { FolderBreadcrumbs } from "@/components/Breadcrumbs";
-import { ConfirmAction } from "@/components/ConfirmAction";
 import { LikeButton } from "@/components/LikeButton";
 import { Markdown } from "@/components/Markdown";
+import { PageActions } from "@/components/PageActions";
 import { PageTitle } from "@/components/PageTitle";
 import { Tags } from "@/components/Tags";
 import { Toc } from "@/components/Toc";
@@ -16,8 +15,10 @@ import { canViewContent, requireAccess } from "@/lib/access";
 import { formatDateTime } from "@/lib/format";
 import { getFolder } from "@/lib/folders";
 import { pageLikes } from "@/lib/page-likes";
+import { renderMarkdown } from "@/lib/markdown";
 import { parseId } from "@/lib/params";
 import { backlinksFor, getPage, latestRevision, tagsForPage } from "@/lib/pages";
+import { extractToc } from "@/lib/toc";
 import { canEdit } from "@/lib/users";
 
 type Props = { params: Promise<{ id: string }> };
@@ -37,15 +38,23 @@ export default async function PageView({ params }: Props) {
   const revision = latestRevision(page.id);
   const backlinks = backlinksFor(page);
   const editable = canEdit(user);
+  const html = page.body.trim() ? renderMarkdown(page.body) : "";
+  const toc = extractToc(html);
 
   return (
     <article className="page">
-      <header className="grid gap-3">
-        <div>
-          {folder && <FolderBreadcrumbs folder={folder} />}
-          <PageTitle>{page.title}</PageTitle>
+      <header className="mb-4 grid gap-2">
+        <div className="flex items-start justify-between gap-2">
+          <div className="min-w-0">
+            {folder && <FolderBreadcrumbs folder={folder} />}
+            <PageTitle>{page.title}</PageTitle>
+          </div>
+          <div className="flex shrink-0 items-center gap-1.5">
+            <LikeButton pageId={page.id} initial={pageLikes(page.id, user?.id ?? null)} canLike={user !== null} />
+            <PageActions pageId={page.id} title={page.title} editable={editable} />
+          </div>
         </div>
-        <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-muted-foreground">
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-muted-foreground">
           <span className="inline-flex items-center gap-1">
             <Clock className="size-3.5" aria-hidden /> 最終更新 {formatDateTime(page.updatedAt)}
           </span>
@@ -59,70 +68,38 @@ export default async function PageView({ params }: Props) {
               <User className="size-3.5" aria-hidden /> {revision.userName}
             </span>
           )}
-        </div>
-        <Tags tags={tagsForPage(page.id)} />
-        <div className="flex flex-wrap gap-2">
-          {editable && (
-            <Button asChild>
-              <Link href={`/pages/${page.id}/edit`} accessKey="e">
-                <Pencil aria-hidden />
-                編集
-              </Link>
-            </Button>
-          )}
-          <Button variant="outline" asChild>
-            <Link href={`/pages/${page.id}/revisions`}>
-              <History aria-hidden />
-              履歴
-            </Link>
-          </Button>
-          <Button variant="outline" asChild>
-            <a href={`/pages/${page.id}/markdown?download=1`} download>
-              <Download aria-hidden />
-              Markdown
-            </a>
-          </Button>
-          <LikeButton pageId={page.id} initial={pageLikes(page.id, user?.id ?? null)} canLike={user !== null} />
-          {editable && (
-            <ConfirmAction
-              action={deletePageAction.bind(null, page.id)}
-              title="ページをゴミ箱に移動しますか？"
-              description={`ページ「${page.title}」をゴミ箱に移動します。変更履歴も一緒に移り、30 日以内ならゴミ箱から元に戻せます。`}
-              confirmLabel="ゴミ箱に移動する"
-              destructive
-              trigger={
-                <Button variant="destructive">
-                  <Trash2 aria-hidden />
-                  ゴミ箱に移動
-                </Button>
-              }
-            />
-          )}
+          <Tags tags={tagsForPage(page.id)} />
         </div>
       </header>
-      <Separator className="my-5" />
 
-      <Toc target=".page > .markdown-body" />
+      <div className={toc.length >= 3 ? "md:grid md:grid-cols-[minmax(0,1fr)_15rem] md:gap-8" : undefined}>
+        {toc.length >= 3 && (
+          <div className="md:col-start-2 md:row-start-1">
+            <Toc items={toc} />
+          </div>
+        )}
+        <div className={toc.length >= 3 ? "min-w-0 md:col-start-1 md:row-start-1" : undefined}>
+          {html ? <Markdown html={html} /> : <p className="text-muted-foreground">本文はまだありません。</p>}
 
-      {page.body.trim() ? <Markdown source={page.body} /> : <p className="text-muted-foreground">本文はまだありません。</p>}
-
-      {backlinks.length > 0 && (
-        <section className="clear-both mt-10">
-          <Separator className="mb-3" />
-          <h2 className="mb-2 flex items-center gap-1.5">
-            <LinkIcon className="size-4" aria-hidden /> このページへのリンク
-          </h2>
-          <ul className="grid gap-1">
-            {backlinks.map((link) => (
-              <li key={link.id}>
-                <Button variant="link" asChild className="h-auto p-0">
-                  <Link href={`/pages/${link.id}`}>{link.title}</Link>
-                </Button>
-              </li>
-            ))}
-          </ul>
-        </section>
-      )}
+          {backlinks.length > 0 && (
+            <section className="mt-10">
+              <Separator className="mb-3" />
+              <h2 className="mb-2 flex items-center gap-1.5">
+                <LinkIcon className="size-4" aria-hidden /> このページへのリンク
+              </h2>
+              <ul className="grid gap-1">
+                {backlinks.map((link) => (
+                  <li key={link.id}>
+                    <Button variant="link" asChild className="h-auto p-0">
+                      <Link href={`/pages/${link.id}`}>{link.title}</Link>
+                    </Button>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )}
+        </div>
+      </div>
     </article>
   );
 }

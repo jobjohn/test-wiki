@@ -18,7 +18,7 @@ export function UserMenu({ name, email, roleName, isAdmin }: { name: string; ema
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="icon" aria-label="ユーザーメニュー">
+        <Button variant="ghost" size="icon" aria-label="ユーザーメニュー" className="max-md:size-11">
           <Avatar>
             <AvatarFallback>{Array.from(name)[0]?.toUpperCase()}</AvatarFallback>
           </Avatar>
