@@ -49,6 +49,7 @@ test.describe("アクセシビリティ（axe）", () => {
     const page = await loggedInPage(browser);
     await page.goto("/");
     await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
+    await expect(page.getByRole("navigation", { name: "サイドバー" })).toBeVisible();
     await expectNoViolations(page);
 
     await page.keyboard.press("Tab");
@@ -75,6 +76,36 @@ test.describe("アクセシビリティ（axe）", () => {
 
     await page.goto(`${url}/revisions`);
     await expectNoViolations(page);
+  });
+
+  test("狭い画面のロゴと、Markdown のチェック・コード・表", async ({ browser }) => {
+    const context = await browser.newContext({ storageState, viewport: { width: 390, height: 844 } });
+    const page = await context.newPage();
+    await page.goto("/");
+    await expect(page.getByRole("link", { name: "E2E テスト Wiki" })).toBeVisible();
+    await expectNoViolations(page);
+
+    await page.goto("/pages/new");
+    await page.locator("#title").fill("アクセシビリティの確認");
+    await page.locator("#body").fill(
+      ["本文の書き出しです。", "", "- [x] 完了した作業", "- [ ] 残作業", "", "|  | 名前 |", "| --- | --- |", "| 1 | 値 |", "", "```", "const value = \"abcdefghijklmnopqrstuvwxyz-abcdefghijklmnopqrstuvwxyz\";", "```"].join("\n"),
+    );
+    await page.getByRole("button", { name: "保存" }).click();
+    await expect(page.getByRole("heading", { level: 1, name: "アクセシビリティの確認" })).toBeVisible();
+
+    const checkbox = page.locator('article input[type="checkbox"]').first();
+    await expect(checkbox).toHaveAttribute("aria-label", "完了した作業");
+    await expect(page.locator("article th").first()).toHaveAttribute("aria-label", "見出しなし");
+    const code = page.locator("article pre").first();
+    await expect(code).toHaveAttribute("tabindex", "0");
+    await expect(code).toHaveAttribute("aria-label", "コード");
+    await code.focus();
+    await expect(code).toBeFocused();
+
+    await expectNoViolations(page);
+    const { violations } = await new AxeBuilder({ page }).withRules(["empty-table-header", "label", "scrollable-region-focusable", "link-name"]).analyze();
+    expect(violations, page.url()).toEqual([]);
+    await context.close();
   });
 
   test("404 画面", async ({ browser }) => {

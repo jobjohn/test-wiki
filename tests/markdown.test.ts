@@ -29,7 +29,7 @@ describe("Markdown", () => {
 
   it("GFM の表・タスクリスト・取り消し線・脚注に対応する", () => {
     const html = renderMarkdown("| a |\n| - |\n| b |\n\n- [x] done\n- [ ] todo\n\n~~x~~\n\n脚注[^1]\n\n[^1]: 本文");
-    expect(html).toContain("<table>");
+    expect(html).toContain("<table ");
     expect(html).toContain('type="checkbox"');
     expect(html).toContain("<del>x</del>");
     expect(html).toContain("脚注");
@@ -45,6 +45,16 @@ describe("Markdown", () => {
     expect(html).toContain('<h2 id="使い方">使い方</h2>');
     expect(html).toContain("hljs-");
     expect(html).toContain("language-ruby");
+    expect(html).toContain('tabindex="0"');
+    expect(html).toContain('aria-label="ruby のコード"');
+  });
+
+  it("チェックボックスにラベルを付け、空の表見出しと表に名前を付ける", () => {
+    const html = renderMarkdown("- [x] 完了した作業\n- [ ] 残作業\n\n|  | 名前 |\n| --- | --- |\n| 1 | 値 |\n");
+    expect(html).toContain('aria-label="完了した作業"');
+    expect(html).toContain('aria-label="残作業"');
+    expect(html).toContain('<th aria-label="見出しなし"></th>');
+    expect(html).toContain('aria-label="表"');
   });
 
   it("画像とファイルへの相対リンクを保持する", () => {

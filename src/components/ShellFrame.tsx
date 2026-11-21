@@ -93,7 +93,7 @@ export function ShellFrame({
           <SidebarTrigger className="max-md:size-11" />
 
           <Button variant="ghost" asChild className="min-w-0">
-            <Link href="/">
+            <Link href="/" aria-label={wikiName}>
               <BookOpen aria-hidden />
               <span className="hidden truncate min-[480px]:inline">{wikiName}</span>
             </Link>
