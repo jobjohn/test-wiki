@@ -43,7 +43,7 @@ test.describe("編集画面の保存バー", () => {
       return {
         scrollHeight: textarea.scrollHeight,
         clientHeight: textarea.clientHeight,
-        fieldSizing: getComputedStyle(textarea).fieldSizing,
+        fieldSizing: getComputedStyle(textarea).getPropertyValue("field-sizing"),
         barBottom: barBox.bottom,
         barTop: barBox.top,
         textBottom: textBox.bottom,
