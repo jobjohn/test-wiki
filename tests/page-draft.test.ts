@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { clearPageDraft, isPageDirty, pageDraftKey, readPageDraft, writePageDraft, type PageDraft } from "@/lib/page-draft";
+import { clearPageDraft, isPageDirty, pageDraftKey, readPageDraft, readPageDraftOffer, writePageDraft, type PageDraft } from "@/lib/page-draft";
 
 function memoryStorage(): Storage {
   const data = new Map<string, string>();
@@ -51,5 +51,17 @@ describe("ページのローカル下書き", () => {
     writePageDraft(storage, 8, draft);
     clearPageDraft(storage, 8);
     expect(readPageDraft(storage, 8)).toBeNull();
+  });
+
+  it("未保存の下書きだけを返し、同じ内容なら同じオブジェクト", () => {
+    const storage = memoryStorage();
+    expect(readPageDraftOffer(storage, 1, initial)).toBeNull();
+    writePageDraft(storage, 1, { ...initial, summary: "", savedAt: "2026-11-21T00:00:00.000Z" });
+    expect(readPageDraftOffer(storage, 1, initial)).toBeNull();
+    writePageDraft(storage, 1, { ...initial, body: "書きかけ", summary: "", savedAt: "2026-11-21T00:00:00.000Z" });
+    const first = readPageDraftOffer(storage, 1, initial);
+    const second = readPageDraftOffer(storage, 1, initial);
+    expect(first?.body).toBe("書きかけ");
+    expect(second).toBe(first);
   });
 });

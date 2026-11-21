@@ -2,7 +2,7 @@
 
 import { Eye, Paperclip, Pencil, Save, TriangleAlert } from "lucide-react";
 import Link from "next/link";
-import { useActionState, useEffect, useRef, useState } from "react";
+import { useActionState, useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { isRedirectError } from "next/dist/client/components/redirect-error";
 import { savePageAction } from "@/actions/pages";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
@@ -14,11 +14,15 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { Field, FieldDescription, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { PAGE_POSITION_PLACEHOLDER, type FormState } from "@/lib/form";
-import { clearPageDraft, isPageDirty, readPageDraft, writePageDraft, type PageDraft } from "@/lib/page-draft";
+import { clearPageDraft, isPageDirty, readPageDraftOffer, writePageDraft } from "@/lib/page-draft";
 import { uploadFile } from "@/lib/upload-client";
 import { FormErrors } from "./FormErrors";
 import { SubmitButton } from "./SubmitButton";
 import { Badge } from "@/components/ui/badge";
+
+function subscribePageDraft() {
+  return () => {};
+}
 
 export interface PageFormValues {
   title: string;
@@ -67,7 +71,6 @@ export function PageForm({
   const [summary, setSummary] = useState("");
   const [lockVersion, setLockVersion] = useState(initial.lockVersion);
   const [conflictDismissed, setConflictDismissed] = useState(false);
-  const [draftOffer, setDraftOffer] = useState<PageDraft | null>(null);
 
   const [tab, setTab] = useState<"write" | "preview">("write");
   const [previewHtml, setPreviewHtml] = useState("");
@@ -86,15 +89,15 @@ export function PageForm({
     setConflictDismissed(false);
   }
 
-  // 戻ったときに復元できるよう、ページ ID ごとの下書きをローカルに残す（サーバーのデータは変えない）
-  useEffect(() => {
-    try {
-      const draft = readPageDraft(localStorage, pageId);
-      if (draft && isPageDirty(draft, initial)) setDraftOffer(draft);
-    } catch {
-      // localStorage が使えない環境では、下書きなしで編集を続ける
-    }
-  }, [pageId, initial]);
+  // 戻ったときに復元できるよう、保存済みの下書きを描画中に読む（サーバー描画では null）
+  const storedDraft = useSyncExternalStore(
+    subscribePageDraft,
+    () => readPageDraftOffer(localStorage, pageId, initial),
+    () => null,
+  );
+  const draftKey = pageId === null ? "new" : String(pageId);
+  const [hiddenDraftKey, setHiddenDraftKey] = useState<string | null>(null);
+  const draftOffer = hiddenDraftKey === draftKey ? null : storedDraft;
 
   useEffect(() => {
     if (!dirty || skipDraftSave.current) return;
@@ -135,7 +138,7 @@ export function PageForm({
     setPosition(draftOffer.position);
     setTags(draftOffer.tags);
     setSummary(draftOffer.summary);
-    setDraftOffer(null);
+    setHiddenDraftKey(draftKey);
   };
 
   const discardDraft = () => {
@@ -144,7 +147,7 @@ export function PageForm({
     } catch {
       // 消せなくても、案内は閉じる
     }
-    setDraftOffer(null);
+    setHiddenDraftKey(draftKey);
   };
 
   // 未保存の変更がある状態での離脱（タブを閉じる・別ページへの移動）に確認を出す

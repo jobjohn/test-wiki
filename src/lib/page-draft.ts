@@ -56,3 +56,23 @@ export function writePageDraft(storage: Storage, pageId: number | null, draft: P
 export function clearPageDraft(storage: Storage, pageId: number | null): void {
   storage.removeItem(pageDraftKey(pageId));
 }
+
+// 同じ内容なら同じオブジェクトを返す（描画のたびに新しい値だと再描画が止まらない）
+const offerCache = new Map<string, PageDraft | null>();
+
+/** 保存済みの内容と違う下書きだけ返す。サーバーでは呼ばず、描画中に読む */
+export function readPageDraftOffer(storage: Storage, pageId: number | null, initial: PageDraftBaseline): PageDraft | null {
+  let raw = "";
+  try {
+    raw = storage.getItem(pageDraftKey(pageId)) ?? "";
+  } catch {
+    return null;
+  }
+  const key = [pageId ?? "new", raw, initial.title, initial.body, initial.folderId, initial.position, initial.tags].join("\0");
+  if (offerCache.has(key)) return offerCache.get(key) ?? null;
+  if (offerCache.size > 20) offerCache.clear();
+  const draft = raw ? readPageDraft(storage, pageId) : null;
+  const value = draft && isPageDirty(draft, initial) ? draft : null;
+  offerCache.set(key, value);
+  return value;
+}
