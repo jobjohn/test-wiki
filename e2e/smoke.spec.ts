@@ -37,15 +37,18 @@ test.describe.serial("スモークテスト", () => {
     await page.locator("#password").fill(PASSWORD);
     await page.getByRole("button", { name: "ログイン", exact: true }).click();
 
-    // ログイン後は初期設定の画面になる
-    await expect(page.locator("#wikiName")).toBeVisible();
-    await page.locator("#wikiName").fill(WIKI_NAME);
-    // 初期パスワードの変更欄が出る場合は埋める
-    if (await page.locator("#passwordConfirmation").isVisible()) {
-      await page.locator("#password").fill(PASSWORD);
-      await page.locator("#passwordConfirmation").fill(PASSWORD);
+    // このファイルより前のテストが初期設定を済ませていることがある。まだならここで済ませる
+    const wikiName = page.locator("#wikiName");
+    const needsSetup = await wikiName.waitFor({ state: "visible", timeout: 3000 }).then(() => true).catch(() => false);
+    if (needsSetup) {
+      await wikiName.fill(WIKI_NAME);
+      // 初期パスワードの変更欄が出る場合は埋める
+      if (await page.locator("#passwordConfirmation").isVisible()) {
+        await page.locator("#password").fill(PASSWORD);
+        await page.locator("#passwordConfirmation").fill(PASSWORD);
+      }
+      await page.getByRole("button", { name: "設定を完了して始める" }).click();
     }
-    await page.getByRole("button", { name: "設定を完了して始める" }).click();
 
     await expect(page.getByRole("heading", { level: 1, name: WIKI_NAME })).toBeVisible();
   });
@@ -127,7 +130,8 @@ test.describe.serial("スモークテスト", () => {
     await expect(page.getByRole("heading", { level: 1, name: WIKI_NAME })).toBeVisible();
 
     await page.goto(`/pages/${pageId}`);
-    await page.getByRole("button", { name: "ゴミ箱に移動" }).click();
+    await page.getByRole("button", { name: "ページの操作" }).click();
+    await page.getByRole("menuitem", { name: "ゴミ箱に移動" }).click();
     await page.getByRole("alertdialog").getByRole("button", { name: "ゴミ箱に移動する" }).click();
     await expect(page.getByText(`ページ「${TITLE}」をゴミ箱に移動しました`)).toBeVisible();
 

@@ -18,8 +18,9 @@ export default async function EditPage({ params }: { params: Promise<{ id: strin
   if (!page) notFound();
 
   return (
-    <div className="grid gap-5">
-      <PageTitle icon={Pencil}>ページを編集</PageTitle>
+    // 狭い画面ではタイトル以外を残りの高さに収め、保存バーを画面下に残す（本文欄がスクロールする）
+    <div className="flex flex-col gap-5 max-md:-mb-16 max-md:h-[calc(100svh-var(--header-height)-1.5rem)] max-md:min-h-0">
+      <PageTitle className="shrink-0" icon={Pencil}>ページを編集</PageTitle>
       <PageForm
         key={`${page.id}-${page.lockVersion}`}
         pageId={page.id}

@@ -1,29 +1,21 @@
 import type { Meta, StoryObj } from "@storybook/nextjs-vite";
 import { Toc } from "./Toc";
 
-const meta = { title: "Components/Toc", component: Toc, tags: ["autodocs"], args: { target: "#toc-sample" } } satisfies Meta<typeof Toc>;
+const items = [
+  { id: "overview", text: "概要", level: 2 },
+  { id: "endpoint", text: "エンドポイント", level: 2 },
+  { id: "login", text: "POST /login", level: 3 },
+];
+
+const meta = {
+  title: "Components/Toc",
+  component: Toc,
+  tags: ["autodocs"],
+  args: { items },
+  parameters: { docs: { description: { component: "サーバーで描画する目次。見出しが 3 つ未満なら何も出さない。狭い画面では折りたたみ、広い画面では sticky な右カラム。" } } },
+} satisfies Meta<typeof Toc>;
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-/** 見出しが 3 つ以上あるときだけ目次を表示する */
-export const Default: Story = {
-  render: (args) => (
-    <div id="toc-sample" className="markdown-body overflow-hidden">
-      <Toc {...args} />
-      <h2 id="overview">概要</h2>
-      <p>ログイン API の仕様です。</p>
-      <h2 id="endpoint">エンドポイント</h2>
-      <h3 id="login">POST /login</h3>
-      <p>パスワードで認証します。</p>
-    </div>
-  ),
-};
-export const TooFewHeadings: Story = {
-  render: (args) => (
-    <div id="toc-sample" className="markdown-body">
-      <Toc {...args} />
-      <h2 id="overview">概要</h2>
-      <p>見出しが少ないので、目次は表示されません。</p>
-    </div>
-  ),
-};
+export const Default: Story = {};
+export const TooFewHeadings: Story = { args: { items: [{ id: "overview", text: "概要", level: 2 }] } };

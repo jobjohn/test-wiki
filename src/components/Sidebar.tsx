@@ -129,8 +129,9 @@ export function Sidebar({ tree, canEdit, ...props }: { tree: TreeData | null; ca
   const hasContent = (folderChildren.get(null)?.length ?? 0) + (pagesByFolder.get(null)?.length ?? 0) > 0;
 
   return (
-    <SidebarRoot aria-label="サイドバー" {...props}>
-      <SidebarContent>
+    <SidebarRoot {...props}>
+      <nav aria-label="サイドバー" className="flex h-full min-h-0 flex-1 flex-col">
+        <SidebarContent>
         <SidebarGroup>
           <SidebarGroupContent>
             <SidebarMenu>
@@ -154,7 +155,7 @@ export function Sidebar({ tree, canEdit, ...props }: { tree: TreeData | null; ca
             <>
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <SidebarGroupAction asChild className="right-10">
+                  <SidebarGroupAction asChild className="max-md:right-14 md:right-10">
                     <Link href="/folders/new" aria-label="新しいフォルダ">
                       <FolderPlus aria-hidden />
                     </Link>
@@ -182,7 +183,8 @@ export function Sidebar({ tree, canEdit, ...props }: { tree: TreeData | null; ca
             )}
           </SidebarGroupContent>
         </SidebarGroup>
-      </SidebarContent>
+        </SidebarContent>
+      </nav>
     </SidebarRoot>
   );
 }

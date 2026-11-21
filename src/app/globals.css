@@ -277,7 +277,7 @@
   .markdown-body {
     overflow-wrap: anywhere;
   }
-  /* 目次（右に回り込ませる）と重ならないよう、罫線や背景のあるブロックは回り込みの横に収める */
+  /* 見出しの罫線が横いっぱいに伸びるよう、回り込みの影響を受けない */
   .markdown-body :is(h1, h2, blockquote, pre, hr) { display: flow-root; }
   .markdown-body > :first-child { margin-top: 0; }
   .markdown-body > :last-child { margin-bottom: 0; }
